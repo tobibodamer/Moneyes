@@ -19,51 +19,70 @@ namespace Test
             Console.OutputEncoding = System.Text.Encoding.UTF8;
 
             var categories = Categories.LoadFromJson();
-            var sales = SalesParser.Parse("20210625-7888600-umsatz.csv");
-            
+            var sales = SalesParser.Parse("Test files/1year.csv");
+
             var expenseSales = sales.Where(sale => sale.SaleType == SaleType.Expense);
 
-            var supermarketExpenses = expenseSales.FilterSales(categories.Single(c => c.Name == "Supermarket").Filter);
-            var housingExpenses = expenseSales.FilterSales(categories.Single(c => c.Name == "Housing").Filter);
-            var onlineShoppingExpenses = expenseSales.FilterSales(categories.Single(c => c.Name == "Online shopping").Filter);
+            var filteredByCategory = categories.ToList().Select(category =>
+            {
+                var filtered = expenseSales.FilterSales(category.Filter);
 
-            var restSales = expenseSales
-                .Except(supermarketExpenses)
-                .Except(housingExpenses)
-                .Except(onlineShoppingExpenses);
+                return (category, filtered);
+            });
 
-            PrintSales("Supermarket", supermarketExpenses);
-            PrintSales("Housing", housingExpenses);
-            PrintSales("Online shopping", onlineShoppingExpenses);
-            PrintSales("Other", restSales);
+            var restSales = filteredByCategory.Aggregate(expenseSales, (sales, pair) => sales.Except(pair.filtered));
+
+            //var supermarketExpenses = expenseSales.FilterSales(categories.Single(c => c.Name == "Supermarket").Filter);
+            //var housingExpenses = expenseSales.FilterSales(categories.Single(c => c.Name == "Housing").Filter);
+            //var onlineShoppingExpenses = expenseSales.FilterSales(categories.Single(c => c.Name == "Online shopping").Filter);
+
+            //var restSales = expenseSales
+            //    .Except(supermarketExpenses)
+            //    .Except(housingExpenses)
+            //    .Except(onlineShoppingExpenses);
+
+            //PrintSales("Supermarket", supermarketExpenses, expenseSales);
+            //PrintSales("Housing", housingExpenses, expenseSales);
+            //PrintSales("Online shopping", onlineShoppingExpenses, expenseSales);
+
+            PrintSales("Total", expenseSales, printFull: false);
+            filteredByCategory.ToList().ForEach(c => PrintSales(c.category.Name, c.filtered, expenseSales));
+            PrintSales("Other", restSales, expenseSales);
         }
 
-        static void PrintSales(string category, IEnumerable<ISale> sales)
+        static void PrintSales(string category, IEnumerable<ISale> sales,
+            IEnumerable<ISale> unfilteredSales = null, bool printFull = true)
         {
-            var (total, avg) = sales.CalulateTotalAndAverageAmount();
+            var startDate = (unfilteredSales ?? sales).FindStartDate();
+            var endDate = (unfilteredSales ?? sales).FindEndDate();
+            var totalDays = ((int)(endDate - startDate).TotalDays + 1);
 
-            var startDate = sales.FindStartDate();
-            var endDate = sales.FindEndDate();
-            var totalDays = ((int)(endDate - startDate).TotalDays);
+            var (total, avg) = sales.CalulateTotalAndAverageAmount(totalDays);
 
+            Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine($"{category} expenses from {startDate:d} to {endDate:d} ({totalDays} days):");
             Console.WriteLine($"Total: {total:C}");
             Console.WriteLine($"Avg ({30} days): {avg:C}");
+
+            Console.ForegroundColor = ConsoleColor.White;
             Console.WriteLine();
 
-            foreach (var sale in sales)
+            if (printFull)
             {
-                Console.WriteLine(sale);
-            }
+                foreach (var sale in sales)
+                {
+                    Console.WriteLine(sale);
+                }
 
-            Console.WriteLine();
+                Console.WriteLine();
+            }
         }
 
         static void PrintFiltered(string category, IEnumerable<ISale> sales, SalesFilter filter)
         {
             var filteredSales = sales.FilterSales(filter);
 
-            PrintSales(category, filteredSales);
+            PrintSales(category, filteredSales, sales);
         }
     }
 }

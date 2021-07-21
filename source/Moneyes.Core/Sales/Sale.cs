@@ -20,6 +20,8 @@ namespace MoneyesParser
 
         public string BookingType { get; init; }
 
+        public string IntendedUse { get; init; }
+
         public override bool Equals(object obj)
         {
             return obj is Sale sale &&
@@ -39,10 +41,12 @@ namespace MoneyesParser
 
         public override string ToString()
         {
-            string date = PaymentDate == default ? $"[{BookingDate:d}]" : PaymentDate.ToShortDateString();
+            string date = PaymentDate == default ? $"{BookingDate:d}" : PaymentDate.ToShortDateString();
 
-            return string.Format("{0, -60} | {1, 10:C} | {2, -10} | {3, -10}", 
-                Name.Substring(0, Math.Min(Name.Length, 60)), Amount, date, BookingType, City);
+            return string.Format("{0, -40} | {1, -40} | {2, 10:C} | {3, -10} | {4, -20}", 
+                Name.Substring(0, Math.Min(Name.Length, 40)), 
+                IntendedUse.Substring(0, Math.Min(IntendedUse.Length, 40)), 
+                Amount, date, BookingType, City);
             //return $"{Name}   {Amount:C}   {PaymentDate:d}   {BookingType}   {City}";
         }
 

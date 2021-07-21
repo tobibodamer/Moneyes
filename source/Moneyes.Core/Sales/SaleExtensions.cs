@@ -49,7 +49,7 @@ namespace MoneyesParser
 
             var startDate = sales.Min(sale => sale.BookingDate);
             var endDate = sales.Max(sale => sale.BookingDate);
-            int daysCount = (int)(endDate - startDate).TotalDays;
+            int daysCount = (int)(endDate - startDate).TotalDays + 1;
 
             return CalulateAverageAmount(sales, daysCount, avgDays);
         }
@@ -70,7 +70,7 @@ namespace MoneyesParser
             {
                 var startDate = sales.FindStartDate();
                 var endDate = sales.FindEndDate();
-                daysCount = (int)(endDate - startDate).TotalDays;
+                daysCount = (int)(endDate - startDate).TotalDays + 1;
             }
 
             decimal totalAmt = CalculateTotalAmount(sales);

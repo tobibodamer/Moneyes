@@ -85,7 +85,8 @@ namespace MoneyesParser.Parsing
                 Amount = Math.Abs(entry.Betrag),
                 Name = name,
                 BookingType = entry.Buchungstext,
-                SaleType = entry.Betrag > 0 ? SaleType.Income : SaleType.Expense
+                SaleType = entry.Betrag > 0 ? SaleType.Income : SaleType.Expense,
+                IntendedUse = entry.Verwendungszweck
             };
 
             return s;

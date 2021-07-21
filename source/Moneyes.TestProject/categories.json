@@ -10,9 +10,16 @@
 							"Operator": "Contains",
 							"Values": [ "EDEKA", "REWE", "DENN S", "K+U", "BIOMARKT", "BAECKEREI",
 										"Backwaren", "Kaufland", "Aktiv Markt", "DM", "NETTO", "LIDL", "NORMA",
-										"ALDI", "Frischemarkt", "MARKET", "MUEHLE", "ALNATURA", "UNVERPACKT", "MUELLER", "E-CENTER", "ECENTER" ],
+										"ALDI", "Frischemarkt", "MARKET", "MUEHLE", "ALNATURA", "UNVERPACKT", 
+										"MUELLER", "E-CENTER", "ECENTER", "PLAPLA", "Schuettgut"],
 							"CaseSensitive": false,
-						}				
+						},
+						{
+							"Selector": "IntendedUse",
+							"Operator": "Contains",
+							"Values": [ "ICONICDRINK", "BIOGEWINNER"],
+							"CaseSensitive": false,
+						}
 					]					
 				}
 			}
@@ -21,19 +28,32 @@
 			"name": "Housing",
 			"Filter": {
 				"Criteria": {
-					"Operator": "And",
-					"Conditions": [ 
-						{
-							"Selector": "Amount",
-							"Operator": "GreaterOrEqual",
-							"Values": [ 100 ]
-						},
+					"Operator": "Or",
+					"Conditions": [
 						{
 							"Selector": "Name",
 							"Operator": "Contains",
-							"Values": [ "GWG", "Studierendenwerk" ],
+							"Values": [ "PACO unlimited" ],
 							"CaseSensitive": false,
-						}	
+						}
+					],
+					"ChildFilters": [
+						{
+							"Operator": "And",
+							"Conditions": [ 
+								{
+									"Selector": "Amount",
+									"Operator": "GreaterOrEqual",
+									"Values": [ 100 ]
+								},
+								{
+									"Selector": "Name",
+									"Operator": "Contains",
+									"Values": [ "GWG", "Studierendenwerk" ],
+									"CaseSensitive": false,
+								}
+							]
+						}
 					]
 				}
 			}
@@ -42,11 +62,114 @@
 			"name": "Online shopping",
 			"Filter": {
 				"Criteria": {
+					"Operator": "Or",
 					"Conditions": [
 						{
 							"Selector": "Name",
 							"Operator": "Contains",
 							"Values": ["AMAZON", "EBAY", "Paypal"]
+						},
+						{
+							"Selector": "IntendedUse",
+							"Operator": "Contains",
+							"Values": ["AMAZON", "EBAY", "Paypal"]
+						}
+					]
+				}
+			}
+		},
+		{
+			"name": "Food",
+			"Filter": {
+				"Criteria": {
+					"Operator": "Or",
+					"Conditions": [
+						{
+							"Selector": "Name",
+							"Operator": "Contains",
+							"Values": ["subway", "another milk", "vegi ", "dean david", "Burreatos",
+										"Hans im Glueck", "Doenastie", "The Healthy Secret", "POP S BAD CANNSTATT"]
+						},
+						{
+							"Selector": "IntendedUse",
+							"Operator": "Contains",
+							"Values": ["Mensa", "TooGoodToGo"]
+						}
+					]
+				}
+			}
+		},
+		{
+			"name": "Supplements",
+			"Filter": {
+				"Criteria": {
+					"Conditions": [
+						{
+							"Selector": "IntendedUse",
+							"Operator": "Contains",
+							"Values": ["VIVO LIFE", "SUNDAY"]
+						}
+					]
+				}
+			}
+		},
+		{
+			"name": "Sports",
+			"Filter": {
+				"Criteria": {
+					"Conditions": [
+						{
+							"Selector": "IntendedUse",
+							"Operator": "Contains",
+							"Values": ["Fitness Express"]
+						}
+					]
+				}
+			}
+		},
+		{
+			"name": "Entertainment",
+			"Filter": {
+				"Criteria": {
+					"Conditions": [
+						{
+							"Selector": "IntendedUse",
+							"Operator": "Contains",
+							"Values": ["SPOTIFY"]
+						}
+					]
+				}
+			}
+		},
+		{
+			"name": "Internet & Phone",
+			"Filter": {
+				"Criteria": {
+					"Conditions": [
+						{
+							"Selector": "Name",
+							"Operator": "Contains",
+							"Values": ["Selfnet", "E-Plus", "Vodafone"]
+						}
+					]
+				}
+			}
+		},
+		{
+			"name": "Transportation (KFZ, ÖPNV)",
+			"Filter": {
+				"Criteria": {
+					"Operator": "Or",
+					"Conditions": [
+						{
+							"Selector": "Name",
+							"Operator": "Contains",
+							"Values": ["DB AUTOMAT", "JET", "AVIA", "OMV", "SHELL", "MINERA KRAFTSTOFFE", "TUEV"]
+						},
+						{
+							"Selector": "IntendedUse",
+							"Operator": "Contains",
+							"Values": ["KFZ"]
 						}
 					]
 				}

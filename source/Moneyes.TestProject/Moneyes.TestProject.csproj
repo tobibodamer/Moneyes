@@ -6,10 +6,18 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="20210721-7888600-umsatz.CSV" />
     <None Remove="categories.json" />
+    <None Remove="Test files\1year.CSV" />
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="Test files\1year.CSV">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Test files\1month.CSV">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="categories.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

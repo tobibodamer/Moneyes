@@ -15,7 +15,7 @@ namespace MoneyesParser.Filters
             {
                 if (StartDate is not null && EndDate is not null)
                 {
-                    return (EndDate - StartDate).Value.TotalDays;
+                    return (EndDate - StartDate).Value.TotalDays + 1;
                 }
 
                 return null;

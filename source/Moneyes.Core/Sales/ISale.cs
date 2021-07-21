@@ -12,6 +12,8 @@ namespace MoneyesParser
         string Name { get; }
         SaleType SaleType { get; }
         string BookingType { get; }
+
+        string IntendedUse { get; }
     }
 
 

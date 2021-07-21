@@ -1,0 +1,55 @@
+﻿	[
+		{
+			"name": "Supermarket",
+			"Filter": {
+				"Criteria": {
+					"Operator": "Or",
+					"Conditions": [
+						{
+							"Selector": "Name",
+							"Operator": "Contains",
+							"Values": [ "EDEKA", "REWE", "DENN S", "K+U", "BIOMARKT", "BAECKEREI",
+										"Backwaren", "Kaufland", "Aktiv Markt", "DM", "NETTO", "LIDL", "NORMA",
+										"ALDI", "Frischemarkt", "MARKET", "MUEHLE", "ALNATURA", "UNVERPACKT", "MUELLER", "E-CENTER", "ECENTER" ],
+							"CaseSensitive": false,
+						}				
+					]					
+				}
+			}
+		},
+		{
+			"name": "Housing",
+			"Filter": {
+				"Criteria": {
+					"Operator": "And",
+					"Conditions": [ 
+						{
+							"Selector": "Amount",
+							"Operator": "GreaterOrEqual",
+							"Values": [ 100 ]
+						},
+						{
+							"Selector": "Name",
+							"Operator": "Contains",
+							"Values": [ "GWG", "Studierendenwerk" ],
+							"CaseSensitive": false,
+						}	
+					]
+				}
+			}
+		},
+		{
+			"name": "Online shopping",
+			"Filter": {
+				"Criteria": {
+					"Conditions": [
+						{
+							"Selector": "Name",
+							"Operator": "Contains",
+							"Values": ["AMAZON", "EBAY", "Paypal"]
+						}
+					]
+				}
+			}
+		}
+	]

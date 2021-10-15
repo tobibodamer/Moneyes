@@ -1,4 +1,4 @@
-﻿namespace MoneyesParser
+﻿namespace Moneyes.Core
 {
     public enum SaleType
     {

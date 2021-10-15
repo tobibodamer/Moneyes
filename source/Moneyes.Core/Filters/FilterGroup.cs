@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace MoneyesParser.Filters
+namespace Moneyes.Core.Filters
 {
     /// <summary>
     /// Represents an evaluable group of filters.

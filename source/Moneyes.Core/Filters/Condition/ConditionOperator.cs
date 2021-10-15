@@ -1,4 +1,4 @@
-﻿namespace MoneyesParser.Filters
+﻿namespace Moneyes.Core.Filters
 {
     /// <summary>
     /// Conditional operators.

@@ -1,4 +1,4 @@
-﻿namespace MoneyesParser.Filters
+﻿namespace Moneyes.Core.Filters
 {
     /// <summary>
     /// Provides a method to evaluate a predicate with input of type <typeparamref name="T"/>.

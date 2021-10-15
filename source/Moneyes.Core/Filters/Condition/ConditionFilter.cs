@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 
-namespace MoneyesParser.Filters
+namespace Moneyes.Core.Filters
 {
     public class ConditionFilter<T, TValue> : IConditionFilter<T>
     {

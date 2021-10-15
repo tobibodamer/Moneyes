@@ -1,11 +1,11 @@
-﻿using MoneyesParser.Filters;
+﻿using Moneyes.Core.Filters;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MoneyesParser
+namespace Moneyes.Core
 {
     public class Category
     {

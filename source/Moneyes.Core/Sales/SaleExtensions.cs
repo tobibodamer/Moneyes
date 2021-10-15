@@ -1,9 +1,9 @@
-﻿using MoneyesParser.Filters;
+﻿using Moneyes.Core.Filters;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace MoneyesParser
+namespace Moneyes.Core
 {
     /// <summary>
     /// Provides extension methods for <see cref="ISale"/>.
@@ -26,6 +26,8 @@ namespace MoneyesParser
 
             return filteredSales;
         }
+
+        
 
         public static decimal CalculateTotalAmount(this IEnumerable<ISale> sales)
         {

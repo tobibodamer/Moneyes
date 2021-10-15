@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MoneyesParser.JSON
+namespace Moneyes.Core.JSON
 {
     class SingleOrArrayConverter<TItem> : SingleOrArrayConverter<List<TItem>, TItem> { }
     class SingleOrArrayConverter<TCollection, TItem> : JsonConverter<TCollection>

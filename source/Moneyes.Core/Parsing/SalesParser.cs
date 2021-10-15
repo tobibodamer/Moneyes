@@ -4,10 +4,12 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using CsvHelper;
 using CsvHelper.Configuration;
+using Moneyes.Core.Parsing;
 
-namespace MoneyesParser.Parsing
+namespace Moneyes.Core.Parsing
 {
     /// <summary>
     /// A parser used to extract <see cref="ISale"/>s from a <c>.csv</c> file.
@@ -35,7 +37,29 @@ namespace MoneyesParser.Parsing
 
             return sales;
         }
-        
+
+        /// <summary>
+        /// Parses the sales from <c>csv</c> content directly, formatted with the default banking format.
+        /// </summary>
+        /// <param name="content">The <c>csv</c> content.</param>
+        /// <param name="delimiter">The delimiter to use.</param>
+        /// <returns>A collection of parsed <see cref="ISale"/>s.</returns>
+        public static IEnumerable<ISale> ParseFromContent(string content, string delimiter = ";")
+        {
+            var config = new CsvConfiguration(CultureInfo.CurrentCulture)
+            {
+                Delimiter = delimiter
+            };
+
+            using var reader = new StringReader(content);
+            using var csv = new CsvReader(reader, config);
+
+            var entries = csv.GetRecords<SaleEntry>().ToList();
+            var sales = CreateSales(entries);
+
+            return sales;
+        }
+
         static IEnumerable<ISale> CreateSales(IEnumerable<SaleEntry> entries)
         {
             foreach (var entry in entries)
@@ -54,11 +78,11 @@ namespace MoneyesParser.Parsing
 
             // Parse location and name
 
-            Regex rx = new (@"\/\/([A-Za-z\s.\-]+)\/([A-Z][A-Z])");
-            Match match = rx.Match(entry.Beguenstigter);
+            Regex rx = new(@"\/\/([A-Za-z\s.\-]+)\/([A-Z][A-Z])");
+            Match match = rx.Match(entry.AccountName);
             string country = null;
             string city = null;
-            string name = entry.Beguenstigter;
+            string name = entry.AccountName;
 
             if (match.Success)
             {
@@ -72,7 +96,7 @@ namespace MoneyesParser.Parsing
                     }
                 }
 
-                name = entry.Beguenstigter.Replace(match.Groups[0].Value, "");
+                name = entry.AccountName.Replace(match.Groups[0].Value, "");
             }
 
 
@@ -82,10 +106,10 @@ namespace MoneyesParser.Parsing
                 BookingDate = entry.Buchungstag,
                 City = city,
                 Country = country,
-                Amount = Math.Abs(entry.Betrag),
+                Amount = Math.Abs(entry.Amount),
                 Name = name,
                 BookingType = entry.Buchungstext,
-                SaleType = entry.Betrag > 0 ? SaleType.Income : SaleType.Expense,
+                SaleType = entry.Amount > 0 ? SaleType.Income : SaleType.Expense,
                 IntendedUse = entry.Verwendungszweck
             };
 

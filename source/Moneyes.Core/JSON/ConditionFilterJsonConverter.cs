@@ -1,10 +1,10 @@
-﻿using MoneyesParser.Filters;
+﻿using Moneyes.Core.Filters;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Linq;
 
-namespace MoneyesParser.JSON
+namespace Moneyes.Core.JSON
 {
     class SaleConditionFilterJsonConverter : ConditionFilterJsonConverter<ISale> { }
     class ConditionFilterJsonConverter<T> : JsonConverter<IConditionFilter<T>>

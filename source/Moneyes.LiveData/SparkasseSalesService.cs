@@ -12,7 +12,7 @@ namespace Moneyes.LiveData
     {
         const string BaseUrl = "https://www.sparkasse-pforzheim-calw.de";
         const string HomePage = "/de/home.html";
-        const string UmsatzPage = "/de/home/onlinebanking/umsaetze/umsaetze.html";
+        const string SalesPage = "/de/home/onlinebanking/umsaetze/umsaetze.html";
 
         private readonly HttpClient _httpClient;
 
@@ -26,7 +26,7 @@ namespace Moneyes.LiveData
 
             _httpClient = new(handler)
             {
-                Timeout = TimeSpan.FromSeconds(10)
+                Timeout = TimeSpan.FromSeconds(1000)
             };
         }
 
@@ -215,8 +215,19 @@ namespace Moneyes.LiveData
             DateTime startDate,
             DateTime endDate)
         {
+            if (startDate > endDate)
+            {
+                throw new ArgumentException("The start date cannot be greater than the end date", nameof(startDate));
+            }
+
+            if ((DateTime.Now - startDate).Days > 90)
+            {
+                throw new InvalidOperationException("Requesting data older than 90 days is not supported." +
+                    " Start date needs to be greater.");
+            }
+
             // Get html of template sales page
-            HttpRequestMessage salesPageRequest = new(HttpMethod.Get, BaseUrl + UmsatzPage);
+            HttpRequestMessage salesPageRequest = new(HttpMethod.Get, BaseUrl + SalesPage);
             HttpResponseMessage salesPageResponse = await _httpClient.SendAsync(salesPageRequest);
 
             string salesPageHtml = await salesPageResponse.Content.ReadAsStringAsync();
@@ -310,8 +321,8 @@ namespace Moneyes.LiveData
 
             HttpRequestMessage postRequest = CreatePostRequestWithHeaders(postData);
             postRequest.Headers.Add("Accept-Encoding", "gzip, deflate, br");
-
-            HttpResponseMessage response = await _httpClient.SendAsync(postRequest);
+            
+            HttpResponseMessage response = await _httpClient.SendAsync(postRequest, HttpCompletionOption.ResponseHeadersRead);
 
             // Return csv content
 

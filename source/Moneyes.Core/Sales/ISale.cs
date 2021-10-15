@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace MoneyesParser
+namespace Moneyes.Core
 {
     public interface ISale
     {
@@ -14,6 +14,7 @@ namespace MoneyesParser
         string BookingType { get; }
 
         string IntendedUse { get; }
+        string IBAN { get; }
     }
 
 

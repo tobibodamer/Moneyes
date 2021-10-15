@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace MoneyesParser
+namespace Moneyes.Core
 {
     class Sale : ISale
     {
@@ -22,6 +22,8 @@ namespace MoneyesParser
 
         public string IntendedUse { get; init; }
 
+        public string IBAN { get; init; }
+
         public override bool Equals(object obj)
         {
             return obj is Sale sale &&
@@ -31,12 +33,13 @@ namespace MoneyesParser
                    Country == sale.Country &&
                    Name == sale.Name &&
                    SaleType == sale.SaleType &&
-                   BookingType == sale.BookingType;
+                   BookingType == sale.BookingType &&
+                   IBAN == sale.IBAN;
         }
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(PaymentDate, Amount, City, Country, Name, SaleType, BookingType);
+            return HashCode.Combine(PaymentDate, Amount, City, Country, Name, SaleType, BookingType, IBAN);
         }
 
         public override string ToString()

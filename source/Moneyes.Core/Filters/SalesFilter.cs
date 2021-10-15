@@ -2,7 +2,7 @@
 using System;
 using System.Collections;
 
-namespace MoneyesParser.Filters
+namespace Moneyes.Core.Filters
 {
     public class SalesFilter
     {

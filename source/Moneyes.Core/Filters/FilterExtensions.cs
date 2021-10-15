@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 
-namespace MoneyesParser.Filters
+namespace Moneyes.Core.Filters
 {
     public static class FilterExtensions
     {
@@ -37,6 +37,14 @@ namespace MoneyesParser.Filters
         public static string GetName<TSource, TField>(this Func<TSource, TField> expr)
         {
             return GetName<TSource, TField>(field: source => expr(source));
+        }
+
+        public static bool Evaluate(this SalesFilter filter, ISale sale)
+        {
+            return (!filter.SaleType.HasValue || sale.SaleType == filter.SaleType)
+                && (!filter.StartDate.HasValue || (sale.BookingDate >= filter.StartDate))
+                && (!filter.EndDate.HasValue || (sale.BookingDate <= filter.EndDate))
+                && filter.Criteria.Evaluate(sale);
         }
     }
 

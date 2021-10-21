@@ -24,51 +24,42 @@ namespace Moneyes.LiveData
         /// <returns></returns>
         public OnlineBankingService CreateService(OnlineBankingDetails bankingDetails)
         {
-            VerifyBankingDetails(bankingDetails);
+            ValidateBankingDetails(bankingDetails);
 
-            FinTsInstitute institute = FinTsInstitutes.GetInstitute(bankingDetails.BankCode);
+            FinTsInstitute institute = FinTsInstitutes.GetInstituteInternal(bankingDetails.BankCode);
 
-            VerifyInstitute(institute);
+            ValidateInstitute(institute);
 
             var details = new ConnectionDetails()
             {
                 Url = institute.FinTs_Url,
                 Blz = bankingDetails.BankCode,
-                Account = bankingDetails.AccountNumber,
                 UserId = bankingDetails.UserId,
                 Pin = bankingDetails.Pin
             };
 
             FinTsClient client = new(details);
-
-            return new(client, _loggerFactory?.CreateLogger<OnlineBankingService>());
+            
+            return new(client, bankingDetails, _loggerFactory?.CreateLogger<OnlineBankingService>());
         }
 
-        private static void VerifyBankingDetails(OnlineBankingDetails bankingDetails)
+        private static void ValidateBankingDetails(OnlineBankingDetails bankingDetails)
         {
             if (bankingDetails == null)
             {
                 throw new ArgumentNullException(nameof(bankingDetails));
             }
-            else if (string.IsNullOrEmpty(bankingDetails.Pin))
-            {
-                throw new ArgumentException("Online banking details must contain valid pin.");
-            }
             else if (string.IsNullOrEmpty(bankingDetails.UserId))
             {
                 throw new ArgumentException("Online banking details must contain valid user id.");
             }
-            else if (string.IsNullOrEmpty(bankingDetails.AccountNumber))
-            {
-                throw new ArgumentException("Online banking details must contain valid account number.");
-            }
-            else if (bankingDetails.BankCode == 0)
+            else if (bankingDetails.BankCode.ToString().Length != 8)
             {
                 throw new ArgumentException("Online banking details must contain valid bank code.");
             }
         }
 
-        private static void VerifyInstitute(FinTsInstitute institute)
+        private static void ValidateInstitute(FinTsInstitute institute)
         {
             if (institute is null)
             {

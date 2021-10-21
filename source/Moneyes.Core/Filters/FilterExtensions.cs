@@ -39,12 +39,28 @@ namespace Moneyes.Core.Filters
             return GetName<TSource, TField>(field: source => expr(source));
         }
 
-        public static bool Evaluate(this SalesFilter filter, ISale sale)
+        public static bool Evaluate(this TransactionFilter filter, Transaction transaction)
         {
-            return (!filter.SaleType.HasValue || sale.SaleType == filter.SaleType)
-                && (!filter.StartDate.HasValue || (sale.BookingDate >= filter.StartDate))
-                && (!filter.EndDate.HasValue || (sale.BookingDate <= filter.EndDate))
-                && filter.Criteria.Evaluate(sale);
+            return (filter.TransactionType is TransactionType.None || MatchesSaleType(transaction, filter.TransactionType))
+                && (!filter.StartDate.HasValue || (transaction.BookingDate >= filter.StartDate))
+                && (!filter.EndDate.HasValue || (transaction.BookingDate <= filter.EndDate))
+                && filter.Criteria.Evaluate(transaction);
+        }
+
+        private static bool MatchesSaleType(Transaction t, TransactionType? saleType)
+        {
+            if (!saleType.HasValue) { return true; }
+
+            if ((saleType == TransactionType.Expense) && t.Amount >= 0)
+            {
+                return true;
+            }
+            else if ((saleType == TransactionType.Income) && t.Amount < 0)
+            {
+                return true;
+            }
+
+            return false;
         }
     }
 

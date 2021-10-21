@@ -1,4 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Runtime.Serialization.Formatters.Binary;
+using System.Security.Cryptography;
+using System.Text.RegularExpressions;
 
 namespace Moneyes.Core
 {
@@ -7,52 +14,75 @@ namespace Moneyes.Core
     /// </summary>
     public class Transaction
     {
+        private readonly int _index;
+        private Lazy<string> _id;
+        public string UID => _id.Value;
+
         /// <summary>
         /// The date this transaction was valued.
         /// </summary>
-        public DateTime? ValueDate { get; set; }
+        public DateTime? ValueDate { get; init; }
 
         /// <summary>
         /// The date this transaction was created.
         /// </summary>
-        public DateTime BookingDate { get; set; }
+        public DateTime BookingDate { get; init; }
+
+        /// <summary>
+        /// The original date when this transaction was caused.
+        /// </summary>
+        public DateTime? OriginalDate => ParseDate();
 
         /// <summary>
         /// The purpose of this transaction.
         /// </summary>
-        public string Purpose { get; set; }
+        public string Purpose { get; init; }
 
         /// <summary>
         /// The booking type.
         /// </summary>
-        public string BookingType { get; set; }
+        public string BookingType { get; init; }
 
         /// <summary>
         /// The transaction amount.
         /// </summary>
-        public decimal Amount { get; set; }
+        public decimal Amount { get; init; }
+
+        /// <summary>
+        /// The type of this transaction.
+        /// </summary>
+        public TransactionType Type => Amount > 0
+            ? TransactionType.Income
+            : TransactionType.Expense;
+
+        /// <summary>
+        /// IBAN of the account this transaction belongs to.
+        /// </summary>
+        public string IBAN { get; init; }
+
+        /// <summary>
+        /// Account number of the account this transaction belongs to.
+        /// </summary>
+        public string AccountNumber { get; init; }
 
         #region Partner
 
         /// <summary>
-        /// IBAN of the partner account.
-        /// </summary>
-        public string IBAN { get; set; }
-
-        /// <summary>
         /// BIC of the partners bank.
         /// </summary>
-        public string BIC { get; set; }
+        public string BIC { get; init; }
 
         /// <summary>
         /// The partner account name.
         /// </summary>
-        public string PartnerName { get; set; }
+        public string Name { get; init; }
 
         /// <summary>
         /// Alternative partner account name.
         /// </summary>
-        public string AltPartnerName { get; set; }
+        public string AltName { get; init; }
+
+        #endregion
 
         /// <summary>
         /// The city provided with the transaction.
@@ -64,13 +94,61 @@ namespace Moneyes.Core
         /// </summary>
         public string CountryCode => ParseCityAndCountry()?.Country;
 
+        /// <summary>
+        /// Gets the categories of this transaction.
+        /// </summary>
+        public List<Category> Categories { get; init; } = new();
+
+        /// <summary>
+        /// Gets the index of this transactions. For identical transactions only!
+        /// </summary>
+        public int Index {
+            get => _index;
+            init
+            {
+                _index = value;
+                _id = new(GenerateUID);
+            }
+        }
+
+        public Transaction()
+        {
+            _id = new(GenerateUID);
+        }
+
+        private DateTime? ParseDate()
+        {
+            if (Purpose == null)
+            {
+                return null;
+            }
+
+            Regex rx = new(@"^(\d{4}-\d{2}-\d{2}T\d{2}\.\d{2})");
+            Match match = rx.Match(Purpose);
+
+            if (!match.Success)
+            {
+                return null;
+            }
+
+            if (DateTime.TryParseExact(match.Value, "yyyy-MM-ddTHH:mm",
+                CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal, out var date)
+                || DateTime.TryParseExact(match.Value, "yyyy-MM-ddTHH.mm",
+                CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal, out date))
+            {
+                return date;
+            };
+
+            return null;
+        }
+
         private (string City, string Country)? ParseCityAndCountry()
         {
-            if (string.IsNullOrEmpty(AltPartnerName) || !AltPartnerName.Contains("//"))
+            if (string.IsNullOrEmpty(AltName) || !AltName.Contains("//"))
 
             { return null; }
 
-            var splitted = AltPartnerName.Split("//");
+            var splitted = AltName.Split("//");
 
             if (splitted.Length != 2)
             {
@@ -97,22 +175,57 @@ namespace Moneyes.Core
             return (city, country);
         }
 
+        private string GenerateUID()
+        {
+            //return HashCode.Combine(BookingDate, Purpose, BookingType, Amount, IBAN, BIC, Name, Index);
+            string s = $"{BookingDate:yyyyMMdd}{Purpose}{BookingType}{Amount}{IBAN}{BIC}{Name}{Index}";
+
+            using SHA256 mySHA256 = SHA256.Create();
+            return BitConverter.ToString(mySHA256.ComputeHash(System.Text.Encoding.ASCII.GetBytes(s))).Replace("-", "");
+        }
+
+        /// <summary>
+        /// Gets the unique identifier of this transaction.
+        /// </summary>
+        /// <returns></returns>
+        public string GetUID()
+        {
+            return _id.Value;
+        }
+
         public override bool Equals(object obj)
         {
             return obj is Transaction transaction &&
                    BookingDate == transaction.BookingDate &&
+                   ValueDate == transaction.ValueDate &&
                    Purpose == transaction.Purpose &&
                    BookingType == transaction.BookingType &&
                    Amount == transaction.Amount &&
                    IBAN == transaction.IBAN &&
+                   AccountNumber == transaction.AccountNumber &&
                    BIC == transaction.BIC &&
-                   PartnerName == transaction.PartnerName;
+                   Name == transaction.Name &&
+                   Categories.SequenceEqual(transaction.Categories) &&
+                   _index.Equals(transaction._index);
         }
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(BookingDate, Purpose, BookingType, Amount, IBAN, BIC, PartnerName);
+            HashCode hash = new();
+
+            hash.Add(BookingDate);
+            hash.Add(ValueDate);
+            hash.Add(Purpose);
+            hash.Add(BookingType);
+            hash.Add(Amount);
+            hash.Add(IBAN);
+            hash.Add(AccountNumber);
+            hash.Add(BIC);
+            hash.Add(Name);
+            hash.Add(Categories);
+            hash.Add(_index);
+
+            return hash.ToHashCode();
         }
-        #endregion
     }
 }

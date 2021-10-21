@@ -6,28 +6,43 @@ using System.Linq;
 namespace Moneyes.Core
 {
     /// <summary>
-    /// Provides extension methods for <see cref="ISale"/>.
+    /// Provides extension methods for <see cref="Transaction"/>s.
     /// </summary>
-    public static class SaleExtensions
+    public static class TransactionExtensions
     {
         /// <summary>
-        /// Apply a <see cref="SalesFilter"/> to a collection of <see cref="ISale"/>s.
+        /// Apply a <see cref="TransactionFilter"/> to a collection of <see cref="ISale"/>s.
         /// </summary>
-        /// <param name="sales"></param>
+        /// <param name="transcations"></param>
         /// <param name="filter"></param>
         /// <returns></returns>
-        public static IEnumerable<ISale> FilterSales(this IEnumerable<ISale> sales, SalesFilter filter)
+        public static IEnumerable<Transaction> FilterTransactions(this IEnumerable<Transaction> transcations,
+            TransactionFilter filter)
         {
-            var filteredSales = sales.Where(sale =>
-                (!filter.SaleType.HasValue || sale.SaleType == filter.SaleType)
-                && (!filter.StartDate.HasValue || (sale.BookingDate >= filter.StartDate))
-                && (!filter.EndDate.HasValue || (sale.BookingDate <= filter.EndDate))
-                && filter.Criteria.Evaluate(sale));
+            var filteredSales = transcations.Where(t =>
+                (filter.TransactionType is TransactionType.None || MatchesSaleType(t, filter.TransactionType))
+                && (!filter.StartDate.HasValue || (t.BookingDate >= filter.StartDate))
+                && (!filter.EndDate.HasValue || (t.BookingDate <= filter.EndDate))
+                && filter.Criteria.Evaluate(t));
 
             return filteredSales;
         }
 
-        
+        private static bool MatchesSaleType(Transaction t, TransactionType? saleType)
+        {
+            if (!saleType.HasValue) { return true; }
+
+            if ((saleType == TransactionType.Expense) && t.Amount >= 0)
+            {
+                return true;
+            }
+            else if ((saleType == TransactionType.Income) && t.Amount < 0)
+            {
+                return true;
+            }
+
+            return false;
+        }
 
         public static decimal CalculateTotalAmount(this IEnumerable<ISale> sales)
         {

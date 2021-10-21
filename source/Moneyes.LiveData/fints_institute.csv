@@ -1,4 +1,4 @@
-﻿Nr.;BLZ;Institut;Ort;RZ;Organisation;HBCI-Zugang DNS;HBCI- Zugang     IP-Adresse;HBCI-Version;DDV;RDH-1;RDH-2;RDH-3;RDH-4;RDH-5;RDH-6;RDH-7;RDH-8;RDH-9;RDH-10;RAH-7;RAH-9;RAH-10;PIN/TAN-Zugang URL;Version;Datum letzte Änderung;;;;;
+﻿Nr.;BLZ;Institut;Ort;RZ;Organisation;HBCI-Zugang DNS;HBCI- Zugang IP-Adresse;HBCI-Version;DDV;RDH-1;RDH-2;RDH-3;RDH-4;RDH-5;RDH-6;RDH-7;RDH-8;RDH-9;RDH-10;RAH-7;RAH-9;RAH-10;PIN/TAN-Zugang URL;Version;Datum letzte Änderung;;;;;
 2;10010010;Postbank;Berlin;eigenes Rechenzentrum;BdB;;;;;;;;;;;;;;;;;;https://hbci.postbank.de/banking/hbci.do;FinTS V3.0;30.04.2015;;;;;
 3;10020200;BHF-Bank AG;Berlin;Bank-Verlag GmbH;BdB;hbciserver.bankverlag.de;nicht unterstützt;3.0;;ja;;ja;;ja;;;;;;;;;https://www.bv-activebanking.de/hbciTunnel/hbciTransfer.jsp;FinTS V3.0;;;;;;
 4;10020890;UniCredit Bank - HypoVereinsbank AG;Berlin;eigenes Rechenzentrum;BdB;hbci.hypovereinsbank.de;;3.0;;ja;;ja;;ja;;;;ja;ja;;ja;ja;https://hbci-01.hypovereinsbank.de/bank/hbci;FinTS V3.0;21.08.2015;;;;;
@@ -672,8 +672,7 @@
 672;27893359;Volksbank Braunlage eG;Braunlage;Fiducia & GAD IT AG;BVR;hbci.gad.de;nicht unterstützt;3.0;;;;;;;;ja;;ja;ja;;;;https://hbci-pintan.gad.de/cgi-bin/hbciservlet;FinTS V3.0;22.05.2013;;;;;
 673;27893760;Volksbank Seesen eG;Seesen;Fiducia & GAD IT AG;BVR;hbci.gad.de;nicht unterstützt;3.0;;;;;;;;ja;;ja;ja;;;;https://hbci-pintan.gad.de/cgi-bin/hbciservlet;FinTS V3.0;23.06.2018;;;;;
 674;28020050;Oldenburgische Landesbank AG;Oldenburg (Oldb);eigenes Rechenzentrum;;hbci.olb.de;;3.0;;ja;;;;;;;;ja;ja;;;;https://hbci.olb.de;FinTS V3.0;20.08.2017;;;;;
-675;28030300;"Oldenburgische Landesbank AG 
-(vormals W. Fortmann & Söhne)";Oldenburg (Oldb);eigenes Rechenzentrum;;hbci.olb.de;;3.0;;ja;;;;;;;;ja;ja;;;;https://hbci.olb.de;FinTS V3.0;29.09.2017;;;;;
+675;28030300;"Oldenburgische Landesbank AG (vormals W. Fortmann & Söhne)";Oldenburg (Oldb);eigenes Rechenzentrum;;hbci.olb.de;;3.0;;ja;;;;;;;;ja;ja;;;;https://hbci.olb.de;FinTS V3.0;29.09.2017;;;;;
 676;28040046;Commerzbank;Oldenburg ;eigenes Rechenzentrum;BdB;hbci.commerzbank.de;;3.0;;ja;ja;ja;;ja;;;ja;ja;ja;;;;;;15.11.2010;;;;;
 677;28042865;Commerzbank;Vechta;eigenes Rechenzentrum;BdB;hbci.commerzbank.de;;3.0;;ja;ja;ja;;ja;;;ja;ja;ja;;;;;;15.11.2010;;;;;
 678;28050100;Landessparkasse zu Oldenburg;Oldenburg;Finanz Informatik GmbH & Co. KG;DSGV;banking-ni1.s-fints-pt-ni.de;nicht unterstützt;3.0;ja;;;;;;;;;;;ja;;;https://banking-ni1.s-fints-pt-ni.de/fints30;FinTS V3.0;09.07.2016;;;;;
@@ -4011,8 +4010,8 @@
 4010;87096034;Volksbank Erzgebirge;Annaberg-Buchholz;Fiducia & GAD IT AG;BVR;hbci01.fiducia.de;;3.0;;;;;;;;ja;;ja;ja;;;;https://hbci11.fiducia.de/cgi-bin/hbciservlet;FinTS V3.0;18.12.2009;;;;;
 4011;87096124;Volksbank;Mittweida;Fiducia & GAD IT AG;BVR;hbci01.fiducia.de;;3.0;;;;;;;;ja;;ja;ja;;;;https://hbci11.fiducia.de/cgi-bin/hbciservlet;FinTS V3.0;18.12.2009;;;;;
 4012;87096214;Volksbank Chemnitz;Chemnitz, Sachs;Fiducia & GAD IT AG;BVR;hbci01.fiducia.de;;3.0;;;;;;;;ja;;ja;ja;;;;https://hbci11.fiducia.de/cgi-bin/hbciservlet;FinTS V3.0;18.12.2009;;;;;
-4013;,;Raiffeisenbank Vordere Alb;Hülben;Fiducia & GAD IT AG;BVR;hbci01.fiducia.de;;3.0;;;;;;;;ja;;ja;ja;;;;https://hbci11.fiducia.de/cgi-bin/hbciservlet;FinTS V3.0;18.12.2009;;;;;
-4014;,;Spar- und Kreditbank;Dauchingen;Fiducia & GAD IT AG;BVR;hbci01.fiducia.de;;3.0;;;;;;;;ja;;ja;ja;;;;https://hbci11.fiducia.de/cgi-bin/hbciservlet;FinTS V3.0;18.12.2009;;;;;
+4013;;Raiffeisenbank Vordere Alb;Hülben;Fiducia & GAD IT AG;BVR;hbci01.fiducia.de;;3.0;;;;;;;;ja;;ja;ja;;;;https://hbci11.fiducia.de/cgi-bin/hbciservlet;FinTS V3.0;18.12.2009;;;;;
+4014;;Spar- und Kreditbank;Dauchingen;Fiducia & GAD IT AG;BVR;hbci01.fiducia.de;;3.0;;;;;;;;ja;;ja;ja;;;;https://hbci11.fiducia.de/cgi-bin/hbciservlet;FinTS V3.0;18.12.2009;;;;;
 4015;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 4016;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 4017;;;;;;;;;;;;;;;;;;;;;;;;;27.10.2018;;;;;

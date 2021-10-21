@@ -7,6 +7,8 @@ using libfintx;
 using Microsoft.Extensions.Logging;
 using libfintx.FinTS;
 using MTransaction = Moneyes.Core.Transaction;
+using libfintx.FinTS.Data;
+using libfintx.FinTS.Swift;
 
 namespace Moneyes.LiveData
 {
@@ -14,18 +16,79 @@ namespace Moneyes.LiveData
     {
         private readonly IFinTsClient _fintsClient;
         private readonly ILogger<OnlineBankingService> _logger;
-        private AccountInformation _activeAccount = null;
 
-        internal OnlineBankingService(IFinTsClient client,
+        public OnlineBankingDetails BankingDetails { get; }
+
+        internal OnlineBankingService(IFinTsClient client, OnlineBankingDetails bankingDetails,
             ILogger<OnlineBankingService> logger = null)
         {
             _fintsClient = client;
             _logger = logger;
+            BankingDetails = bankingDetails;
         }
 
-        public async Task<OnlineBankingResult<AccountInformation>> AccountInformation()
+        private void UpdateConnectionDetails(AccountDetails account = null)
         {
-            _logger.LogInformation("Fetching account information");
+            if (account != null)
+            {
+                _fintsClient.ConnectionDetails.Account = account.Number;
+                _fintsClient.ConnectionDetails.Bic = account.BIC;
+                _fintsClient.ConnectionDetails.Iban = account.IBAN;
+            }
+
+            _fintsClient.ConnectionDetails.Blz = BankingDetails.BankCode;
+            _fintsClient.ConnectionDetails.UserId = BankingDetails.UserId;
+            _fintsClient.ConnectionDetails.Pin = BankingDetails.Pin;
+        }
+
+        private void ValidateBankingDetails()
+        {
+            //TODO: Pin Prompt
+
+            if (BankingDetails.Pin == null || BankingDetails.Pin.Length == 0)
+            {
+                throw new ApplicationException("Online banking details must contain valid pin.");
+            }
+            else if (string.IsNullOrEmpty(BankingDetails.UserId))
+            {
+                throw new ApplicationException("Online banking details must contain valid user id.");
+            }
+        }
+
+        public async Task<Result> Sync()
+        {
+            ValidateBankingDetails();
+            UpdateConnectionDetails();
+
+            try
+            {
+                HBCIDialogResult<string> result = await _fintsClient.Synchronization();
+
+                HBCIOutput(result.Messages);
+
+                if (!result.IsSuccess)
+                {
+                    _logger?.LogWarning("Fetching account information was not successful");
+
+                    return Result.Failed();
+                }
+
+                return Result.Successful();
+            }
+            catch
+            {
+                //TODO: Log
+            }
+
+            return Result.Failed();
+        }
+        public async Task<Result<IEnumerable<AccountDetails>>> Accounts()
+        {
+            ValidateBankingDetails();
+
+            _logger?.LogInformation("Fetching account information");
+
+            UpdateConnectionDetails();
 
             var result = await _fintsClient.Accounts(new(WaitForTanAsync));
 
@@ -33,47 +96,43 @@ namespace Moneyes.LiveData
 
             if (!result.IsSuccess)
             {
-                _logger.LogWarning("Fetching account information was not successful");
+                _logger?.LogWarning("Fetching account information was not successful");
 
-                return new(false);
+                return new(successful: false);
             }
 
-            var activeAccount = result.Data.FirstOrDefault(acc =>
-                acc.AccountNumber.Equals(_fintsClient.ConnectionDetails.Account));
-
-            if (activeAccount == null)
+            return Result.Successful(result.Data.Select(accInfo =>
             {
-                _logger.LogWarning("Account information not found for account {Account ({AccNumber})}...",
-                _fintsClient.activeAccount.AccountType,
-                _fintsClient.activeAccount.AccountNumber);
-
-                return new(false);
-            }
-
-            _logger.LogInformation("Account information found for account {Account ({AccNumber})}...",
-                _fintsClient.activeAccount.AccountType,
-                _fintsClient.activeAccount.AccountNumber);
-
-            _activeAccount = activeAccount;
-
-            return new(activeAccount);
+                return new AccountDetails
+                {
+                    BIC = accInfo.AccountBic,
+                    IBAN = accInfo.AccountIban,
+                    Number = accInfo.AccountNumber,
+                    OwnerName = accInfo.AccountOwner,
+                    Type = accInfo.AccountType
+                };
+            }));
         }
 
-        public async Task<OnlineBankingResult<IEnumerable<MTransaction>>> Transactions(
-            DateTime? startDate = null, DateTime? endDate = null)
+        public async Task<Result<IEnumerable<MTransaction>>> Transactions(
+            AccountDetails account,
+            DateTime? startDate = null,
+            DateTime? endDate = null)
         {
-            _logger.LogInformation("Fetching transactions for account {Account ({AccNumber})}, " +
+            if (account == null)
+            {
+                throw new ArgumentNullException(nameof(account));
+            }
+
+            ValidateBankingDetails();
+
+            _logger?.LogInformation("Fetching transactions for account {Account ({AccNumber})}, " +
                 "Timespan: {startDate} - {endDate}",
-                _fintsClient.activeAccount.AccountType,
-                _fintsClient.activeAccount.AccountNumber,
+                account.Type,
+                account.Number,
                 startDate, endDate ?? DateTime.Now);
 
-            if (_activeAccount == null)
-            {
-                _logger.LogInformation("No account information found, fetching account info");
-
-                await AccountInformation();
-            }
+            UpdateConnectionDetails(account);
 
             var result = await _fintsClient.Transactions(
                 new TANDialog(WaitForTanAsync), startDate, endDate);
@@ -82,31 +141,56 @@ namespace Moneyes.LiveData
 
             if (!result.IsSuccess)
             {
-                _logger.LogWarning("Fetching transactions was not successful.");
+                _logger?.LogWarning("Fetching transactions was not successful.");
 
-                return new(false);
+                return new(successful: false);
             }
 
-            _logger.LogInformation("Fetching transactions was successful.");
+            _logger?.LogInformation("Fetching transactions was successful.");
 
-            var transactions = result.Data.SelectMany(stmt => stmt.SwiftTransactions)
-                .Select(t => Conversion.FromLiveTransaction(t, _activeAccount));
+            // Parse all non pending transactions
+            IEnumerable<MTransaction> transactions = result.Data
+                .Where(stmt => !stmt.Pending)
+                .SelectMany(stmt => ParseFromSwift(stmt, account));
 
-            return new(transactions);
+            return Result.Successful(transactions);
         }
 
-        public async Task<OnlineBankingResult<decimal>> Balance()
+        private static IEnumerable<MTransaction> ParseFromSwift(SwiftStatement swiftStatement, AccountDetails account)
         {
-            _logger.LogInformation("Fetching balance for account {Account ({AccNumber})}...",
-                _fintsClient.activeAccount.AccountType,
-                _fintsClient.activeAccount.AccountNumber);
+            Dictionary<string, int> uids = new();
 
-            if (_activeAccount == null)
+            foreach (SwiftTransaction t in swiftStatement.SwiftTransactions)
             {
-                _logger.LogInformation("No account information found, fetching account info");
+                MTransaction transaction = Conversion.FromLiveTransaction(t, account);
 
-                await AccountInformation();
+                if (uids.ContainsKey(transaction.GetUID()))
+                {
+                    transaction = Conversion.FromLiveTransaction(t, account, ++uids[transaction.GetUID()]);
+                }
+                else
+                {
+                    uids.Add(transaction.GetUID(), 0);
+                }
+
+                yield return transaction;
             }
+        }
+
+        public async Task<Result<decimal>> Balance(AccountDetails account)
+        {
+            if (account == null)
+            {
+                throw new ArgumentNullException(nameof(account));
+            }
+
+            ValidateBankingDetails();
+
+            _logger?.LogInformation("Fetching balance for account {Account ({AccNumber})}...",
+                account.Type,
+                account.Number);
+
+            UpdateConnectionDetails(account);
 
             var result = await _fintsClient.Balance(
                 new TANDialog(WaitForTanAsync));
@@ -115,16 +199,15 @@ namespace Moneyes.LiveData
 
             if (!result.IsSuccess)
             {
-                _logger.LogWarning("Fetching balance was not successful.");
+                _logger?.LogWarning("Fetching balance was not successful.");
 
-                return new(false);
+                return new(successful: false);
             }
 
-            _logger.LogInformation("Fetching balance was successful.");
+            _logger?.LogInformation("Fetching balance was successful.");
 
-            return new(result.Data.Balance);
+            return Result.Successful(result.Data.Balance);
         }
-
 
         private static async Task<string> WaitForTanAsync(TANDialog tanDialog)
         {

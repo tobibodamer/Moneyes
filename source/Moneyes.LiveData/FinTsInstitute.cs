@@ -2,10 +2,10 @@
 
 namespace Moneyes.LiveData
 {
-    class FinTsInstitute
+    class FinTsInstitute : IBankInstitute
     {
         [Name("BLZ")]
-        public int BankCode { get; set; }
+        public string BankCode { get; set; }
 
         [Name("Institut")]
         public string Institute { get; set; }
@@ -19,7 +19,7 @@ namespace Moneyes.LiveData
         [Name("HBCI-Zugang DNS")]
         public string HBCI_DNS { get; set; }
 
-        [Name("HBCI- Zugang     IP-Adresse")]
+        [Name("HBCI- Zugang IP-Adresse")]
         public string HBCI_IP { get; set; }
 
         [Name("HBCI-Version")]

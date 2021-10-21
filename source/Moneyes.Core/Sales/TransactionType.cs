@@ -1,7 +1,8 @@
 ﻿namespace Moneyes.Core
 {
-    public enum SaleType
+    public enum TransactionType
     {
+        None,
         Expense,
         Income
     }

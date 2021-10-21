@@ -17,7 +17,7 @@ namespace Moneyes.Core
             string json = r.ReadToEnd();
 
             Category[] deserializedCategories = JsonConvert.DeserializeObject<Category[]>(
-                json, new ConditionFilterJsonConverter<ISale>());
+                json, new ConditionFilterJsonConverter<Transaction>());
 
             return deserializedCategories;
         }

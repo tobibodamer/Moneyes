@@ -64,8 +64,8 @@ namespace Moneyes.Core.Parsing
             return new()
             {
                 Amount = entry.Amount,
-                AltPartnerName = entry.AccountName,
-                PartnerName = shortPartnerName,
+                AltName = entry.AccountName,
+                Name = shortPartnerName,
                 IBAN = entry.IBAN,
                 BIC = entry.BIC,
                 Purpose = entry.Verwendungszweck,

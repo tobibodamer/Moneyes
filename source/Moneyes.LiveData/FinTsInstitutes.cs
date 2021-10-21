@@ -8,7 +8,7 @@ using System.IO;
 
 namespace Moneyes.LiveData
 {
-    class FinTsInstitutes
+    public class FinTsInstitutes
     {
         public const string FINTS_INSTITUTES_FILE = "fints_institute.csv";
 
@@ -16,14 +16,14 @@ namespace Moneyes.LiveData
 
 
 #pragma warning disable CS8632 // Die Anmerkung für Nullable-Verweistypen darf nur in Code innerhalb eines #nullable-Anmerkungskontexts verwendet werden.
-        public static FinTsInstitute? GetInstitute(int bankCode)
+        internal static FinTsInstitute? GetInstituteInternal(int bankCode)
 #pragma warning restore CS8632 // Die Anmerkung für Nullable-Verweistypen darf nur in Code innerhalb eines #nullable-Anmerkungskontexts verwendet werden.
         {
             return GetInstitutes()
-                .FirstOrDefault(institute => institute.BankCode.Equals(bankCode));
+                .FirstOrDefault(institute => institute.BankCode.Equals(bankCode.ToString()));
         }
 
-        public static IEnumerable<FinTsInstitute> GetInstitutes(string fileName = FINTS_INSTITUTES_FILE)
+        internal static IEnumerable<FinTsInstitute> GetInstitutes(string fileName = FINTS_INSTITUTES_FILE)
         {
             if (_institutes != null && _institutes.Any())
             {
@@ -33,7 +33,8 @@ namespace Moneyes.LiveData
             var config = new CsvConfiguration(CultureInfo.CurrentCulture)
             {
                 Encoding = Encoding.UTF8,
-                DetectDelimiter = true
+                DetectDelimiter = true,
+                IgnoreBlankLines = true
             };
 
             using var reader = new StreamReader(fileName);
@@ -43,5 +44,12 @@ namespace Moneyes.LiveData
 
             return _institutes;
         }
+
+#nullable enable
+        public static IBankInstitute? GetInstitute(int bankCode)
+        {
+            return GetInstituteInternal(bankCode);
+        }
+#nullable disable
     }
 }

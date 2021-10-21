@@ -16,7 +16,7 @@ namespace Moneyes.Core
 
         public string Name { get; init; }
 
-        public SaleType SaleType { get; init; }
+        public TransactionType SaleType { get; init; }
 
         public string BookingType { get; init; }
 

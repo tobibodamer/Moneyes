@@ -109,13 +109,11 @@ namespace Moneyes.Core.Parsing
                 Amount = Math.Abs(entry.Amount),
                 Name = name,
                 BookingType = entry.Buchungstext,
-                SaleType = entry.Amount > 0 ? SaleType.Income : SaleType.Expense,
+                SaleType = entry.Amount > 0 ? TransactionType.Income : TransactionType.Expense,
                 IntendedUse = entry.Verwendungszweck
             };
 
             return s;
         }
     }
-
-
 }

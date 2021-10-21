@@ -10,7 +10,7 @@ namespace Moneyes.Core
         string City { get; }
         string Country { get; }
         string Name { get; }
-        SaleType SaleType { get; }
+        TransactionType SaleType { get; }
         string BookingType { get; }
 
         string IntendedUse { get; }

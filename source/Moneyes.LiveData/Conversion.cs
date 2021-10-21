@@ -7,20 +7,23 @@ namespace Moneyes.LiveData
     static class Conversion
     {
         public static Core.Transaction FromLiveTransaction(
-            SwiftTransaction swiftTransaction, 
-            AccountInformation account)
+            SwiftTransaction swiftTransaction,
+            AccountDetails account,
+            int index = 0)
         {
             return new()
             {
+                Index = index,
                 Purpose = swiftTransaction.SVWZ,
                 Amount = swiftTransaction.Amount,
-                IBAN = account?.AccountIban,
+                IBAN = account?.IBAN,
                 BIC = swiftTransaction.BankCode,
-                PartnerName = swiftTransaction.PartnerName,
-                AltPartnerName = swiftTransaction.ABWA,
+                Name = swiftTransaction.PartnerName,
+                AltName = swiftTransaction.ABWA,
                 BookingType = swiftTransaction.Text,
                 BookingDate = swiftTransaction.InputDate,
-                ValueDate = swiftTransaction.ValueDate
+                ValueDate = swiftTransaction.ValueDate,
+                AccountNumber = account.Number
             };
         }
     }

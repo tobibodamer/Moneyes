@@ -60,12 +60,12 @@ namespace Moneyes.Core
         /// </summary>
         public string IBAN { get; init; }
 
-        /// <summary>
-        /// Account number of the account this transaction belongs to.
-        /// </summary>
-        public string AccountNumber { get; init; }
-
         #region Partner
+
+        /// <summary>
+        /// IBAN of the partners account.
+        /// </summary>
+        public string PartnerIBAN { get; init; }
 
         /// <summary>
         /// BIC of the partners bank.
@@ -202,7 +202,7 @@ namespace Moneyes.Core
                    BookingType == transaction.BookingType &&
                    Amount == transaction.Amount &&
                    IBAN == transaction.IBAN &&
-                   AccountNumber == transaction.AccountNumber &&
+                   PartnerIBAN == transaction.PartnerIBAN &&
                    BIC == transaction.BIC &&
                    Name == transaction.Name &&
                    Categories.SequenceEqual(transaction.Categories) &&
@@ -219,7 +219,7 @@ namespace Moneyes.Core
             hash.Add(BookingType);
             hash.Add(Amount);
             hash.Add(IBAN);
-            hash.Add(AccountNumber);
+            hash.Add(PartnerIBAN);
             hash.Add(BIC);
             hash.Add(Name);
             hash.Add(Categories);

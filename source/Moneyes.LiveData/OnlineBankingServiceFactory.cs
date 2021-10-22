@@ -26,11 +26,11 @@ namespace Moneyes.LiveData
         {
             ValidateBankingDetails(bankingDetails);
 
-            FinTsInstitute institute = FinTsInstitutes.GetInstituteInternal(bankingDetails.BankCode);
+            FinTsInstitute institute = BankInstitutes.GetInstituteInternal(bankingDetails.BankCode);
 
             ValidateInstitute(institute);
 
-            var details = new ConnectionDetails()
+            ConnectionDetails details = new ()
             {
                 Url = institute.FinTs_Url,
                 Blz = bankingDetails.BankCode,

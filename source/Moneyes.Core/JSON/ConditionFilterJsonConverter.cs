@@ -6,7 +6,6 @@ using System.Linq;
 
 namespace Moneyes.Core.JSON
 {
-    class SaleConditionFilterJsonConverter : ConditionFilterJsonConverter<Transaction> { }
     class ConditionFilterJsonConverter<T> : JsonConverter<IConditionFilter<T>>
     {
         public override IConditionFilter<T> ReadJson(JsonReader reader, Type objectType,

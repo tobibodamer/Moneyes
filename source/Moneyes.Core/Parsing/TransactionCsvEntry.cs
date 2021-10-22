@@ -11,9 +11,9 @@ using System.Text.Unicode;
 namespace Moneyes.Core.Parsing
 {
     /// <summary>
-    /// Represents a POCO for a sale.
+    /// Represents a POCO for a transaction.
     /// </summary>
-    class SaleEntry
+    internal class TransactionCsvEntry
     {
         [Name("Auftragskonto")]
         public string Auftragskonto { get; set; }

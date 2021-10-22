@@ -2,21 +2,24 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Moneyes.Core;
-using libfintx;
 using Microsoft.Extensions.Logging;
 using libfintx.FinTS;
 using MTransaction = Moneyes.Core.Transaction;
-using libfintx.FinTS.Data;
 using libfintx.FinTS.Swift;
 
 namespace Moneyes.LiveData
 {
+    /// <summary>
+    /// Service that supports basic online banking read operations.
+    /// </summary>
     public class OnlineBankingService
     {
         private readonly IFinTsClient _fintsClient;
         private readonly ILogger<OnlineBankingService> _logger;
 
+        /// <summary>
+        /// Gets the online banking details used by this service.
+        /// </summary>
         public OnlineBankingDetails BankingDetails { get; }
 
         internal OnlineBankingService(IFinTsClient client, OnlineBankingDetails bankingDetails,
@@ -55,9 +58,17 @@ namespace Moneyes.LiveData
             }
         }
 
+        /// <summary>
+        /// Synchronizes with the online banking API. <br></br>
+        /// Can be used to check whether a successful connection can be established to the bank.
+        /// </summary>
+        /// <returns></returns>
         public async Task<Result> Sync()
         {
             ValidateBankingDetails();
+
+            _logger?.LogInformation("Synchronizing...");
+
             UpdateConnectionDetails();
 
             try
@@ -68,7 +79,7 @@ namespace Moneyes.LiveData
 
                 if (!result.IsSuccess)
                 {
-                    _logger?.LogWarning("Fetching account information was not successful");
+                    _logger?.LogWarning("Synchronizing was not successful");
 
                     return Result.Failed();
                 }

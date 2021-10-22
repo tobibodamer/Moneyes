@@ -4,8 +4,15 @@ using libfintx.FinTS;
 
 namespace Moneyes.LiveData
 {
-    static class Conversion
+    internal static class Conversion
     {
+        /// <summary>
+        /// Converts a <see cref="SwiftTransaction"/> to a <see cref="Moneyes.Core.Transaction"/>.
+        /// </summary>
+        /// <param name="swiftTransaction"></param>
+        /// <param name="account"></param>
+        /// <param name="index"></param>
+        /// <returns></returns>
         public static Core.Transaction FromLiveTransaction(
             SwiftTransaction swiftTransaction,
             AccountDetails account,
@@ -16,14 +23,14 @@ namespace Moneyes.LiveData
                 Index = index,
                 Purpose = swiftTransaction.SVWZ,
                 Amount = swiftTransaction.Amount,
-                IBAN = account?.IBAN,
+                PartnerIBAN = swiftTransaction.IBAN,
                 BIC = swiftTransaction.BankCode,
                 Name = swiftTransaction.PartnerName,
                 AltName = swiftTransaction.ABWA,
                 BookingType = swiftTransaction.Text,
                 BookingDate = swiftTransaction.InputDate,
                 ValueDate = swiftTransaction.ValueDate,
-                AccountNumber = account.Number
+                IBAN = account.IBAN
             };
         }
     }

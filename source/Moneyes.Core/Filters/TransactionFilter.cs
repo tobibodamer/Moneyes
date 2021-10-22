@@ -20,9 +20,9 @@ namespace Moneyes.Core.Filters
                 return null;
             }
         }
-#pragma warning disable CS8632 // Die Anmerkung für Nullable-Verweistypen darf nur in Code innerhalb eines #nullable-Anmerkungskontexts verwendet werden.
+#nullable enable
         public string? AccountNumber { get; set; }
-#pragma warning restore CS8632 // Die Anmerkung für Nullable-Verweistypen darf nur in Code innerhalb eines #nullable-Anmerkungskontexts verwendet werden.
+#nullable disable
 
         public decimal? MinAmount { get; set; }
         public decimal? MaxAmount { get; set; }
@@ -51,7 +51,7 @@ namespace Moneyes.Core.Filters
             return (TransactionType is TransactionType.None || (input.Type == TransactionType))
                && (!StartDate.HasValue || (input.BookingDate >= StartDate))
                && (!EndDate.HasValue || (input.BookingDate <= EndDate))
-               && (AccountNumber is null || input.AccountNumber.Equals(AccountNumber))
+               && (AccountNumber is null || input.PartnerIBAN.EndsWith(AccountNumber))
                && (MinAmount is null || input.Amount >= MinAmount)
                && (MaxAmount is null || input.Amount <= MaxAmount)
                && Criteria.Evaluate(input);

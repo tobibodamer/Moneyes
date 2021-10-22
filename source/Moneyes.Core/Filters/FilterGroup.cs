@@ -47,7 +47,7 @@ namespace Moneyes.Core.Filters
             var conditionFilter = new ConditionFilter<T, TValue>()
             {
                 Selector = selector.GetName(),
-                Operator = conditionOperator,
+                ConditionOperator = conditionOperator,
                 Values = values.ToList()
             };
 

@@ -8,20 +8,23 @@ using System.IO;
 
 namespace Moneyes.LiveData
 {
-    public class FinTsInstitutes
+    /// <summary>
+    /// Class to get bank institutes that support online banking with this application.
+    /// </summary>
+    public class BankInstitutes
     {
-        public const string FINTS_INSTITUTES_FILE = "fints_institute.csv";
+        internal const string FINTS_INSTITUTES_FILE = "fints_institute.csv";
 
         private static List<FinTsInstitute> _institutes;
 
 
-#pragma warning disable CS8632 // Die Anmerkung für Nullable-Verweistypen darf nur in Code innerhalb eines #nullable-Anmerkungskontexts verwendet werden.
+#nullable enable
         internal static FinTsInstitute? GetInstituteInternal(int bankCode)
-#pragma warning restore CS8632 // Die Anmerkung für Nullable-Verweistypen darf nur in Code innerhalb eines #nullable-Anmerkungskontexts verwendet werden.
         {
             return GetInstitutes()
                 .FirstOrDefault(institute => institute.BankCode.Equals(bankCode.ToString()));
         }
+#nullable disable
 
         internal static IEnumerable<FinTsInstitute> GetInstitutes(string fileName = FINTS_INSTITUTES_FILE)
         {
@@ -46,6 +49,11 @@ namespace Moneyes.LiveData
         }
 
 #nullable enable
+        /// <summary>
+        /// Gets the bank institute for the given bank code, or <see langword="null"/> if not found.
+        /// </summary>
+        /// <param name="bankCode">The bank code.</param>
+        /// <returns></returns>
         public static IBankInstitute? GetInstitute(int bankCode)
         {
             return GetInstituteInternal(bankCode);

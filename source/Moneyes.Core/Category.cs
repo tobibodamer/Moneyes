@@ -8,16 +8,48 @@ using System.Threading.Tasks;
 
 namespace Moneyes.Core
 {
+    /// <summary>
+    /// Represents a category for transactions.
+    /// </summary>
     public class Category
     {
-        public int Id { get; set; }
-        public string Name { get; set; }
-        public TransactionFilter Filter { get; set; }
-        public decimal Target { get; set; }
-        public Category Parent { get; set; }
-        public bool IsExlusive { get; set; }
-
+        /// <summary>
+        /// Gets a in memory representation of a category, indicating no category has been assoiated with a transaction.
+        /// </summary>
         public static readonly Category NoCategory = new() { Name = new Guid().ToString() };
+
+        /// <summary>
+        /// Unique identifier, for equally named categories.
+        /// </summary>
+        public int Id { get; set; }
+
+        /// <summary>
+        /// Name of the category.
+        /// </summary>
+        public string Name { get; set; }
+
+#nullable enable
+        /// <summary>
+        /// A <see cref="TransactionFilter"/> used to identify transactions belonging to this category. <br></br>
+        /// Can be <see langword="null"/> for dumb categories.
+        /// </summary>
+        public TransactionFilter? Filter { get; set; }
+
+        /// <summary>
+        /// The parent category.
+        /// </summary>
+        public Category? Parent { get; set; }
+#nullable disable
+
+        /// <summary>
+        /// Gets or sets the monthly target amount for this category.
+        /// </summary>
+        public decimal Target { get; set; }
+        
+        /// <summary>
+        /// Indicates whether transactions are exclusive to this category.
+        /// </summary>
+        public bool IsExlusive { get; set; }
 
         public override bool Equals(object obj)
         {

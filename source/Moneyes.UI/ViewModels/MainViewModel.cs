@@ -18,20 +18,21 @@ namespace Moneyes.UI.ViewModels
 
     class MainViewModel : ViewModelBase
     {
-        public ICommand FetchOnlineCommand { get; }
-        public ICommand SelectCategoryCommand { get; }
+        private LiveDataService _liveDataService;
+        private IExpenseIncomeService _expenseIncomeService;
+        private TransactionRepository _transactionRepository;
 
-        LiveDataService _liveDataService;
-        IExpenseIncomeService _expenseIncomeService;
-        TransactionRepository _transactionRepository;
-
-        IRepository<AccountDetails> _accountStore;
-        AccountDetails _selectedAccount;
-        IList _selectedCategories;
+        private AccountRepository _accountRepo;
+        private AccountDetails _selectedAccount;
+        private IList _selectedCategories;
 
         private ObservableCollection<AccountDetails> _accounts = new();
         private ObservableCollection<Transaction> _transactions = new();
         private ObservableCollection<CategoryViewModel> _categories = new();
+
+        public ICommand LoadedCommand { get; }
+        public ICommand FetchOnlineCommand { get; }
+        public ICommand SelectCategoryCommand { get; }
 
         public IList SelectedCategories
         {
@@ -97,20 +98,43 @@ namespace Moneyes.UI.ViewModels
             LiveDataService liveDataService,
             IExpenseIncomeService expenseIncomeService,
             TransactionRepository transactionService,
-            IRepository<AccountDetails> accountStore)
+            AccountRepository accountRepo,
+            BankConnectionStore bankConnections)
         {
             DisplayName = "Overview";
 
             _liveDataService = liveDataService;
-            _accountStore = accountStore;
+            _accountRepo = accountRepo;
             _expenseIncomeService = expenseIncomeService;
             _transactionRepository = transactionService;
+
+            LoadedCommand = new AsyncCommand(async ct =>
+            {
+                //TODO: 
+                // Get current bank
+                // Fetch accounts for this bank
+
+                var bankingDetails = bankConnections.GetBankingDetails();
+
+                if (bankingDetails == null)
+                {
+                    // No bank connection configured -> show message?
+                    return;
+                }
+
+                await FetchAccounts(bankingDetails.BankCode.ToString());
+            });
+
+            //liveDataService.BankingInitialized += bankingDetails =>
+            //{
+            //    _ = Task.Run(() => FetchAccounts(bankingDetails.BankCode.ToString()));
+            //};
 
             FetchOnlineCommand = new AsyncCommand(async ct =>
             {
                 Result<int> result = await _liveDataService
                     .FetchOnlineTransactions(SelectedAccount);
-                    
+
                 if (result.IsSuccessful && result.Data > 0)
                 {
                     FetchTransactions();
@@ -121,9 +145,6 @@ namespace Moneyes.UI.ViewModels
             {
                 await Task.Run(() => FetchTransactions(updateCategories: false));
             });
-
-            FetchAccounts()
-                .ContinueWith(t => FetchTransactions(), TaskScheduler.FromCurrentSynchronizationContext());
         }
 
         private void FetchTransactions(bool updateCategories = true)
@@ -183,9 +204,9 @@ namespace Moneyes.UI.ViewModels
             MessageBox.Show(message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
 
-        private async Task FetchAccounts()
+        private async Task FetchAccounts(string bankCode)
         {
-            Accounts = new(await _accountStore.GetAll());
+            Accounts = new(_accountRepo.GetByBankCode(bankCode));
 
             if (Accounts.Any())
             {
@@ -199,7 +220,7 @@ namespace Moneyes.UI.ViewModels
                 // TODO: Display message
             }
 
-            Accounts = new(await _accountStore.GetAll());
+            Accounts = new(_accountRepo.All());
         }
     }
 }

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Security;
 using System.Windows;
 using System.Windows.Controls;
+using Moneyes.Core;
 
 namespace Moneyes.UI.View
 {

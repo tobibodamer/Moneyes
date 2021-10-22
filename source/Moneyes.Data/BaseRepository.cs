@@ -35,6 +35,11 @@ namespace Moneyes.Data
             Collection.Upsert(entity);
         }
 
+        public virtual void Set(IEnumerable<T> entities)
+        {
+            Collection.Upsert(entities);
+        }
+
         public virtual bool Delete(int id)
         {
             return Collection.Delete(id);

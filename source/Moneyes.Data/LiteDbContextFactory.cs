@@ -1,13 +1,17 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq.Expressions;
+using System.Security;
 using System.Threading.Tasks;
 using LiteDB;
 using Microsoft.Extensions.Options;
 using Moneyes.Core;
-using Moneyes.LiveData;
 
 namespace Moneyes.Data
-{public class LiteDbContextFactory
+{
+    public class LiteDbContextFactory
     {
         private readonly IOptions<LiteDbConfig> _config;
         public LiteDbContextFactory(IOptions<LiteDbConfig> config)
@@ -15,11 +19,11 @@ namespace Moneyes.Data
             _config = config;
         }
 
-        public ILiteDatabase CreateContext()
+        public ILiteDatabase CreateContext(string password = null)
         {
             try
             {
-                var bsonMapper = new BsonMapper();
+                BsonMapper bsonMapper = new();
 
                 bsonMapper.Entity<Category>()
                     .Id(c => c.Id, true)
@@ -29,6 +33,20 @@ namespace Moneyes.Data
                 bsonMapper.Entity<Transaction>()
                     .Id(t => t.UID, false)
                     .DbRef(t => t.Categories);
+
+                if (password != null)
+                {
+                    bsonMapper.RegisterType<SecureString>
+                    (
+                        serialize: str => str.ToUnsecuredString(),
+                        deserialize: value => value.AsString.ToSecuredString()
+                    );
+                }
+
+                ConnectionString connectionString = new(_config.Value.DatabasePath)
+                {
+                    Password = password
+                };
 
                 return new LiteDatabase(_config.Value.DatabasePath, bsonMapper);
             }

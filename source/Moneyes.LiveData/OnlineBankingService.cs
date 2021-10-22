@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using libfintx.FinTS;
 using MTransaction = Moneyes.Core.Transaction;
 using libfintx.FinTS.Swift;
+using Moneyes.Core;
 
 namespace Moneyes.LiveData
 {
@@ -116,6 +117,7 @@ namespace Moneyes.LiveData
             {
                 return new AccountDetails
                 {
+                    BankCode = accInfo.AccountBankCode,
                     BIC = accInfo.AccountBic,
                     IBAN = accInfo.AccountIban,
                     Number = accInfo.AccountNumber,

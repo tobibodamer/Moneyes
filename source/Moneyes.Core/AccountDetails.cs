@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Moneyes.LiveData
+namespace Moneyes.Core
 {
     /// <summary>
     /// Represents account details for a bank account.
@@ -16,6 +16,11 @@ namespace Moneyes.LiveData
         /// The bank identifier code.
         /// </summary>
         public string BIC { get; init; }
+        
+        /// <summary>
+        /// The bank code.
+        /// </summary>
+        public string BankCode { get; init; }
 
         /// <summary>
         /// The international bank account number

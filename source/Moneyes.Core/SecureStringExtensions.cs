@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Moneyes.UI
+namespace Moneyes.Core
 {
     using System;
     using System.Runtime.InteropServices;

@@ -8,6 +8,7 @@ namespace Moneyes.Data
         IEnumerable<T> All();
         T FindById(int id);
         void Set(T entity);
+        void Set(IEnumerable<T> entities);
         bool Delete(int id);
     }
 }

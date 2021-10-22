@@ -26,10 +26,12 @@ namespace Moneyes.UI
             var db = dbFactory.CreateContext();
             var categoryRepo = new CategoryRepository(db);
             var transactionRepo = new TransactionRepository(db);
+            var accountRepo = new AccountRepository(db);
+            var configStore = new BankConnectionStore(db);
 
             //var transactionStore = new JsonDatabase<Transaction>("E:\\transcationsTest.json", transaction => transaction.GetUID());
-            var accountStore = new JsonDatabase<AccountDetails>("E:\\accountTest.json", account => account.IBAN);
-            var categoryStore = new CategoryDatabase("categories.json");
+            //var accountStore = new JsonDatabase<AccountDetails>("E:\\accountTest.json", account => account.IBAN);
+            //var categoryStore = new CategoryDatabase("categories.json");
 
             //foreach (var c in await categoryStore.GetAll())
             //{
@@ -39,21 +41,27 @@ namespace Moneyes.UI
             var passwordPrompt = new DialogPasswordPrompt();
 
             LiveDataService liveDataService = new(
-                transactionRepo, categoryRepo, accountStore, new OnlineBankingServiceFactory(), passwordPrompt);
+                transactionRepo, categoryRepo, accountRepo, 
+                configStore, new OnlineBankingServiceFactory(), passwordPrompt);
 
             ExpenseIncomServieUsingDb expenseIncomeService = new(categoryRepo, transactionRepo);
             //TransactionService transactionService = new(transactionRepo);
 
             var mainViewModel = new MainViewModel(liveDataService, expenseIncomeService, transactionRepo,
-                accountStore);
-
-            var settingsViewModel = new BankingSettingsViewModel(liveDataService);
+                accountRepo, configStore);
+            
+            var settingsViewModel = new BankingSettingsViewModel(liveDataService, configStore);
 
             var mainWindowViewModel = new MainWindowViewModel()
             {
                 Tabs = new() { mainViewModel, settingsViewModel },
-                CurrentViewModel = settingsViewModel
+                CurrentViewModel = mainViewModel
             };
+
+            if (!configStore.HasBankingDetails)
+            {
+                mainWindowViewModel.CurrentViewModel = settingsViewModel;
+            }
 
             this.MainWindow = new MainWindow(mainWindowViewModel);
             this.MainWindow.Show();

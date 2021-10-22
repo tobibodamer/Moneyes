@@ -1,4 +1,5 @@
-﻿using Moneyes.LiveData;
+﻿using Moneyes.Data;
+using Moneyes.LiveData;
 using System;
 using System.Collections;
 using System.Collections.Concurrent;
@@ -15,34 +16,37 @@ namespace Moneyes.UI.ViewModels
 {
     class BankingSettingsViewModel : ViewModelBase, INotifyDataErrorInfo
     {
-        private readonly OnlineBankingDetails _onlineBankingDetails;
         private readonly LiveDataService _liveDataService;
+        private readonly BankConnectionStore _configStore;
 
-        public BankingSettingsViewModel(LiveDataService liveDataService)
+        public BankingSettingsViewModel(LiveDataService liveDataService, BankConnectionStore bankConnectionStore)
         {
             DisplayName = "Settings";
 
             _liveDataService = liveDataService;
+            _configStore = bankConnectionStore;
+
+            LoadedCommand = new AsyncCommand(ct =>
+            {
+                if (_configStore.HasBankingDetails)
+                {
+                    OnlineBankingDetails bankingDetails = _configStore.GetBankingDetails();
+
+                    BankCode = bankingDetails.BankCode;
+                    UserId = bankingDetails.UserId;
+                    PIN = bankingDetails.Pin;
+
+                    IsDirty = false;
+
+                    LookupBank();
+                }
+
+                return Task.CompletedTask;
+            });
 
             FindBankCommand = new AsyncCommand(ct =>
             {
-                _liveDataService.FindBank(_bankCode.Value)
-                    .OnSuccess(bank =>
-                    {
-                        BankLookupResult = bank.Institute;
-                        BankFound = true;
-                    })
-                    .OnError(() =>
-                    {
-                        BankLookupResult = "Bank not supported.";
-                        BankFound = false;
-
-                        //_errors.TryAdd(nameof(BankCode), new());
-                        //_errors[nameof(BankCode)].Add("Bank not supported.");
-                        //OnErrorsChanged(nameof(BankCode));
-                    });
-
-                BankLookupCompleted = true;
+                LookupBank();
 
                 return Task.CompletedTask;
             }, () => BankCode.HasValue);
@@ -59,26 +63,45 @@ namespace Moneyes.UI.ViewModels
                 if (!BankLookupCompleted)
                 {
                     await FindBankCommand.ExecuteAsync();
+                }
 
-                    if (BankFound == false)
-                    {
-                        return;
-                    }
+                if (!BankFound)
+                {
+                    return;
                 }
 
                 OnlineBankingDetails bankingDetails = CreateBankingDetails();
 
-                Result result = await _liveDataService.Initialize(bankingDetails);
+                //Result result = await _liveDataService.CreateBankConnection(bankingDetails);
 
-                if (!result.IsSuccessful)
+                //if (!result.IsSuccessful)
+                //{
+                //    MessageBox.Show("Error");
+                //    return;
+                //}
+
+                if (!_configStore.SetBankingDetails(bankingDetails))
                 {
                     MessageBox.Show("Error");
-                    return;
                 }
-                //TODO: PIN Prompt evtl.
+            }, () => IsDirty);
+        }
 
-                MessageBox.Show("Success");
-            });
+        public void LookupBank()
+        {
+            _ = _liveDataService.FindBank(_bankCode.Value)
+                     .OnSuccess(bank =>
+                     {
+                         BankLookupResult = bank.Institute;
+                         BankFound = true;
+                     })
+                     .OnError(() =>
+                     {
+                         BankLookupResult = "Bank not supported.";
+                         BankFound = false;
+                     });
+
+            BankLookupCompleted = true;
         }
 
         private OnlineBankingDetails CreateBankingDetails()
@@ -101,9 +124,10 @@ namespace Moneyes.UI.ViewModels
 
                 _bankCode = value;
                 BankLookupCompleted = false;
+                IsDirty = true;
 
                 OnPropertyChanged(nameof(BankCode));
-                FindBankCommand.RaiseCanExecuteChanged();
+                FindBankCommand?.RaiseCanExecuteChanged();
             }
         }
 
@@ -149,13 +173,17 @@ namespace Moneyes.UI.ViewModels
             get => _userId;
             set
             {
-
+                if (value == _userId)
+                {
+                    return;
+                }
                 if (_errors.TryRemove(nameof(UserId), out _))
                 {
                     OnErrorsChanged(nameof(UserId));
                 }
 
                 _userId = value;
+                IsDirty = true;
                 OnPropertyChanged(nameof(UserId));
             }
         }
@@ -166,12 +194,32 @@ namespace Moneyes.UI.ViewModels
             get => _pin;
             set
             {
+                if (_pin == null && value == null)
+                {
+                    return;
+                }
+
                 _pin = value;
+                IsDirty = true;
                 OnPropertyChanged(nameof(PIN));
+            }
+        }
+
+        private bool _isDirty;
+        public bool IsDirty
+        {
+            get => _isDirty;
+            set
+            {
+                _isDirty = value;
+                OnPropertyChanged(nameof(IsDirty));
+                ApplyCommand?.RaiseCanExecuteChanged();
             }
         }
         public AsyncCommand FindBankCommand { get; }
         public AsyncCommand ApplyCommand { get; }
+
+        public AsyncCommand LoadedCommand { get; }
 
 
         private ConcurrentDictionary<string, List<string>> _errors =

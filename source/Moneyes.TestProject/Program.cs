@@ -23,12 +23,6 @@ namespace Test
 
         //static async Task<IEnumerable<Moneyes.Core.Transaction>> GetLiveTransactions()
         //{
-        //    var details = new OnlineBankingDetails()
-        //    {
-        //        BankCode = 66650085,
-        //        Pin = "mypin",
-        //        UserId = "tobi.bo"
-        //    };
 
         //    OnlineBankingService onlineBanking = new OnlineBankingServiceFactory(null)
         //        .CreateService(details);
@@ -56,8 +50,6 @@ namespace Test
             //await store.Store(csvTransactions);
 
             //var sparkasseService = new Moneyes.LiveData.SparkasseSalesService();
-
-            //await sparkasseService.Login("tobi.bo", "mypin");
 
             //string csvContent = await sparkasseService.GetSalesCsvContent(accounts =>
             //    accounts.First(), new (DateTime.Now.Year, DateTime.Now.Month, 1), DateTime.Now);

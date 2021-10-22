@@ -46,13 +46,13 @@ namespace Moneyes.Core.Parsing
 
             using var csv = new CsvReader(reader, config);
 
-            var transactions = csv.GetRecords<SaleEntry>().ToList()
+            var transactions = csv.GetRecords<TransactionCsvEntry>().ToList()
                 .Select(record => FromCsvTransaction(record));
 
             return transactions;
         }
 
-        private static Transaction FromCsvTransaction(SaleEntry entry)
+        private static Transaction FromCsvTransaction(TransactionCsvEntry entry)
         {
             string shortPartnerName = entry.AccountName;
 

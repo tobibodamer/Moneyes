@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 
 namespace Moneyes.LiveData
 {
+    /*DEPRECATED. USE ONLINE BANKING SERVICE INSTEAD.*/
     public class SparkasseSalesService
     {
         const string BaseUrl = "https://www.sparkasse-pforzheim-calw.de";

@@ -7,7 +7,16 @@ namespace Moneyes.Core.Filters
 {
     public static class FilterExtensions
     {
-        public static bool EvaluateFilters<T>(this IEnumerable<IEvaluable<T>> filters, 
+        /// <summary>
+        /// Evaluates multiple <paramref name="filters"/> for a given <paramref name="input"/>, 
+        /// by combining them with the given <paramref name="logicalOperator"/>.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="filters"></param>
+        /// <param name="input"></param>
+        /// <param name="logicalOperator"></param>
+        /// <returns></returns>
+        public static bool EvaluateFilters<T>(this IEnumerable<IEvaluable<T>> filters,
             T input, LogicalOperator logicalOperator)
         {
             if (!filters.Any()) { return logicalOperator == LogicalOperator.And; }
@@ -28,39 +37,41 @@ namespace Moneyes.Core.Filters
             return expression;
         }
 
-        public static string GetName<TSource, TField>(this Expression<Func<TSource, TField>> field)
+        /// <summary>
+        /// Returns all values that evaluate positive with the given filter.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="values"></param>
+        /// <param name="filter"></param>
+        /// <returns></returns>
+        public static IEnumerable<T> Filter<T>(this IEnumerable<T> values, IEvaluable<T> filter)
         {
-            return (field.Body as MemberExpression ?? 
+            return values.Where(value => filter.Evaluate(value));
+        }
+
+        /// <summary>
+        /// Gets the target member name of a selector expression.
+        /// </summary>
+        /// <typeparam name="TSource">Source type</typeparam>
+        /// <typeparam name="TField">Target member type</typeparam>
+        /// <param name="field">The selector expression</param>
+        /// <returns></returns>
+        internal static string GetName<TSource, TField>(this Expression<Func<TSource, TField>> field)
+        {
+            return (field.Body as MemberExpression ??
                 ((UnaryExpression)field.Body).Operand as MemberExpression).Member.Name;
         }
 
-        public static string GetName<TSource, TField>(this Func<TSource, TField> expr)
+        /// <summary>
+        /// Gets the target member name of a selector expression.
+        /// </summary>
+        /// <typeparam name="TSource">Source type</typeparam>
+        /// <typeparam name="TField">Target member type</typeparam>
+        /// <param name="field">The selector expression</param>
+        /// <returns></returns>
+        internal static string GetName<TSource, TField>(this Func<TSource, TField> expr)
         {
             return GetName<TSource, TField>(field: source => expr(source));
-        }
-
-        public static bool Evaluate(this TransactionFilter filter, Transaction transaction)
-        {
-            return (filter.TransactionType is TransactionType.None || MatchesSaleType(transaction, filter.TransactionType))
-                && (!filter.StartDate.HasValue || (transaction.BookingDate >= filter.StartDate))
-                && (!filter.EndDate.HasValue || (transaction.BookingDate <= filter.EndDate))
-                && filter.Criteria.Evaluate(transaction);
-        }
-
-        private static bool MatchesSaleType(Transaction t, TransactionType? saleType)
-        {
-            if (!saleType.HasValue) { return true; }
-
-            if ((saleType == TransactionType.Expense) && t.Amount >= 0)
-            {
-                return true;
-            }
-            else if ((saleType == TransactionType.Income) && t.Amount < 0)
-            {
-                return true;
-            }
-
-            return false;
         }
     }
 

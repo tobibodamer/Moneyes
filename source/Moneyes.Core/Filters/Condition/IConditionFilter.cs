@@ -2,7 +2,8 @@
 using System.Collections;
 using System.Collections.Generic;
 
-namespace Moneyes.Core.Filters
+namespace Moneyes.Core
+    .Filters
 {
     /// <summary>
     /// Provides an evaluable condition filter for objects of type <typeparamref name="T"/>.
@@ -18,7 +19,7 @@ namespace Moneyes.Core.Filters
         /// <summary>
         /// The operator used for this condition.
         /// </summary>
-        ConditionOperator Operator { get; }
+        ConditionOperator ConditionOperator { get; }
 
         /// <summary>
         /// The values used for the condition.

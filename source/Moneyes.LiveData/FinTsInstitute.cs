@@ -2,7 +2,10 @@
 
 namespace Moneyes.LiveData
 {
-    class FinTsInstitute : IBankInstitute
+    /// <summary>
+    /// POCO for a FinTs institute from the FinTs institute table.
+    /// </summary>
+    internal class FinTsInstitute : IBankInstitute
     {
         [Name("BLZ")]
         public string BankCode { get; set; }

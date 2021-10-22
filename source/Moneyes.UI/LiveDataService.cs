@@ -57,7 +57,7 @@ namespace Moneyes.UI
         {
             try
             {
-                IBankInstitute bank = FinTsInstitutes.GetInstitute(bankCode);
+                IBankInstitute bank = BankInstitutes.GetInstitute(bankCode);
 
                 if (bank != null)
                 {

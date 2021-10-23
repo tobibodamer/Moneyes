@@ -24,7 +24,7 @@ namespace Moneyes.UI.ViewModels
 
         private AccountRepository _accountRepo;
         private AccountDetails _selectedAccount;
-        private IList _selectedCategories;
+        private CategoryViewModel _selectedCategory;
 
         private ObservableCollection<AccountDetails> _accounts = new();
         private ObservableCollection<Transaction> _transactions = new();
@@ -34,13 +34,13 @@ namespace Moneyes.UI.ViewModels
         public ICommand FetchOnlineCommand { get; }
         public ICommand SelectCategoryCommand { get; }
 
-        public IList SelectedCategories
+        public CategoryViewModel SelectedCategory
         {
-            get => _selectedCategories;
+            get => _selectedCategory;
             set
             {
-                _selectedCategories = value;
-                OnPropertyChanged(nameof(SelectedCategories));
+                _selectedCategory = value;
+                OnPropertyChanged(nameof(SelectedCategory));
             }
         }
 
@@ -141,7 +141,7 @@ namespace Moneyes.UI.ViewModels
                 }
             });
 
-            SelectCategoryCommand = new AsyncCommand<IEnumerable<CategoryViewModel>>(async (viewModels, ct) =>
+            SelectCategoryCommand = new AsyncCommand<CategoryViewModel>(async (viewModel, ct) =>
             {
                 await Task.Run(() => FetchTransactions(updateCategories: false));
             });
@@ -149,15 +149,17 @@ namespace Moneyes.UI.ViewModels
 
         private void FetchTransactions(bool updateCategories = true)
         {
-            Category[] selectedCategories = SelectedCategories?
-                .Cast<CategoryViewModel>()
-                .Select(c => c.Category)
-                .ToArray();
+            //Category[] selectedCategories = SelectedCategory?
+            //    .Cast<CategoryViewModel>()
+            //    .Select(c => c.Category)
+            //    .ToArray();
+
+            Category selectedCategory = SelectedCategory?.Category;
 
             // Get all transactions for selected category and filter
             IEnumerable<Transaction> transactions = _transactionRepository.All(
                 filter: GetTransactionFilter(),
-                categories: selectedCategories);
+                categories: selectedCategory);
 
             Transactions = new(transactions);
 
@@ -196,6 +198,17 @@ namespace Moneyes.UI.ViewModels
                             Categories.Add(new("Total", totalAmt));
                         })
                         .OnError(() => HandleError("Could not get total expense"));
+
+                    // Set sub categories
+                    foreach (CategoryViewModel category in Categories)
+                    {
+                        Category parent = category.Category?.Parent;
+                        if ( parent == null) { continue; }
+
+                        // Add category as sub category in parent
+                        Categories.FirstOrDefault(c => c.Category.Equals(parent))
+                            .SubCatgeories.Add(category);
+                    }
                 });
         }
 

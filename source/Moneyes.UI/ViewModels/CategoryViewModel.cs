@@ -1,15 +1,19 @@
 ﻿using Moneyes.Core;
+using System.Collections.Generic;
 
 namespace Moneyes.UI.ViewModels
 {
     internal class CategoryViewModel : ViewModelBase
     {
         private readonly Category _category;
-        private string _displayName;
         private string _name;
         private string _totalExpense;
         private string _target;
         internal Category Category => _category;
+
+        public List<CategoryViewModel> SubCatgeories { get; set; } = new();
+
+        public bool IsNoCategory { get; set; }
         public string Name
         {
             get => _name;
@@ -49,13 +53,23 @@ namespace Moneyes.UI.ViewModels
 
             if (category == Category.NoCategory)
             {
+                IsNoCategory = true;
+                OnPropertyChanged(nameof(IsNoCategory));
                 Name = "[No category]";
-                _displayName = $"[No category]: {totalExpense} €";
+                DisplayName = $"-- No category --  ({totalExpense} €)";
             }
             else
             {
                 Name = category.Name;
-                _displayName = $"{category.Name}: {totalExpense} / {category.Target} €";
+
+                if (category.Target > 0)
+                {
+                    DisplayName = $"{category.Name}  ({totalExpense} / {category.Target} €)";
+                }
+                else
+                {
+                    DisplayName = $"{category.Name}  ({totalExpense}€)";
+                }
             }
         }
 
@@ -64,12 +78,20 @@ namespace Moneyes.UI.ViewModels
             Name = name;
             TotalExpense = $"{(int)totalExpense}";
             Target = $"{(int)target}";
-            _displayName = $"{name}: {totalExpense} / {target} €";
+
+            if (target > 0)
+            {
+                DisplayName = $"{name}  ({totalExpense} / {target} €)";
+            }
+            else
+            {
+                DisplayName = $"{name}  ({totalExpense}€)";
+            }
         }
 
         public override string ToString()
         {
-            return _displayName;
+            return DisplayName;
         }
     }
 }

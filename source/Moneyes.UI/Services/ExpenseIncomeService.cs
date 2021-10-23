@@ -67,7 +67,7 @@ namespace Moneyes.UI
 
                 if (includeNoCategory)
                 {
-                    categories.Add(Category.NoCategory);
+                    categories.Insert(0, Category.NoCategory);
                 }
 
                 //List<(Category, decimal)> results = new();

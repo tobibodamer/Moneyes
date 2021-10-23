@@ -5,6 +5,8 @@
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
       xmlns:i="clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity"
       xmlns:local="clr-namespace:Moneyes.UI.View"
+      xmlns:vm="clr-namespace:Moneyes.UI.ViewModels"
+      xmlns:controls="clr-namespace:System.Windows.Controls;assembly=MultiSelectTreeView"
       xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
       TextElement.Foreground="{DynamicResource MaterialDesignBody}"
       TextElement.FontWeight="Regular"
@@ -20,9 +22,19 @@
             <i:InvokeCommandAction Command="{Binding LoadedCommand}" />
         </i:EventTrigger>
     </i:Interaction.Triggers>
+    <UserControl.Resources>
+        <Style x:Key="NoCategoryStyle" TargetType="{x:Type TreeViewItem}" BasedOn="{StaticResource MaterialDesignTreeViewItem}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsNoCategory}" Value="True">
+                    <Setter Property="FontWeight" Value="Bold"/>
+                    <Setter Property="Foreground" Value="#FF5F5F5F"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="0.75*"/>
+            <ColumnDefinition Width="Auto"/>
             <ColumnDefinition/>
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
@@ -38,9 +50,26 @@
                 <DataGridTextColumn Header="Amount" Binding="{Binding Amount}"/>
             </DataGrid.Columns>
         </DataGrid>
-        <local:BindableMultiSelectDataGrid x:Name="categoryListBox" Margin="5" BorderThickness="1" BorderBrush="AliceBlue"
+        <TreeView ItemsSource="{Binding Categories}" Grid.Row="1" Style="{StaticResource MaterialDesignTreeView}" 
+                  ItemContainerStyle="{StaticResource NoCategoryStyle}">
+            <i:Interaction.Behaviors>
+                <local:BindableSelectedItemBehavior SelectedItem="{Binding SelectedCategory, Mode=OneWayToSource}"/>
+            </i:Interaction.Behaviors>
+            <TreeView.ItemTemplate>
+                <HierarchicalDataTemplate ItemsSource="{Binding SubCatgeories}" DataType="{x:Type vm:CategoryViewModel}">
+                    <TextBlock Text="{Binding DisplayName}"/>
+                </HierarchicalDataTemplate>
+            </TreeView.ItemTemplate>
+            <i:Interaction.Triggers>
+                <i:EventTrigger EventName="SelectedItemChanged">
+                    <i:InvokeCommandAction Command="{Binding SelectCategoryCommand}"
+                                           CommandParameter="{Binding ElementName=categoryListBox, Path=SelectedItem}"/>
+                </i:EventTrigger>
+            </i:Interaction.Triggers>
+        </TreeView>
+        <!--<local:BindableMultiSelectDataGrid x:Name="categoryListBox" Margin="5" BorderThickness="1" BorderBrush="AliceBlue"
                  ItemsSource="{Binding Categories}" AutoGenerateColumns="False" SelectedItems="{Binding SelectedCategories, Mode=OneWayToSource}"
-                 Grid.Row="1" Style="{StaticResource MaterialDesignDataGrid}">
+                 Grid.Row="1" Style="{StaticResource MaterialDesignDataGrid}">            
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Name" Binding="{Binding Name}"/>
                 <DataGridTextColumn Header="Expense" IsReadOnly="True">
@@ -58,7 +87,7 @@
                                            CommandParameter="{Binding ElementName=categoryListBox, Path=SelectedItems}"/>
                 </i:EventTrigger>
             </i:Interaction.Triggers>
-        </local:BindableMultiSelectDataGrid>
+        </local:BindableMultiSelectDataGrid>-->
         <StackPanel Grid.Column="1" HorizontalAlignment="Right" Orientation="Horizontal">
             <ComboBox ItemsSource="{Binding Accounts}" Margin="5" SelectedItem="{Binding SelectedAccount}" DisplayMemberPath="Type" 
                   Height="24" VerticalAlignment="Center" HorizontalAlignment="Right" Width="175">

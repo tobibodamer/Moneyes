@@ -15,7 +15,7 @@
         Background="{DynamicResource MaterialDesignPaper}"
         FontFamily="{DynamicResource MaterialDesignFont}"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="MainWindow" Height="550" Width="1000">
     <TabControl ItemsSource="{Binding Tabs}" SelectedItem="{Binding CurrentViewModel}" 
                 Style="{StaticResource MaterialDesignNavigatilRailTabControl}">
         <TabControl.ItemTemplate>

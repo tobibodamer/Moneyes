@@ -55,6 +55,8 @@ namespace Moneyes.Core
             ? TransactionType.Income
             : TransactionType.Expense;
 
+        public string Currency { get; init; }
+
         /// <summary>
         /// IBAN of the account this transaction belongs to.
         /// </summary>
@@ -97,7 +99,7 @@ namespace Moneyes.Core
         /// <summary>
         /// Gets the categories of this transaction.
         /// </summary>
-        public List<Category> Categories { get; init; } = new();
+        public List<Category> Categories { get; set; } = new();
 
         /// <summary>
         /// Gets the index of this transactions. For identical transactions only!
@@ -206,7 +208,8 @@ namespace Moneyes.Core
                    BIC == transaction.BIC &&
                    Name == transaction.Name &&
                    Categories.SequenceEqual(transaction.Categories) &&
-                   _index.Equals(transaction._index);
+                   _index.Equals(transaction._index) &&
+                   Currency == transaction.Currency;
         }
 
         public override int GetHashCode()
@@ -224,6 +227,7 @@ namespace Moneyes.Core
             hash.Add(Name);
             hash.Add(Categories);
             hash.Add(_index);
+            hash.Add(Currency);
 
             return hash.ToHashCode();
         }

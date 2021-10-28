@@ -19,40 +19,52 @@ namespace Moneyes.Data
             _config = config;
         }
 
+        public LiteDbContextFactory(LiteDbConfig config) : this(Options.Create(config))
+        {
+        }
+
         public ILiteDatabase CreateContext(string password = null)
         {
             try
             {
                 BsonMapper bsonMapper = new();
 
-                bsonMapper.Entity<Category>()
+                bsonMapper.Entity<Category>()                    
                     .Id(c => c.Id, true)
-                    .DbRef(c => c.Parent);
+                    .DbRef(c => c.Parent, "Category");
                 bsonMapper.Entity<AccountDetails>()
                     .Id(acc => acc.IBAN, false);
                 bsonMapper.Entity<Transaction>()
                     .Id(t => t.UID, false)
-                    .DbRef(t => t.Categories);
+                    .DbRef(t => t.Categories, "Category");
+                bsonMapper.Entity<Balance>()
+                    .Ignore(b => b.IsNegative)
+                    .DbRef(b => b.Account, "AccountDetails");
+
+                ConnectionString connectionString = new(_config.Value.DatabasePath);
+
+                if (password == "")
+                {
+                    password = null;
+                }
 
                 if (password != null)
                 {
                     bsonMapper.RegisterType<SecureString>
                     (
                         serialize: str => str.ToUnsecuredString(),
-                        deserialize: value => value.AsString.ToSecuredString()
+                        deserialize: value => value.IsString ? value.AsString.ToSecuredString() : null
                     );
+
+                    connectionString.Password = password;
                 }
 
-                ConnectionString connectionString = new(_config.Value.DatabasePath)
-                {
-                    Password = password
-                };
-
-                return new LiteDatabase(_config.Value.DatabasePath, bsonMapper);
+                return new LiteDatabase(connectionString, bsonMapper);
             }
-            catch (Exception ex)
+            catch
             {
-                throw new Exception("Can find or create LiteDb database.", ex);
+                //throw new Exception("Can find or create LiteDb database.", ex);
+                throw;
             }
         }
     }

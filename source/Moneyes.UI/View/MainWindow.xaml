@@ -5,7 +5,9 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:i="clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity"
         xmlns:local="clr-namespace:Moneyes.UI.View"
+        xmlns:dragablz="clr-namespace:Dragablz;assembly=Dragablz"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        xmlns:materialDesignExt="clr-namespace:MaterialDesignExtensions.Controls;assembly=MaterialDesignExtensions"
         xmlns:vm="clr-namespace:Moneyes.UI.ViewModels"
         TextElement.Foreground="{DynamicResource MaterialDesignBody}"
         TextElement.FontWeight="Regular"
@@ -15,21 +17,75 @@
         Background="{DynamicResource MaterialDesignPaper}"
         FontFamily="{DynamicResource MaterialDesignFont}"
         mc:Ignorable="d"
-        Title="MainWindow" Height="550" Width="1000">
-    <TabControl ItemsSource="{Binding Tabs}" SelectedItem="{Binding CurrentViewModel}" 
-                Style="{StaticResource MaterialDesignNavigatilRailTabControl}">
-        <TabControl.ItemTemplate>
-            <DataTemplate>
-                <TextBlock Text="{Binding DisplayName}"/>
-            </DataTemplate>
-        </TabControl.ItemTemplate>
-        <TabControl.Resources>
-            <DataTemplate DataType="{x:Type vm:MainViewModel}">
-                <local:MainPage/>
-            </DataTemplate>
-            <DataTemplate DataType="{x:Type vm:BankingSettingsViewModel}">
-                <local:SettingsPage/>
-            </DataTemplate>
-        </TabControl.Resources>
-    </TabControl>
+        Title="Moneyes" Height="550" Width="1000" WindowStyle="None"
+        >
+    <Window.Style>
+        <Style TargetType="Window">
+            <Setter Property="WindowChrome.WindowChrome">
+                <Setter.Value>
+                    <WindowChrome 
+                        CaptionHeight="0"
+                        CornerRadius="3"
+                        GlassFrameThickness="0"
+                        NonClientFrameEdges="None"
+                        ResizeBorderThickness="3"/>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Style>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Grid Height="40" VerticalAlignment="Top" Grid.Row="0" PreviewMouseDown="Move" Background="{DynamicResource PrimaryHueMidBrush}">
+            <TextBlock Text="Moneyes" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="18" FontFamily="Segoe UI"/>
+
+            <Button Name="CloseButton" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="10" Padding="5" Height="30" Width="30"
+                    Background="{x:Null}" BorderThickness="0" Cursor="Hand">
+                <materialDesign:PackIcon Kind="CloseBox"/>
+            </Button>
+        </Grid>
+
+        <dragablz:TabablzControl ItemsSource="{Binding Tabs}" SelectedItem="{Binding CurrentViewModel}" Grid.Row="1">
+            <dragablz:TabablzControl.InterTabController>
+                <dragablz:InterTabController />
+            </dragablz:TabablzControl.InterTabController>
+            <dragablz:TabablzControl.HeaderItemTemplate>
+                <DataTemplate>
+                    <TextBlock Text="{Binding DisplayName}"/>
+                </DataTemplate>
+            </dragablz:TabablzControl.HeaderItemTemplate>
+            <dragablz:TabablzControl.Resources>
+                <DataTemplate DataType="{x:Type vm:MainViewModel}">
+                    <local:MainPage/>
+                </DataTemplate>
+                <DataTemplate DataType="{x:Type vm:BankingSettingsViewModel}">
+                    <local:SettingsPage/>
+                </DataTemplate>
+            </dragablz:TabablzControl.Resources>
+        </dragablz:TabablzControl>
+
+        <StatusBar VerticalAlignment="Bottom" Grid.Row="2" Height="25" Background="{DynamicResource MaterialDesignLightBackground}">
+            
+        </StatusBar>
+
+        <!--<TabControl ItemsSource="{Binding Tabs}" SelectedItem="{Binding CurrentViewModel}" 
+                Style="{StaticResource MaterialDesignNavigatilRailTabControl}" Grid.Row="1">
+            <TabControl.ItemTemplate>
+                <DataTemplate>
+                    <TextBlock Text="{Binding DisplayName}"/>
+                </DataTemplate>
+            </TabControl.ItemTemplate>
+            <TabControl.Resources>
+                <DataTemplate DataType="{x:Type vm:MainViewModel}">
+                    <local:MainPage/>
+                </DataTemplate>
+                <DataTemplate DataType="{x:Type vm:BankingSettingsViewModel}">
+                    <local:SettingsPage/>
+                </DataTemplate>
+            </TabControl.Resources>
+        </TabControl>-->
+    </Grid>
 </Window>

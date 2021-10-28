@@ -41,7 +41,7 @@ namespace Moneyes.Core.Filters
         /// The values used for the condition.
         /// </summary>
         public List<TValue> Values { get; init; } = new List<TValue>();
-        public ConditionOperator ConditionOperator { get; init; }
+        public ConditionOperator Operator { get; init; }
         public bool CaseSensitive { get; set; }
         public bool CompareAll { get; set; }
 
@@ -65,7 +65,7 @@ namespace Moneyes.Core.Filters
                 valueSelector = new Func<Func<TValue, bool>, bool>(Values.Any);
             }
 
-            return ConditionOperator switch
+            return Operator switch
             {
                 ConditionOperator.Equal => valueSelector(value => value.Equals(target)),
                 ConditionOperator.Greater => valueSelector(value => target is IComparable comparableTarget && comparableTarget.CompareTo(value) > 0),

@@ -14,105 +14,12 @@ using System.Windows.Input;
 
 namespace Moneyes.UI.ViewModels
 {
-    class BankingSettingsViewModel : ViewModelBase, INotifyDataErrorInfo
+    class BankingSettingsViewModel : ViewModelBase, ITabViewModel, INotifyDataErrorInfo
     {
         private readonly LiveDataService _liveDataService;
-        private readonly BankConnectionStore _configStore;
+        private readonly IBankingService _bankingService;
 
-        public BankingSettingsViewModel(LiveDataService liveDataService, BankConnectionStore bankConnectionStore)
-        {
-            DisplayName = "Settings";
-
-            _liveDataService = liveDataService;
-            _configStore = bankConnectionStore;
-
-            LoadedCommand = new AsyncCommand(ct =>
-            {
-                if (_configStore.HasBankingDetails)
-                {
-                    OnlineBankingDetails bankingDetails = _configStore.GetBankingDetails();
-
-                    BankCode = bankingDetails.BankCode;
-                    UserId = bankingDetails.UserId;
-                    PIN = bankingDetails.Pin;
-
-                    IsDirty = false;
-
-                    LookupBank();
-                }
-
-                return Task.CompletedTask;
-            });
-
-            FindBankCommand = new AsyncCommand(ct =>
-            {
-                LookupBank();
-
-                return Task.CompletedTask;
-            }, () => BankCode.HasValue);
-
-            ApplyCommand = new AsyncCommand(async ct =>
-            {
-                Validate();
-
-                if (HasErrors)
-                {
-                    return;
-                }
-
-                if (!BankLookupCompleted)
-                {
-                    await FindBankCommand.ExecuteAsync();
-                }
-
-                if (!BankFound)
-                {
-                    return;
-                }
-
-                OnlineBankingDetails bankingDetails = CreateBankingDetails();
-
-                //Result result = await _liveDataService.CreateBankConnection(bankingDetails);
-
-                //if (!result.IsSuccessful)
-                //{
-                //    MessageBox.Show("Error");
-                //    return;
-                //}
-
-                if (!_configStore.SetBankingDetails(bankingDetails))
-                {
-                    MessageBox.Show("Error");
-                }
-            }, () => IsDirty);
-        }
-
-        public void LookupBank()
-        {
-            _ = _liveDataService.FindBank(_bankCode.Value)
-                     .OnSuccess(bank =>
-                     {
-                         BankLookupResult = bank.Institute;
-                         BankFound = true;
-                     })
-                     .OnError(() =>
-                     {
-                         BankLookupResult = "Bank not supported.";
-                         BankFound = false;
-                     });
-
-            BankLookupCompleted = true;
-        }
-
-        private OnlineBankingDetails CreateBankingDetails()
-        {
-            return new()
-            {
-                BankCode = BankCode.Value,
-                UserId = UserId,
-                Pin = PIN
-            };
-        }
+        #region UI 
 
         private int? _bankCode;
         public int? BankCode
@@ -218,13 +125,113 @@ namespace Moneyes.UI.ViewModels
         }
         public AsyncCommand FindBankCommand { get; }
         public AsyncCommand ApplyCommand { get; }
-
         public AsyncCommand LoadedCommand { get; }
 
+        #endregion
+
+        public BankingSettingsViewModel(LiveDataService liveDataService, IBankingService bankingService)
+        {
+            DisplayName = "Settings";
+
+            _liveDataService = liveDataService;
+            _bankingService = bankingService;
+
+            LoadedCommand = new AsyncCommand(async ct =>
+            {
+                if (_bankingService.HasBankingDetails)
+                {
+                    OnlineBankingDetails bankingDetails = _bankingService.BankingDetails;
+
+                    // Set UI fields
+                    BankCode = bankingDetails.BankCode;
+                    UserId = bankingDetails.UserId;
+                    PIN = bankingDetails.Pin;
+
+                    IsDirty = false;
+
+                    await Task.Run(() => LookupBank());
+                }
+            });
+
+            FindBankCommand = new AsyncCommand(async ct =>
+            {
+                await Task.Run(() => LookupBank());
+            }, () => BankCode.HasValue);
+
+            ApplyCommand = new AsyncCommand(async ct =>
+            {
+                await ApplySettings();
+            }, () => IsDirty);
+        }
+
+        private OnlineBankingDetails CreateBankingDetails()
+        {
+            return new()
+            {
+                BankCode = BankCode.Value,
+                UserId = UserId,
+                Pin = PIN
+            };
+        }
+
+        private async Task ApplySettings()
+        {
+            Validate();
+
+            if (HasErrors)
+            {
+                return;
+            }
+
+            if (!BankLookupCompleted)
+            {
+                await FindBankCommand.ExecuteAsync();
+            }
+
+            if (!BankFound)
+            {
+                return;
+            }
+
+            OnlineBankingDetails bankingDetails = CreateBankingDetails();
+
+            if (!PIN.IsNullOrEmpty())
+            {
+                Result result = await _liveDataService.CreateBankConnection(bankingDetails, sync: true);
+
+                if (!result.IsSuccessful)
+                {
+                    MessageBox.Show("Could not connect to bank. Check your bank code and credentials.",
+                        "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+            }
+
+            _bankingService.BankingDetails = bankingDetails;
+        } 
+
+        public void LookupBank()
+        {
+            _ = _liveDataService.FindBank(_bankCode.Value)
+                     .OnSuccess(bank =>
+                     {
+                         BankLookupResult = bank.Institute;
+                         BankFound = true;
+                     })
+                     .OnError(() =>
+                     {
+                         BankLookupResult = "Bank not supported.";
+                         BankFound = false;
+                     });
+
+            BankLookupCompleted = true;
+        }
+
+
+        #region Validation
 
         private ConcurrentDictionary<string, List<string>> _errors =
             new ConcurrentDictionary<string, List<string>>();
-
         public void Validate()
         {
             _errors = new();
@@ -258,5 +265,7 @@ namespace Moneyes.UI.ViewModels
             _errors.TryGetValue(propertyName, out errorsForName);
             return errorsForName;
         }
+
+        #endregion
     }
 }

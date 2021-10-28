@@ -66,12 +66,14 @@ namespace Moneyes.Core.Parsing
                 Amount = entry.Amount,
                 AltName = entry.AccountName,
                 Name = shortPartnerName,
-                IBAN = entry.IBAN,
+                IBAN = entry.Auftragskonto,
                 BIC = entry.BIC,
                 Purpose = entry.Verwendungszweck,
                 BookingType = entry.Buchungstext,
                 BookingDate = entry.Buchungstag,
-                ValueDate = entry.Valutadatum
+                ValueDate = entry.Valutadatum,
+                Currency = entry.Waehrung,
+                PartnerIBAN = entry.IBAN
             };
         }
     }

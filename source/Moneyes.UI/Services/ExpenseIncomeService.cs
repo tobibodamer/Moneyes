@@ -70,20 +70,27 @@ namespace Moneyes.UI
                     categories.Insert(0, Category.NoCategory);
                 }
 
-                //List<(Category, decimal)> results = new();
+                List<(Category, decimal)> results = new();
 
-                //foreach (var c in categories)
-                //{
-                //    var transactions = _transactionRepo.GetByCategory(c).ToList();
-                //    results.Add((c, transactions.Where(t => t.Type == TransactionType.Expense).Sum(t => t.Amount)));
-                //}
+                foreach (Category c in categories)
+                {
+                    TransactionFilter filter = new()
+                    {
+                        AccountNumber = account.Number,
+                        TransactionType = TransactionType.Expense
+                    };
+
+                    List<Transaction> transactions = _transactionRepo.All(filter, c)
+                        .ToList();
+
+                    decimal sum = Math.Abs(transactions.Sum(t => t.Amount));
+
+                    results.Add((c, sum));
+                }
 
                 //return results;
 
-                return Result.Successful(categories.Select(c => (c, Math.Abs(_transactionRepo.All(
-                    new TransactionFilter { AccountNumber = account.Number }, c).ToList()
-                    .Where(t => t.Type == TransactionType.Expense)
-                    .Sum(t => t.Amount)))));
+                return Result.Successful(results.AsEnumerable());
 
                 //IEnumerable<Transaction> transactions = await _transactionRepo.GetAll();
 

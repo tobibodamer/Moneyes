@@ -6,7 +6,7 @@ namespace Moneyes.Data
     public abstract class BaseRepository<T> : IBaseRepository<T>
     {
         protected ILiteDatabase DB { get; }
-        protected ILiteCollection<T> Collection { get; }
+        protected ILiteCollection<T> Collection { get; set; }
 
         protected BaseRepository(ILiteDatabase db)
         {
@@ -21,18 +21,18 @@ namespace Moneyes.Data
         }
 
         public virtual IEnumerable<T> All()
-        { 
+        {
             return Collection.FindAll();
         }
 
         public virtual T FindById(int id)
-        { 
+        {
             return Collection.FindById(id);
         }
 
-        public virtual void Set(T entity)
+        public virtual bool Set(T entity)
         {
-            Collection.Upsert(entity);
+            return Collection.Upsert(entity);
         }
 
         public virtual void Set(IEnumerable<T> entities)

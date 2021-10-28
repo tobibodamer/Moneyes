@@ -127,7 +127,7 @@ namespace Moneyes.LiveData
             }));
         }
 
-        public async Task<Result<IEnumerable<MTransaction>>> Transactions(
+        public async Task<Result<TransactionData>> Transactions(
             AccountDetails account,
             DateTime? startDate = null,
             DateTime? endDate = null)
@@ -166,7 +166,23 @@ namespace Moneyes.LiveData
                 .Where(stmt => !stmt.Pending)
                 .SelectMany(stmt => ParseFromSwift(stmt, account));
 
-            return Result.Successful(transactions);
+            IEnumerable<Balance> balances = result.Data
+                .Where(stmt => !stmt.Pending)
+                .Select(stmt => new Balance
+                {
+                    Account = account,
+                    Amount = stmt.EndBalance,
+                    Date = stmt.EndDate,
+                    Currency = stmt.Currency
+                });
+
+            TransactionData transactionData = new()
+            {
+                Transactions = transactions,
+                Balances = balances
+            };
+
+            return Result.Successful(transactionData);
         }
 
         private static IEnumerable<MTransaction> ParseFromSwift(SwiftStatement swiftStatement, AccountDetails account)
@@ -175,11 +191,12 @@ namespace Moneyes.LiveData
 
             foreach (SwiftTransaction t in swiftStatement.SwiftTransactions)
             {
-                MTransaction transaction = Conversion.FromLiveTransaction(t, account);
+                string currency = swiftStatement.Currency;
+                MTransaction transaction = Conversion.FromLiveTransaction(t, account, currency);
 
                 if (uids.ContainsKey(transaction.GetUID()))
                 {
-                    transaction = Conversion.FromLiveTransaction(t, account, ++uids[transaction.GetUID()]);
+                    transaction = Conversion.FromLiveTransaction(t, account, currency, ++uids[transaction.GetUID()]);
                 }
                 else
                 {
@@ -190,7 +207,7 @@ namespace Moneyes.LiveData
             }
         }
 
-        public async Task<Result<decimal>> Balance(AccountDetails account)
+        public async Task<Result<Balance>> Balance(AccountDetails account)
         {
             if (account == null)
             {
@@ -219,11 +236,16 @@ namespace Moneyes.LiveData
 
             _logger?.LogInformation("Fetching balance was successful.");
 
-            return Result.Successful(result.Data.Balance);
+            return Result.Successful(new Balance()
+            {
+                Account = account,
+                Date = DateTime.Now,
+                Amount = result.Data.Balance
+            });
         }
 
         private static async Task<string> WaitForTanAsync(TANDialog tanDialog)
-        {
+        { 
             foreach (var msg in tanDialog.DialogResult.Messages)
                 Console.WriteLine(msg);
 
@@ -243,5 +265,11 @@ namespace Moneyes.LiveData
                                   "Message: " + msg.Message);
             }
         }
+    }
+
+    public class TransactionData
+    {
+        public IEnumerable<MTransaction> Transactions { get; init; }
+        public IEnumerable<Balance> Balances { get; init; }
     }
 }

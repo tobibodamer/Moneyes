@@ -14,9 +14,14 @@ namespace Moneyes.Core
     public class Category
     {
         /// <summary>
-        /// Gets a in memory representation of a category, indicating no category has been assoiated with a transaction.
+        /// Gets a category indicating no category has been assoiated with a transaction.
         /// </summary>
-        public static readonly Category NoCategory = new() { Name = new Guid().ToString() };
+        public static readonly Category NoCategory = new() { Name = "No category", IsExlusive = true, Id = -1 };
+
+        /// <summary>
+        /// Gets a category all transactions belong to.
+        /// </summary>
+        public static readonly Category AllCategory = new() { Name = "All", IsExlusive = true, Id = -2 };
 
         /// <summary>
         /// Unique identifier, for equally named categories.
@@ -45,7 +50,7 @@ namespace Moneyes.Core
         /// Gets or sets the monthly target amount for this category.
         /// </summary>
         public decimal Target { get; set; }
-        
+
         /// <summary>
         /// Indicates whether transactions are exclusive to this category.
         /// </summary>
@@ -55,7 +60,6 @@ namespace Moneyes.Core
         {
             return obj is Category category &&
                    Name == category.Name &&
-                   EqualityComparer<TransactionFilter>.Default.Equals(Filter, category.Filter) &&
                    Target == category.Target &&
                    Parent == category.Parent &&
                    IsExlusive == IsExlusive;

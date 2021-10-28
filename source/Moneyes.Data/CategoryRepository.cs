@@ -25,14 +25,14 @@ namespace Moneyes.Data
             return base.Create(entity);
         }
 
-        public override void Set(Category entity)
+        public override bool Set(Category entity)
         {
             if (entity == Category.NoCategory)
             {
-                return;
+                return false;
             }
 
-            base.Set(entity);
+            return base.Set(entity);
         }
     }
 }

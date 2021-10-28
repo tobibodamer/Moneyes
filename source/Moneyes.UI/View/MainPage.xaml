@@ -6,6 +6,7 @@
       xmlns:i="clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity"
       xmlns:local="clr-namespace:Moneyes.UI.View"
       xmlns:vm="clr-namespace:Moneyes.UI.ViewModels"
+      xmlns:m="clr-namespace:Moneyes.Core;assembly=Moneyes.Core"
       xmlns:controls="clr-namespace:System.Windows.Controls;assembly=MultiSelectTreeView"
       xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
       TextElement.Foreground="{DynamicResource MaterialDesignBody}"
@@ -31,6 +32,144 @@
                 </DataTrigger>
             </Style.Triggers>
         </Style>
+        <local:CollectionEmptyBoolConverter x:Key="CollectionEmptyBoolConverter"/>
+
+        <Style x:Key="ScrollBarTrackThumb"
+        TargetType="{x:Type Thumb}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Thumb}">
+                        <Grid x:Name="Grid">
+                            <Rectangle HorizontalAlignment="Stretch"
+                                VerticalAlignment="Stretch"
+                                Width="Auto"
+                                Height="Auto"
+                                Fill="Transparent" />
+                            <Border x:Name="CornerScrollBarRectangle"
+                            CornerRadius="5"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Stretch"
+                            Width="7"
+                            Height="Auto"
+                            Margin="0,1,0,1"                                    
+                            Background="{TemplateBinding Background}" />
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="Tag"
+                                Value="Horizontal">
+                                <Setter TargetName="CornerScrollBarRectangle"
+                                Property="Width"
+                                Value="Auto" />
+                                <Setter TargetName="CornerScrollBarRectangle"
+                                Property="Height"
+                                Value="6" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style TargetType="{x:Type ScrollBar}">
+            <Setter Property="Stylus.IsFlicksEnabled"
+            Value="false" />
+            <Setter Property="Foreground"
+            Value="#ADABAB" />
+            <Setter Property="Background"
+            Value="Transparent" />
+            <Setter Property="Width"
+            Value="7" />
+            <Setter Property="Padding"
+            Value="0" />
+            <Setter Property="Margin"
+            Value="0" />
+
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ScrollBar}">
+                        <Grid x:Name="GridRoot"
+                        Width="7"
+                        Background="{TemplateBinding Background}">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="0.00001*" />
+                            </Grid.RowDefinitions>
+                            <Track x:Name="PART_Track"
+                            Grid.Row="0"
+                            IsDirectionReversed="true"
+                            Focusable="false">
+                                <Track.Thumb>
+                                    <Thumb x:Name="Thumb"
+                                    Background="{TemplateBinding Foreground}"
+                                    Style="{DynamicResource ScrollBarTrackThumb}" />
+                                </Track.Thumb>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton x:Name="PageUp"
+                                            Command="ScrollBar.PageDownCommand"
+                                            Opacity="0"
+                                            Focusable="false" />
+                                </Track.IncreaseRepeatButton>
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton x:Name="PageDown"
+                                            Command="ScrollBar.PageUpCommand"
+                                            Opacity="0"
+                                            Focusable="false" />
+                                </Track.DecreaseRepeatButton>
+                            </Track>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger SourceName="Thumb"
+                                Property="IsMouseOver"
+                                Value="true">
+                                <Setter Value="{DynamicResource ButtonSelectBrush}"
+                                TargetName="Thumb"
+                                Property="Background" />
+                            </Trigger>
+                            <Trigger SourceName="Thumb"
+                                Property="IsDragging"
+                                Value="true">
+                                <Setter Value="{DynamicResource DarkBrush}"
+                                TargetName="Thumb"
+                                Property="Background" />
+                            </Trigger>
+
+                            <Trigger Property="IsEnabled"
+                                Value="false">
+                                <Setter TargetName="Thumb"
+                                Property="Visibility"
+                                Value="Collapsed" />
+                            </Trigger>
+                            <Trigger Property="Orientation"
+                                Value="Horizontal">
+                                <Setter TargetName="GridRoot"
+                                Property="LayoutTransform">
+                                    <Setter.Value>
+                                        <RotateTransform Angle="-90" />
+                                    </Setter.Value>
+                                </Setter>
+                                <Setter TargetName="PART_Track"
+                                Property="LayoutTransform">
+                                    <Setter.Value>
+                                        <RotateTransform Angle="-90" />
+                                    </Setter.Value>
+                                </Setter>
+                                <Setter Property="Width"
+                                Value="Auto" />
+                                <Setter Property="Height"
+                                Value="8" />
+                                <Setter TargetName="Thumb"
+                                Property="Tag"
+                                Value="Horizontal" />
+                                <Setter TargetName="PageDown"
+                                Property="Command"
+                                Value="ScrollBar.PageLeftCommand" />
+                                <Setter TargetName="PageUp"
+                                Property="Command"
+                                Value="ScrollBar.PageRightCommand" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </UserControl.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
@@ -38,22 +177,155 @@
             <ColumnDefinition/>
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
-            <RowDefinition Height="45"/>
-            <RowDefinition/>
+            <RowDefinition Height="85"/>
+            <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
+        
+        <Grid Grid.Column="1" Grid.Row="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            <DockPanel Grid.Row="0" Margin="10,0" LastChildFill="true" HorizontalAlignment="Stretch" >
+                <StackPanel Orientation="Vertical" Grid.Column="0" VerticalAlignment="Center">
+                    <!--<TextBlock FontSize="15" Text="{Binding Date, StringFormat={}'Balance / 'dd.MM.yyyy}" Foreground="#333" />-->
+                    <TextBlock FontSize="15" Text="{Binding SelectedCategory, UpdateSourceTrigger=PropertyChanged}" Foreground="#333" />
+                    <!--<TextBlock Text="{Binding Date, StringFormat=dd.MM.yyyy}" Foreground="Gray" />-->
+                </StackPanel>
+                <StackPanel Orientation="Vertical" HorizontalAlignment="Right" Grid.Column="1" DataContext="{Binding CurrentBalance}">
+                    <!--<TextBlock FontSize="13" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="10,0"
+                               Text="{Binding Date, StringFormat={}'Balance' (dd.MM.yyyy):}" Foreground="#333" />-->
 
-        <DataGrid ItemsSource="{Binding Transactions}" AutoGenerateColumns="False" Margin="5" Grid.Row="1" Grid.Column="1"
+                    <TextBlock FontSize="17" Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center" Padding="0,4,0,0">
+                        <TextBlock.Text>
+                            <MultiBinding StringFormat="{}{0} {1}">
+                                <Binding Path="Amount" />
+                                <Binding Path="Currency" />
+                            </MultiBinding>
+                        </TextBlock.Text>
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock" BasedOn="{StaticResource MaterialDesignTextBlock}">
+                                <Setter Property="Foreground" Value="#FF00A800"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsNegative}" Value="True">
+                                        <Setter Property="Foreground" Value="#FFD80000"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                    <!--<Separator Margin="0"></Separator>-->
+                    <TextBlock Text="{Binding Date, StringFormat=dd.MM.yyyy}" FontSize="11" HorizontalAlignment="Right" Foreground="Gray" />
+                </StackPanel>
+            </DockPanel>
+            <Separator Grid.Row="1" BorderBrush="Black" BorderThickness="0.5">
+                <Separator.Style>
+                    <Style TargetType="Separator">
+                        <Setter Property="Visibility" Value="Hidden"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Transactions, Converter={StaticResource CollectionEmptyBoolConverter}}" Value="False">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Separator.Style>
+            </Separator>
+
+            <TextBlock Text="No transactions" Foreground="Gray" VerticalAlignment="Center" HorizontalAlignment="Center"
+                   Grid.Row="2">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Visibility" Value="Hidden"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Transactions, Converter={StaticResource CollectionEmptyBoolConverter}}" Value="True">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+
+            <ListView Name="transactionsListView" ItemsSource="{Binding Transactions}" HorizontalContentAlignment="Stretch" Margin="5,5,0,5" Grid.Row="2"  >
+                <ListView.ItemTemplate>
+                    <DataTemplate>
+                        <DockPanel>
+                            <StackPanel Orientation="Vertical">
+                                <TextBlock FontSize="15" Text="{Binding Name}" />
+                                <TextBlock Text="{Binding Purpose}" Foreground="Gray" TextWrapping="NoWrap" MaxWidth="500" HorizontalAlignment="Left" />
+                                <TextBlock Text="{Binding BookingDate, StringFormat=dd.MM.yyyy}" Foreground="Gray" />
+                            </StackPanel>
+                            <TextBlock FontSize="17" HorizontalAlignment="Right" Padding="0" VerticalAlignment="Top">
+                                <TextBlock.Text>
+                                    <MultiBinding StringFormat="{}{0} {1}">
+                                        <Binding Path="Amount" />
+                                        <Binding Path="Currency" />
+                                    </MultiBinding>
+                                </TextBlock.Text>
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock" BasedOn="{StaticResource MaterialDesignTextBlock}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Type}" Value="{x:Static m:TransactionType.Expense}">
+                                                <Setter Property="Foreground" Value="#FFD80000"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Type}" Value="{x:Static m:TransactionType.Income}">
+                                                <Setter Property="Foreground" Value="#FF00A800"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </DockPanel>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+        </Grid>
+
+        <!--<DataGrid ItemsSource="{Binding Transactions}" AutoGenerateColumns="False" Margin="5" Grid.Row="1" Grid.Column="1"
                   IsReadOnly="True" SelectionUnit="FullRow">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Name" Binding="{Binding Name}"/>
                 <DataGridTextColumn Header="Date" Binding="{Binding ValueDate, StringFormat=dd.MM.yyyy}" SortDirection="Descending"/>
                 <DataGridTextColumn Header="Amount" Binding="{Binding Amount}"/>
             </DataGrid.Columns>
-        </DataGrid>
-        <TreeView ItemsSource="{Binding Categories}" Grid.Row="1" Style="{StaticResource MaterialDesignTreeView}" 
-                  ItemContainerStyle="{StaticResource NoCategoryStyle}">
+        </DataGrid>-->
+        
+        <!--<TextBlock Text="No categories" Foreground="Gray" VerticalAlignment="Center" HorizontalAlignment="Center"
+                   Grid.Row="1">
+            <TextBlock.Style>                
+                <Style TargetType="TextBlock">
+                    <Setter Property="Visibility" Value="Hidden"/>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding Categories,
+                            Converter={StaticResource CollectionEmptyBoolConverter}, UpdateSourceTrigger=PropertyChanged}" Value="True">
+                            <Setter Property="Visibility" Value="Visible"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </TextBlock.Style>
+        </TextBlock>-->
+        
+        <TreeView Name="treeView" ItemsSource="{Binding Categories}" Grid.Row="1"
+                  AllowDrop="True" MinWidth="200">
+            <TreeView.Style>
+                <Style TargetType="TreeView" BasedOn="{StaticResource MaterialDesignTreeView}">
+
+                </Style>
+            </TreeView.Style>
+            <TreeView.ItemContainerStyle>
+                <Style TargetType="{x:Type TreeViewItem}" BasedOn="{StaticResource NoCategoryStyle}">
+                    <Setter Property="FontWeight" Value="Normal" />
+                    <Setter Property="IsSelected" Value="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" />
+                    <Setter Property="local:DropBehavior.PreviewDropCommand" Value="{Binding AddToCategoryCommand}"/>
+                    <Style.Triggers>
+                        <Trigger Property="local:TreeViewDropHighlighter.IsPossibleDropTarget" Value="True">
+                            <Setter Property="Background" Value="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}" />
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+            </TreeView.ItemContainerStyle>
             <i:Interaction.Behaviors>
-                <local:BindableSelectedItemBehavior SelectedItem="{Binding SelectedCategory, Mode=OneWayToSource}"/>
+                <!--<local:BindableSelectedItemBehavior SelectedItem="{Binding SelectedCategory, Mode=TwoWay}"/>-->
             </i:Interaction.Behaviors>
             <TreeView.ItemTemplate>
                 <HierarchicalDataTemplate ItemsSource="{Binding SubCatgeories}" DataType="{x:Type vm:CategoryViewModel}">
@@ -62,8 +334,7 @@
             </TreeView.ItemTemplate>
             <i:Interaction.Triggers>
                 <i:EventTrigger EventName="SelectedItemChanged">
-                    <i:InvokeCommandAction Command="{Binding SelectCategoryCommand}"
-                                           CommandParameter="{Binding ElementName=categoryListBox, Path=SelectedItem}"/>
+                    <i:InvokeCommandAction Command="{Binding SelectCategoryCommand}"/>
                 </i:EventTrigger>
             </i:Interaction.Triggers>
         </TreeView>
@@ -88,13 +359,34 @@
                 </i:EventTrigger>
             </i:Interaction.Triggers>
         </local:BindableMultiSelectDataGrid>-->
-        <StackPanel Grid.Column="1" HorizontalAlignment="Right" Orientation="Horizontal">
-            <ComboBox ItemsSource="{Binding Accounts}" Margin="5" SelectedItem="{Binding SelectedAccount}" DisplayMemberPath="Type" 
-                  Height="24" VerticalAlignment="Center" HorizontalAlignment="Right" Width="175">
-            </ComboBox>
+        <materialDesign:ColorZone Mode="Standard" Padding="12" Grid.ColumnSpan="2" Height="60">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
 
-            <Button Content="Fetch online" Command="{Binding FetchOnlineCommand}" HorizontalAlignment="Left"
-                Height="24" Margin="5" VerticalAlignment="Center" Width="122"/>
+                <Button Style="{StaticResource MaterialDesignPaperButton}" Grid.Column="1" 
+                    Width="25" Height="25" Padding="0" Margin="5,0" HorizontalAlignment="Right">
+                    <materialDesign:PackIcon Kind="File" Margin="0"/>
+                </Button>
+                
+                <ComboBox ItemsSource="{Binding Accounts}" Margin="20,0" SelectedItem="{Binding SelectedAccount}" DisplayMemberPath="Type"
+                  Height="24" VerticalAlignment="Center" HorizontalAlignment="Right" Width="175" Grid.Column="2"/>
+
+                <Button Content="Fetch online" Command="{Binding FetchOnlineCommand}" HorizontalAlignment="Center"
+                Height="24" Margin="5" VerticalAlignment="Center" Width="122" Grid.Column="3"/>
+            </Grid>
+            <materialDesign:ColorZone.Effect>
+                <DropShadowEffect BlurRadius="14" ShadowDepth="4.5" Direction="270" Color="{StaticResource MaterialDesignShadow}"
+                                  Opacity=".22" RenderingBias="Performance" />
+            </materialDesign:ColorZone.Effect>
+        </materialDesign:ColorZone>
+        
+        <StackPanel Grid.Column="1" HorizontalAlignment="Right" Orientation="Horizontal">
+            
         </StackPanel>
     </Grid>
 </UserControl>

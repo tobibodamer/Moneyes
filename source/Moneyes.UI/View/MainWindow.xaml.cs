@@ -25,6 +25,18 @@ namespace Moneyes.UI.View
             InitializeComponent();
 
             DataContext = dataContext;
+
+            CloseButton.Click += (s, args) =>
+            {
+                this.Close();
+            };
+        }
+
+        private void Move(object sender, MouseButtonEventArgs e)
+        {
+            if (CloseButton.IsMouseOver) { return; }
+            if (Mouse.LeftButton == MouseButtonState.Pressed)
+                DragMove();
         }
     }
 }

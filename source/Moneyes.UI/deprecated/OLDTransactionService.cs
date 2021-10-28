@@ -8,13 +8,13 @@ using System.Threading.Tasks;
 
 namespace Moneyes.UI
 {
-    public class TransactionService : ITransactionService
+    public class OLDTransactionService : OLDITransactionService
     {
         private readonly IRepository<Transaction> _transactionStore;
 
         public event Action TransactionsChanged;
 
-        public TransactionService(IRepository<Transaction> transactionStore)
+        public OLDTransactionService(IRepository<Transaction> transactionStore)
         {
             _transactionStore = transactionStore;
         }

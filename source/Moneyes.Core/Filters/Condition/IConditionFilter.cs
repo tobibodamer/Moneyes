@@ -19,7 +19,7 @@ namespace Moneyes.Core
         /// <summary>
         /// The operator used for this condition.
         /// </summary>
-        ConditionOperator ConditionOperator { get; }
+        ConditionOperator Operator { get; }
 
         /// <summary>
         /// The values used for the condition.

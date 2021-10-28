@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Moneyes.UI
 {
-    public interface ITransactionService
+    public interface OLDITransactionService
     {
         Task<Result<IEnumerable<Transaction>>> GetTransactions(
             IEvaluable<Transaction> filter = null, params Category[] categories);

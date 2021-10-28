@@ -5,6 +5,7 @@ using System.Collections.Generic;
 
 namespace Moneyes.UI
 {
+
     class TransactionService : ITransactionService
     {
         private readonly TransactionRepository _transactionRepository;

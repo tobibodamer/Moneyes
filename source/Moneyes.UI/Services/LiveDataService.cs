@@ -6,7 +6,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Moneyes.UI
@@ -14,9 +13,10 @@ namespace Moneyes.UI
     public class LiveDataService
     {
         private readonly TransactionRepository _transactionRepo;
-        private readonly CategoryRepository _categoryRepo;
         private readonly IBaseRepository<AccountDetails> _accountRepo;
         private readonly BalanceRepository _balanceRepo;
+
+        private readonly ICategoryService _categoryService;
 
         private readonly OnlineBankingServiceFactory _bankingServiceFactory;
         private readonly IPasswordPrompt _passwordProvider;
@@ -29,7 +29,7 @@ namespace Moneyes.UI
 
         public LiveDataService(
             TransactionRepository transactionStore,
-            CategoryRepository categoryStore,
+            ICategoryService categoryService,
             IBaseRepository<AccountDetails> accountRepo,
             BalanceRepository balanceRepo,
             BankConnectionStore bankConnectionStore,
@@ -37,7 +37,7 @@ namespace Moneyes.UI
             IPasswordPrompt passwordPrompt)
         {
             _transactionRepo = transactionStore;
-            _categoryRepo = categoryStore;
+            _categoryService = categoryService;
             _accountRepo = accountRepo;
             _balanceRepo = balanceRepo;
             _configStore = bankConnectionStore;
@@ -152,7 +152,9 @@ namespace Moneyes.UI
             return Result.Successful();
         }
 
-        public async Task<Result<int>> FetchOnlineTransactionsAndBalances(AccountDetails account, bool keepCategories = true)
+        public async Task<Result<int>> FetchOnlineTransactionsAndBalances(
+            AccountDetails account, 
+            AssignMethod categoryAssignMethod = AssignMethod.KeepPrevious)
         {
             try
             {
@@ -174,47 +176,12 @@ namespace Moneyes.UI
                     return Result.Failed<int>();
                 }
 
-                // Get new transactions
+                // Transactions and Balances
                 List<Transaction> transactions = result.Data.Transactions.ToList();
-
                 List<Balance> balances = result.Data.Balances.ToList();
 
-                // Get old transactions
-                Dictionary<string, Transaction> oldTransactions = _transactionRepo.All()
-                    .ToDictionary(t => t.UID, t => t);
-
                 // Assign categories
-
-                List<Category> categories = _categoryRepo.All()
-                    .OrderBy(c => c.IsExlusive)
-                    .Where(c => c != Category.AllCategory)
-                    .Where(c => c != Category.NoCategory)
-                    .ToList();
-
-                foreach (Transaction transaction in transactions)
-                {
-                    if (keepCategories && oldTransactions.TryGetValue(transaction.UID, out Transaction oldTransaction))
-                    {
-                        // Transaction already imported -> keep categories
-                        transaction.Categories = oldTransaction.Categories;
-                        continue;
-                    }
-
-                    // Transaction not imported -> assign categories
-                    foreach (Category category in categories)
-                    {
-                        if (category.IsExlusive && transaction.Categories.Any())
-                        {
-                            // Exclusive category and already assigned
-                            continue;
-                        }
-
-                        if (category.Filter != null && category.Filter.Evaluate(transaction))
-                        {
-                            transaction.Categories.Add(category);
-                        }
-                    }
-                }
+                _categoryService.SortIntoCategories(transactions, assignMethod: categoryAssignMethod, updateDatabase: false);
 
                 // Store
                 _transactionRepo.Set(transactions);

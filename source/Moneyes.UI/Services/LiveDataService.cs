@@ -16,8 +16,10 @@ namespace Moneyes.UI
         private readonly TransactionRepository _transactionRepo;
         private readonly CategoryRepository _categoryRepo;
         private readonly IBaseRepository<AccountDetails> _accountRepo;
+        private readonly BalanceRepository _balanceRepo;
+
         private readonly OnlineBankingServiceFactory _bankingServiceFactory;
-        private readonly IPasswordPrompt _passwordPrompt;
+        private readonly IPasswordPrompt _passwordProvider;
         private readonly BankConnectionStore _configStore;
         private readonly ILogger<LiveDataService> _logger;
 
@@ -29,6 +31,7 @@ namespace Moneyes.UI
             TransactionRepository transactionStore,
             CategoryRepository categoryStore,
             IBaseRepository<AccountDetails> accountRepo,
+            BalanceRepository balanceRepo,
             BankConnectionStore bankConnectionStore,
             OnlineBankingServiceFactory bankingServiceFactory,
             IPasswordPrompt passwordPrompt)
@@ -36,19 +39,19 @@ namespace Moneyes.UI
             _transactionRepo = transactionStore;
             _categoryRepo = categoryStore;
             _accountRepo = accountRepo;
+            _balanceRepo = balanceRepo;
             _configStore = bankConnectionStore;
             _bankingServiceFactory = bankingServiceFactory;
-            _passwordPrompt = passwordPrompt;
+            _passwordProvider = passwordPrompt;
         }
 
         private static DateTime FirstOfMonth => new(DateTime.Now.Year, DateTime.Now.Month, 1);
 
-        private async Task ShowPasswordPromptIfNotSet()
+        private async Task EnsurePassword()
         {
-            if (_bankingService.BankingDetails.Pin == null
-                || _bankingService.BankingDetails.Pin.Length == 0)
+            if (_bankingService.BankingDetails.Pin.IsNullOrEmpty())
             {
-                SecureString password = await _passwordPrompt.WaitForPasswordAsync();
+                SecureString password = await _passwordProvider.WaitForPasswordAsync();
 
                 if (password == null || password.Length == 0)
                 {
@@ -89,7 +92,7 @@ namespace Moneyes.UI
 
                 if (sync)
                 {
-                    await ShowPasswordPromptIfNotSet();
+                    await EnsurePassword();
 
                     return await _bankingService.Sync();
                 }
@@ -101,6 +104,8 @@ namespace Moneyes.UI
             catch (Exception ex)
             {
                 _logger?.LogError("Error while creating bank connection", ex);
+
+                _bankingService = null;
             }
 
             return Result.Failed();
@@ -136,18 +141,22 @@ namespace Moneyes.UI
 
             // Apply banking settings from store
             _bankingService.BankingDetails.UserId = bankingDetails.UserId;
-            _bankingService.BankingDetails.Pin = bankingDetails.Pin;
+
+            if (!bankingDetails.Pin.IsNullOrEmpty())
+            {
+                _bankingService.BankingDetails.Pin = bankingDetails.Pin;
+            }
 
             _logger?.LogInformation("Online banking service initialized");
 
             return Result.Successful();
         }
 
-        public async Task<Result<int>> FetchOnlineTransactions(AccountDetails account)
+        public async Task<Result<int>> FetchOnlineTransactionsAndBalances(AccountDetails account, bool keepCategories = true)
         {
             try
             {
-                var initResult = await InitOnlineBankingService();
+                Result initResult = await InitOnlineBankingService();
 
                 if (!initResult.IsSuccessful)
                 {
@@ -155,9 +164,9 @@ namespace Moneyes.UI
                     return Result.Failed<int>();
                 }
 
-                await ShowPasswordPromptIfNotSet();
+                await EnsurePassword();
 
-                Result<IEnumerable<Transaction>> result =
+                Result<TransactionData> result =
                     await _bankingService.Transactions(account, startDate: FirstOfMonth, endDate: DateTime.Now);
 
                 if (!result.IsSuccessful)
@@ -166,20 +175,37 @@ namespace Moneyes.UI
                 }
 
                 // Get new transactions
-                List<Transaction> transactions = result.Data.ToList();
+                List<Transaction> transactions = result.Data.Transactions.ToList();
 
+                List<Balance> balances = result.Data.Balances.ToList();
+
+                // Get old transactions
+                Dictionary<string, Transaction> oldTransactions = _transactionRepo.All()
+                    .ToDictionary(t => t.UID, t => t);
 
                 // Assign categories
 
                 List<Category> categories = _categoryRepo.All()
-                    .OrderBy(c => c.IsExlusive).ToList();
+                    .OrderBy(c => c.IsExlusive)
+                    .Where(c => c != Category.AllCategory)
+                    .Where(c => c != Category.NoCategory)
+                    .ToList();
 
                 foreach (Transaction transaction in transactions)
                 {
+                    if (keepCategories && oldTransactions.TryGetValue(transaction.UID, out Transaction oldTransaction))
+                    {
+                        // Transaction already imported -> keep categories
+                        transaction.Categories = oldTransaction.Categories;
+                        continue;
+                    }
+
+                    // Transaction not imported -> assign categories
                     foreach (Category category in categories)
                     {
                         if (category.IsExlusive && transaction.Categories.Any())
                         {
+                            // Exclusive category and already assigned
                             continue;
                         }
 
@@ -191,8 +217,10 @@ namespace Moneyes.UI
                 }
 
                 // Store
+                _transactionRepo.Set(transactions);
+                _balanceRepo.Set(balances);
 
-                return _transactionRepo.InsertAll(transactions);
+                return transactions.Count;
             }
             catch
             {
@@ -206,7 +234,7 @@ namespace Moneyes.UI
         {
             try
             {
-                var initResult = await InitOnlineBankingService();
+                Result initResult = await InitOnlineBankingService();
 
                 if (!initResult.IsSuccessful)
                 {
@@ -214,7 +242,7 @@ namespace Moneyes.UI
                     return Result.Failed<int>();
                 }
 
-                await ShowPasswordPromptIfNotSet();
+                await EnsurePassword();
 
                 IEnumerable<AccountDetails> accounts = (await _bankingService.Accounts()).GetOrNull();
 
@@ -225,7 +253,7 @@ namespace Moneyes.UI
                     return Result.Successful(accounts);
                 }
             }
-            catch
+            catch (Exception ex)
             {
                 //TODO: Log
             }

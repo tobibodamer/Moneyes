@@ -23,6 +23,19 @@ namespace Moneyes.UI.View
         public MainPage()
         {
             InitializeComponent();
+            new ListViewDragDropManager<Moneyes.Core.Transaction>(transactionsListView);
+        }
+
+        private void TreeView_Drop(object sender, DragEventArgs e)
+        {
+            var dataContext = (e.OriginalSource as FrameworkElement)?.DataContext;
+
+            if (e.Data != null)
+            {
+                var data = e.Data.GetData(e.Data.GetFormats()[0]);
+
+                ((dynamic)DataContext).AddToCategoryCommand?.Execute((data, dataContext));
+            }
         }
     }
 }

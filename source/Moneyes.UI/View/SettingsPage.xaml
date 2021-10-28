@@ -90,7 +90,7 @@
                            Foreground="{Binding BankFound, Converter={StaticResource BoolToColorConverter}, 
                            ConverterParameter=DimGray;#ba0c00, Mode=OneWay}" FontStyle="Italic"
                            Visibility="{Binding BankLookupCompleted, Converter={StaticResource BooleanToVisibilityConverter}}"
-                           Margin="5,0,5,2" FontSize="11" Grid.Row="1" Grid.ColumnSpan="2" Grid.Column="1" HorizontalAlignment="Left"/>
+                           Margin="5,0,5,5" FontSize="11" Grid.Row="1" Grid.ColumnSpan="2" Grid.Column="1" HorizontalAlignment="Left"/>
 
                 <StackPanel Grid.Row="2" Margin="5">
                     <Label FontSize="15" Content="Username:" VerticalAlignment="Center" Padding="4,4,4,0"/>

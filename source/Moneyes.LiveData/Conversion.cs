@@ -16,6 +16,7 @@ namespace Moneyes.LiveData
         public static Core.Transaction FromLiveTransaction(
             SwiftTransaction swiftTransaction,
             AccountDetails account,
+            string currency,
             int index = 0)
         {
             return new()
@@ -30,7 +31,8 @@ namespace Moneyes.LiveData
                 BookingType = swiftTransaction.Text,
                 BookingDate = swiftTransaction.InputDate,
                 ValueDate = swiftTransaction.ValueDate,
-                IBAN = account.IBAN
+                IBAN = account.IBAN,
+                Currency = currency
             };
         }
     }

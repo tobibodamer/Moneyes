@@ -214,7 +214,7 @@
 					]
 				}
 			},
-			"Target": 25
+			"Target": 30
 		},
 		{
 			"name": "Sports",
@@ -277,10 +277,5 @@
 					]
 				}
 			}
-		},
-		{
-			"name": "Misc",
-			"isOther": true,
-			"Target": 100
 		}
 	]

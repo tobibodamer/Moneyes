@@ -51,7 +51,7 @@ namespace Moneyes.Core.Filters
             return (TransactionType is TransactionType.None || (input.Type == TransactionType))
                && (!StartDate.HasValue || (input.BookingDate >= StartDate))
                && (!EndDate.HasValue || (input.BookingDate <= EndDate))
-               && (AccountNumber is null || (input.PartnerIBAN?.EndsWith(AccountNumber) ?? true))
+               && (AccountNumber is null || (input.IBAN?.EndsWith(AccountNumber) ?? true))
                && (MinAmount is null || input.Amount >= MinAmount)
                && (MaxAmount is null || input.Amount <= MaxAmount)
                && Criteria.Evaluate(input);

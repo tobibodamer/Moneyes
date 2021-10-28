@@ -363,3 +363,4 @@ MigrationBackup/
 FodyWeavers.xsd
 
 /source/Moneyes.TestProject/Test files/*.CSV
+*.exe

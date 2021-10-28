@@ -12,36 +12,39 @@ using Moneyes.Core.Filters;
 using Moneyes.Data;
 using System.Windows;
 using System.Collections;
+using System.Threading;
+using Moneyes.UI.View;
 
 namespace Moneyes.UI.ViewModels
 {
-
-    class MainViewModel : ViewModelBase
+    class MainViewModel : ViewModelBase, ITabViewModel
     {
         private LiveDataService _liveDataService;
         private IExpenseIncomeService _expenseIncomeService;
-        private TransactionRepository _transactionRepository;
+        private readonly ITransactionService _transactionService;
+        private readonly IBankingService _bankingService;
 
-        private AccountRepository _accountRepo;
         private AccountDetails _selectedAccount;
         private CategoryViewModel _selectedCategory;
+        private Balance _currentBalance;
 
         private ObservableCollection<AccountDetails> _accounts = new();
         private ObservableCollection<Transaction> _transactions = new();
         private ObservableCollection<CategoryViewModel> _categories = new();
 
+        #region UI Properties
         public ICommand LoadedCommand { get; }
         public ICommand FetchOnlineCommand { get; }
         public ICommand SelectCategoryCommand { get; }
 
         public CategoryViewModel SelectedCategory
         {
-            get => _selectedCategory;
-            set
-            {
-                _selectedCategory = value;
-                OnPropertyChanged(nameof(SelectedCategory));
-            }
+            get => Categories.FirstOrDefault(c => c.IsSelected);
+            //set
+            //{
+            //    _selectedCategory = value;
+            //    OnPropertyChanged(nameof(SelectedCategory));
+            //}
         }
 
         public AccountDetails SelectedAccount
@@ -51,10 +54,10 @@ namespace Moneyes.UI.ViewModels
             {
                 _selectedAccount = value;
                 OnPropertyChanged(nameof(SelectedAccount));
-                FetchTransactions();
+                UpdateCategories();
+                UpdateTransactions();
             }
         }
-
 
         public ObservableCollection<AccountDetails> Accounts
         {
@@ -94,60 +97,62 @@ namespace Moneyes.UI.ViewModels
             }
         }
 
+        public Balance CurrentBalance
+        {
+            get => _currentBalance;
+            set
+            {
+                _currentBalance = value;
+
+                OnPropertyChanged(nameof(CurrentBalance));
+            }
+        }
+
+#endregion
         public MainViewModel(
             LiveDataService liveDataService,
             IExpenseIncomeService expenseIncomeService,
-            TransactionRepository transactionService,
-            AccountRepository accountRepo,
-            BankConnectionStore bankConnections)
+            ITransactionService transactionService,
+            IBankingService bankingService)
         {
             DisplayName = "Overview";
 
             _liveDataService = liveDataService;
-            _accountRepo = accountRepo;
             _expenseIncomeService = expenseIncomeService;
-            _transactionRepository = transactionService;
+            _transactionService = transactionService;
+            _bankingService = bankingService;
 
             LoadedCommand = new AsyncCommand(async ct =>
             {
-                //TODO: 
-                // Get current bank
-                // Fetch accounts for this bank
-
-                var bankingDetails = bankConnections.GetBankingDetails();
-
-                if (bankingDetails == null)
+                if (!bankingService.HasBankingDetails)
                 {
                     // No bank connection configured -> show message?
                     return;
                 }
 
-                await FetchAccounts(bankingDetails.BankCode.ToString());
+                await FetchAccounts();
             });
-
-            //liveDataService.BankingInitialized += bankingDetails =>
-            //{
-            //    _ = Task.Run(() => FetchAccounts(bankingDetails.BankCode.ToString()));
-            //};
 
             FetchOnlineCommand = new AsyncCommand(async ct =>
             {
                 Result<int> result = await _liveDataService
-                    .FetchOnlineTransactions(SelectedAccount);
+                    .FetchOnlineTransactionsAndBalances(SelectedAccount);
 
                 if (result.IsSuccessful && result.Data > 0)
                 {
-                    FetchTransactions();
+                    UpdateCategories();
+                    UpdateTransactions();
                 }
             });
 
             SelectCategoryCommand = new AsyncCommand<CategoryViewModel>(async (viewModel, ct) =>
             {
-                await Task.Run(() => FetchTransactions(updateCategories: false));
+                await Task.Run(() => UpdateTransactions());
+                OnPropertyChanged(nameof(SelectedCategory));
             });
         }
 
-        private void FetchTransactions(bool updateCategories = true)
+        private void UpdateTransactions()
         {
             //Category[] selectedCategories = SelectedCategory?
             //    .Cast<CategoryViewModel>()
@@ -157,16 +162,13 @@ namespace Moneyes.UI.ViewModels
             Category selectedCategory = SelectedCategory?.Category;
 
             // Get all transactions for selected category and filter
-            IEnumerable<Transaction> transactions = _transactionRepository.All(
+            IEnumerable<Transaction> transactions = _transactionService.GetTransactions(
                 filter: GetTransactionFilter(),
                 categories: selectedCategory);
 
-            Transactions = new(transactions);
+            CurrentBalance = _bankingService.GetBalance(DateTime.Now, SelectedAccount);
 
-            if (updateCategories)
-            {
-                UpdateCategories();
-            }
+            Transactions = new(transactions);
         }
 
         private TransactionFilter GetTransactionFilter()
@@ -177,6 +179,7 @@ namespace Moneyes.UI.ViewModels
             };
         }
 
+        
         private void UpdateCategories()
         {
             // Get expenses per category
@@ -184,18 +187,51 @@ namespace Moneyes.UI.ViewModels
                 .OnError(() => HandleError("Could not get expenses for this category"))
                 .OnSuccess(expenses =>
                 {
+                    int? selectedCategoryId = SelectedCategory?.Category?.Id;
+
                     Categories.Clear();
 
                     foreach ((Category category, decimal amt) in expenses)
                     {
-                        Categories.Add(new(category, amt));
+                        Categories.Add(
+                            new CategoryViewModel(category, amt)
+                            {
+                                AddToCategoryCommand = new AsyncCommand<Transaction>(async (transaction, ct) =>
+                                {
+                                    Category targetCategory = category;
+                                    Category currentCategory = SelectedCategory?.Category;
+
+                                    if (_transactionService.MoveToCategory(transaction, currentCategory, targetCategory))
+                                    {
+                                        UpdateCategories();
+                                        UpdateTransactions();
+                                    }
+
+                                    await Task.CompletedTask;
+                                }, 
+                                (transaction) =>
+                                {
+                                    Category targetCategory = category;
+
+                                    // cant change null transaction
+                                    if (transaction == null) { return false; }
+
+                                    // cant add to 'All' category
+                                    if (targetCategory == Category.AllCategory) { return false; }
+
+                                    // cant add to own category
+                                    if (transaction.Categories.Contains(targetCategory)) { return false; }
+
+                                    return true;
+                                })
+                            });
                     }
 
                     // Get total expenses
                     _expenseIncomeService.GetTotalExpense(SelectedAccount)
                         .OnSuccess(totalAmt =>
                         {
-                            Categories.Add(new("Total", totalAmt));
+                            Categories.Add(new(Category.AllCategory, totalAmt));
                         })
                         .OnError(() => HandleError("Could not get total expense"));
 
@@ -203,11 +239,22 @@ namespace Moneyes.UI.ViewModels
                     foreach (CategoryViewModel category in Categories)
                     {
                         Category parent = category.Category?.Parent;
-                        if ( parent == null) { continue; }
+                        if (parent == null) { continue; }
 
                         // Add category as sub category in parent
                         Categories.FirstOrDefault(c => c.Category.Equals(parent))
                             .SubCatgeories.Add(category);
+                    }
+
+                    if (selectedCategoryId.HasValue)
+                    {
+                        CategoryViewModel previouslySelectedCategory = Categories
+                            .FirstOrDefault(c => c.Category.Id == selectedCategoryId);
+
+                        if (previouslySelectedCategory != null)
+                        {
+                            previouslySelectedCategory.IsSelected = true;
+                        }
                     }
                 });
         }
@@ -217,9 +264,9 @@ namespace Moneyes.UI.ViewModels
             MessageBox.Show(message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
 
-        private async Task FetchAccounts(string bankCode)
+        private async Task FetchAccounts()
         {
-            Accounts = new(_accountRepo.GetByBankCode(bankCode));
+            Accounts = new(_bankingService.GetAccounts());
 
             if (Accounts.Any())
             {
@@ -233,7 +280,7 @@ namespace Moneyes.UI.ViewModels
                 // TODO: Display message
             }
 
-            Accounts = new(_accountRepo.All());
+            Accounts = new(_bankingService.GetAccounts());
         }
     }
 }

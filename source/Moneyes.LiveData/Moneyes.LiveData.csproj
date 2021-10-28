@@ -18,7 +18,7 @@
 
   <ItemGroup>
     <Reference Include="libfintx.FinTS">
-      <HintPath>..\..\..\libfintx\src\libfintx\bin\Release\netstandard2.0\libfintx.FinTS.dll</HintPath>
+      <HintPath>..\libfintx\libfintx.FinTS.dll</HintPath>
     </Reference>
   </ItemGroup>
 

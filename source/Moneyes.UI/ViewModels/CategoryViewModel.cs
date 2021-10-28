@@ -1,5 +1,7 @@
 ﻿using Moneyes.Core;
+using Moneyes.Data;
 using System.Collections.Generic;
+using System.Windows.Input;
 
 namespace Moneyes.UI.ViewModels
 {
@@ -7,12 +9,24 @@ namespace Moneyes.UI.ViewModels
     {
         private readonly Category _category;
         private string _name;
-        private string _totalExpense;
-        private string _target;
+        private int _totalExpense;
+        private int _target;
         internal Category Category => _category;
+
+        private bool _isSelected;
+        public bool IsSelected
+        {
+            get => _isSelected;
+            set
+            {
+                _isSelected = value;
+                OnPropertyChanged(nameof(IsSelected));
+            }
+        }
 
         public List<CategoryViewModel> SubCatgeories { get; set; } = new();
 
+        public ICommand AddToCategoryCommand { get; set; }
         public bool IsNoCategory { get; set; }
         public string Name
         {
@@ -24,7 +38,7 @@ namespace Moneyes.UI.ViewModels
             }
         }
 
-        public string TotalExpense
+        public int TotalExpense
         {
             get => _totalExpense;
             set
@@ -34,7 +48,7 @@ namespace Moneyes.UI.ViewModels
             }
         }
 
-        public string Target
+        public int Target
         {
             get => _target;
             set
@@ -48,15 +62,15 @@ namespace Moneyes.UI.ViewModels
         {
             _category = category;
 
-            TotalExpense = $"{(int)totalExpense}";
-            Target = $"{(int)category.Target}";
+            TotalExpense = (int)totalExpense;
+            Target = (int)category.Target;
 
             if (category == Category.NoCategory)
             {
                 IsNoCategory = true;
                 OnPropertyChanged(nameof(IsNoCategory));
                 Name = "[No category]";
-                DisplayName = $"-- No category --  ({totalExpense} €)";
+                DisplayName = $"-- No category -- ({totalExpense} €)";
             }
             else
             {
@@ -64,11 +78,11 @@ namespace Moneyes.UI.ViewModels
 
                 if (category.Target > 0)
                 {
-                    DisplayName = $"{category.Name}  ({totalExpense} / {category.Target} €)";
+                    DisplayName = $"{category.Name} ({totalExpense} / {category.Target} €)";
                 }
                 else
                 {
-                    DisplayName = $"{category.Name}  ({totalExpense}€)";
+                    DisplayName = $"{category.Name} ({totalExpense} €)";
                 }
             }
         }
@@ -76,16 +90,16 @@ namespace Moneyes.UI.ViewModels
         public CategoryViewModel(string name, decimal totalExpense, decimal target = 0)
         {
             Name = name;
-            TotalExpense = $"{(int)totalExpense}";
-            Target = $"{(int)target}";
+            TotalExpense = (int)totalExpense;
+            Target = (int)target;
 
             if (target > 0)
             {
-                DisplayName = $"{name}  ({totalExpense} / {target} €)";
+                DisplayName = $"{name} ({totalExpense} / {target} €)";
             }
             else
             {
-                DisplayName = $"{name}  ({totalExpense}€)";
+                DisplayName = $"{name} ({totalExpense} €)";
             }
         }
 

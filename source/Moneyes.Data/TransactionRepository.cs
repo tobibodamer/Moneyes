@@ -10,23 +10,27 @@ namespace Moneyes.Data
     {
         public TransactionRepository(ILiteDatabase db) : base(db)
         {
+            Collection = Collection.Include(t => t.Categories);
         }
 
         public IEnumerable<Transaction> GetByCategory(Category category)
         {
-            if (category == null)
+            if (category == null || category == Category.AllCategory)
             {
                 return AllOrderedByDate();
             }
 
             if (category == Category.NoCategory)
             {
-                return Collection.Find(t => t.Categories == null || t.Categories.Count == 0);
+                return Collection.Query()
+                    .Where(t => t.Categories == null || t.Categories.Count == 0)
+                    .OrderByDescending(t => t.BookingDate)
+                    .ToEnumerable();
             }
 
             return Collection.Query()
                 .Where(t => t.Categories != null && t.Categories.Count > 0)
-                .OrderByDescending(t => t.ValueDate)
+                .OrderByDescending(t => t.BookingDate)
                 .ToEnumerable()
                 .Where(t => t.Categories.Any(c => c.Id == category.Id));
         }
@@ -40,7 +44,7 @@ namespace Moneyes.Data
         public IEnumerable<Transaction> AllOrderedByDate()
         {
             return Collection.Query()
-                .OrderByDescending(t => t.ValueDate)
+                .OrderByDescending(t => t.BookingDate)
                 .ToEnumerable();
         }
         public IEnumerable<Transaction> All(TransactionFilter filter)
@@ -65,7 +69,6 @@ namespace Moneyes.Data
             // Remove null values, set to null if empty
             var notNullCategories = categories.Where(c => c != null);
 
-
             if (!notNullCategories.Any())
             {
                 notNullCategories = null;
@@ -75,7 +78,7 @@ namespace Moneyes.Data
                 hasNoCategory = true;
             }
 
-            if (notNullCategories == null)
+            if (notNullCategories == null || notNullCategories.Contains(Category.AllCategory))
             {
                 return AllOrderedByDate();
             }
@@ -84,7 +87,7 @@ namespace Moneyes.Data
 
             return Collection.Query()
                 .Where(t => t.Categories != null && t.Categories.Count > 0)
-                .OrderByDescending(t => t.ValueDate)
+                .OrderByDescending(t => t.BookingDate)
                 .ToEnumerable()
                 .Where(t => t.Categories.Any(category =>
                     notNullCategories.Any(c => c.Id == category.Id)) ||

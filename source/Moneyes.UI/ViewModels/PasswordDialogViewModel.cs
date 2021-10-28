@@ -10,6 +10,8 @@ namespace Moneyes.UI.ViewModels
 {
     class PasswordDialogViewModel
     {
+        public string Text { get; set; }
+        public string Title { get; set; }
         public SecureString Password { get; set; }
 
         public ICommand OkCommand { get; }

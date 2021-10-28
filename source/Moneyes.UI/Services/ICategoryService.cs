@@ -7,13 +7,17 @@ namespace Moneyes.UI
     public interface ICategoryService
     {
         //TODO: Move to transaction service??
-        void SortIntoCategories(
+        void AssignCategories(
             IEnumerable<Transaction> transactions,
             AssignMethod assignMethod = AssignMethod.KeepPrevious,
             bool updateDatabase = false);
 
+        void ReassignCategories(AssignMethod assignMethod = AssignMethod.Simple);
+        
+
         Result<Category> GetCategoryByName(string name);
 
-        Result<IEnumerable<Category>> GetCategories();
+        Result<IEnumerable<Category>> GetCategories(
+            CategoryFlags includeCategories = CategoryFlags.All);
     }
 }

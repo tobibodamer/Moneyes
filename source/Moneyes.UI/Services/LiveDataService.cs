@@ -181,7 +181,7 @@ namespace Moneyes.UI
                 List<Balance> balances = result.Data.Balances.ToList();
 
                 // Assign categories
-                _categoryService.SortIntoCategories(transactions, assignMethod: categoryAssignMethod, updateDatabase: false);
+                _categoryService.AssignCategories(transactions, assignMethod: categoryAssignMethod, updateDatabase: false);
 
                 // Store
                 _transactionRepo.Set(transactions);

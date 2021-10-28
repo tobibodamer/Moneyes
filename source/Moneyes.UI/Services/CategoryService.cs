@@ -12,7 +12,7 @@ namespace Moneyes.UI
         private readonly TransactionRepository _transactionRepo;
         private readonly CategoryRepository _categoryRepo;
 
-        public CategoryService(TransactionRepository transactionRepo, 
+        public CategoryService(TransactionRepository transactionRepo,
             CategoryRepository categoryRepo)
         {
             _transactionRepo = transactionRepo;
@@ -32,12 +32,30 @@ namespace Moneyes.UI
             }
         }
 
-        public Result<IEnumerable<Category>> GetCategories()
+        public Result<IEnumerable<Category>> GetCategories(CategoryFlags includeCategories = CategoryFlags.All)
         {
             try
             {
-                var categories = _categoryRepo.All();
+                IEnumerable<Category> categories =
+                    _categoryRepo.All();
 
+                if (!includeCategories.HasFlag(CategoryFlags.Real))
+                {
+                    categories = new Category[] {
+                        _categoryRepo.FindById(Category.NoCategory.Id),
+                        _categoryRepo.FindById(Category.AllCategory.Id)
+                    }.Where(c => c != null);
+                }
+
+                if (!includeCategories.HasFlag(CategoryFlags.NoCategory))
+                {
+                    categories = categories.Where(c => c != Category.NoCategory);
+                }
+
+                if (!includeCategories.HasFlag(CategoryFlags.AllCategory))
+                {
+                    categories = categories.Where(c => c != Category.AllCategory);
+                }
 
                 return Result.Successful(categories);
             }
@@ -48,7 +66,64 @@ namespace Moneyes.UI
             }
         }
 
-        public void SortIntoCategories(IEnumerable<Transaction> transactions,
+        public void AssignCategories(Transaction transaction,
+            AssignMethod assignMethod = AssignMethod.KeepPrevious,
+            bool updateDatabase = false)
+        {
+            // Get old transaction
+            Transaction oldTransaction = null;
+
+            if (assignMethod is not AssignMethod.Simple)
+            {
+                oldTransaction = _transactionRepo.FindById(transaction.UID);
+            }
+
+            // Assign categories
+
+            List<Category> categories = GetCategories(CategoryFlags.Real).Data
+                .OrderBy(c => c.IsExlusive)
+                .ToList();
+
+            if (assignMethod is not AssignMethod.Simple && oldTransaction != null)
+            {
+                // Transaction already imported -> keep old categories
+                transaction.Categories = oldTransaction.Categories;
+
+                // Dont merge if keep previous method is used
+                if (assignMethod is AssignMethod.KeepPrevious)
+                {
+                    if (updateDatabase)
+                    {
+                        _transactionRepo.Set(transaction);
+                    }
+
+                    return;
+                }
+            }
+
+            // Transaction not imported or merge -> assign new categories
+            foreach (Category category in categories)
+            {
+                if (category.IsExlusive && transaction.Categories.Any())
+                {
+                    // Exclusive category and already assigned
+                    continue;
+                }
+
+                if (category.Filter != null && category.Filter.Evaluate(transaction))
+                {
+                    transaction.Categories.Add(category);
+                }
+            }
+
+            if (updateDatabase)
+            {
+                _transactionRepo.Set(transaction);
+            }
+        }
+
+
+        public void AssignCategories(IEnumerable<Transaction> transactions,
             AssignMethod assignMethod = AssignMethod.KeepPrevious,
             bool updateDatabase = false)
         {
@@ -63,10 +138,8 @@ namespace Moneyes.UI
 
             // Assign categories
 
-            List<Category> categories = _categoryRepo.All()
+            List<Category> categories = GetCategories(CategoryFlags.Real).Data
                 .OrderBy(c => c.IsExlusive)
-                .Where(c => c != Category.AllCategory)
-                .Where(c => c != Category.NoCategory)
                 .ToList();
 
             foreach (Transaction transaction in transactions)
@@ -98,7 +171,19 @@ namespace Moneyes.UI
                         transaction.Categories.Add(category);
                     }
                 }
+
+                // Store
+                _transactionRepo.Set(transactions);
             }
+        }
+
+        public void ReassignCategories(AssignMethod assignMethod = AssignMethod.Simple)
+        {
+            if (assignMethod is AssignMethod.KeepPrevious) { return; }
+
+            IEnumerable<Transaction> transactions = _transactionRepo.All();
+
+            AssignCategories(transactions, assignMethod, true);
         }
     }
 }

@@ -30,6 +30,11 @@ namespace Moneyes.Data
             return Collection.FindById(id);
         }
 
+        public virtual T FindById(string id)
+        {
+            return Collection.FindById(id);
+        }
+
         public virtual bool Set(T entity)
         {
             return Collection.Upsert(entity);

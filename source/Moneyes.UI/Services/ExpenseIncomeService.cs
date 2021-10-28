@@ -9,41 +9,6 @@ using System.Threading.Tasks;
 
 namespace Moneyes.UI
 {
-    public class CategoryService
-    {
-        private readonly IRepository<Category> _categoryStore;
-
-        public async Task<Result<Category>> GetCategoryByName(string name)
-        {
-            try
-            {
-                return await _categoryStore.GetItem(name);
-            }
-            catch (Exception)
-            {
-                return Result.Failed<Category>();
-                //TODO: Log
-            }
-        }
-
-        public async Task<Result<IEnumerable<Category>>> GetCategories()
-        {
-            try
-            {
-                var categories = await _categoryStore.GetAll();
-
-
-                return Result.Successful(categories);
-            }
-            catch (Exception)
-            {
-                return Result.Failed<IEnumerable<Category>>();
-                //TODO: Log
-            }
-        }
-    }
-
-
     class ExpenseIncomServieUsingDb : IExpenseIncomeService
     {
         private readonly IBaseRepository<Category> _categoryRepo;

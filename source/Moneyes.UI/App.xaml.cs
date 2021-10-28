@@ -131,6 +131,7 @@ namespace Moneyes.UI
             services.AddScoped<IExpenseIncomeService, ExpenseIncomServieUsingDb>();
             services.AddScoped<IBankingService, BankingService>();
             services.AddScoped<ITransactionService, TransactionService>();
+            services.AddScoped<ICategoryService, CategoryService>();
 
             services.AddTransient<ITabViewModel, MainViewModel>();
             services.AddTransient<ITabViewModel, BankingSettingsViewModel>();

@@ -10,8 +10,8 @@ namespace Moneyes.UI.ViewModels
     {
         private readonly Category _category;
         private string _name;
-        private int _totalExpense;
-        private int _target;
+        private decimal _totalExpense;
+        private decimal _target;
         internal Category Category => _category;
 
         private bool _isSelected;
@@ -39,7 +39,7 @@ namespace Moneyes.UI.ViewModels
             }
         }
 
-        public int TotalExpense
+        public decimal TotalExpense
         {
             get => _totalExpense;
             set
@@ -49,7 +49,7 @@ namespace Moneyes.UI.ViewModels
             }
         }
 
-        public int Target
+        public decimal Target
         {
             get => _target;
             set
@@ -67,14 +67,14 @@ namespace Moneyes.UI.ViewModels
         {
             _category = category;
 
-            TotalExpense = (int)totalExpense;
-            Target = (int)category.Target;
+            TotalExpense = totalExpense;
+            Target = category.Target;
 
             if (category == Category.NoCategory)
             {
                 IsNoCategory = true;
                 OnPropertyChanged(nameof(IsNoCategory));
-                Name = "[No category]";
+                Name = "No category";
                 DisplayName = $"-- No category -- ({totalExpense} €)";
             }
             else

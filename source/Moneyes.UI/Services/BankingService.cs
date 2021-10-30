@@ -39,6 +39,21 @@ namespace Moneyes.UI
             return _accountRepository.GetByBankCode(BankingDetails.BankCode.ToString());
         }
 
+        public int ImportAccounts(IEnumerable<AccountDetails> accounts)
+        {
+            int counter = 0;
+
+            foreach (var account in accounts)
+            {
+                if (_accountRepository.Set(account))
+                {
+                    counter++;
+                }
+            }
+
+            return counter;
+        }
+
         public Balance GetBalance(DateTime date, AccountDetails account)
         {
             return _balanceRepository.GetByDate(date, account);

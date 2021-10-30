@@ -48,6 +48,9 @@
             </Button>
         </Grid>
 
+        <materialDesign:Snackbar Grid.Row="1" Margin="5" Name="Snackbar" Panel.ZIndex="20">
+        </materialDesign:Snackbar>
+
         <dragablz:TabablzControl ItemsSource="{Binding Tabs}" SelectedItem="{Binding CurrentViewModel}" Grid.Row="1">
             <dragablz:TabablzControl.InterTabController>
                 <dragablz:InterTabController />
@@ -64,15 +67,18 @@
                 <DataTemplate DataType="{x:Type vm:MainViewModel}">
                     <local:MainPage/>
                 </DataTemplate>
+                <DataTemplate DataType="{x:Type vm:AccountsViewModel}">
+                    <local:Accounts/>
+                </DataTemplate>
                 <DataTemplate DataType="{x:Type vm:BankingSettingsViewModel}">
                     <local:SettingsPage/>
                 </DataTemplate>
             </dragablz:TabablzControl.Resources>
         </dragablz:TabablzControl>
 
-        <StatusBar VerticalAlignment="Bottom" Grid.Row="2" Height="25" Background="{DynamicResource MaterialDesignLightBackground}">
+        <!--<StatusBar VerticalAlignment="Bottom" Grid.Row="2" Height="25" Background="{DynamicResource MaterialDesignLightBackground}">
             
-        </StatusBar>
+        </StatusBar>-->
 
         <!--<TabControl ItemsSource="{Binding Tabs}" SelectedItem="{Binding CurrentViewModel}" 
                 Style="{StaticResource MaterialDesignNavigatilRailTabControl}" Grid.Row="1">

@@ -4,6 +4,7 @@ using Microsoft.Extensions.Options;
 using Moneyes.Core;
 using Moneyes.Data;
 using Moneyes.LiveData;
+using Moneyes.UI.Services;
 using Moneyes.UI.View;
 using Moneyes.UI.ViewModels;
 using System;
@@ -133,8 +134,14 @@ namespace Moneyes.UI
             services.AddScoped<ITransactionService, TransactionService>();
             services.AddScoped<ICategoryService, CategoryService>();
 
+            // UI services
+            services.AddScoped<IStatusMessageService, StatusMessageService>();
+            services.AddScoped<IDialogService<ImportAccountsViewModel>, 
+                DialogService<ImportAccountsView, ImportAccountsViewModel>>();
+
             services.AddTransient<ITabViewModel, OverviewViewModel>();
             services.AddTransient<ITabViewModel, MainViewModel>();
+            services.AddTransient<ITabViewModel, AccountsViewModel>();
             services.AddTransient<ITabViewModel, BankingSettingsViewModel>();
             
             services.AddTransient<MainWindowViewModel>();

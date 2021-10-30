@@ -48,6 +48,12 @@
             <Setter Property="FontSize" Value="15"/>
             <Setter Property="FontWeight" Value="Bold"/>
             <Setter Property="TextWrapping" Value="WrapWithOverflow"/>
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryHueMidBrush}"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsOver}" Value="True">
+                    <Setter Property="Foreground" Value="#d41204"/>
+                </DataTrigger>                
+            </Style.Triggers>
         </Style>
 
         <Style TargetType="{x:Type materialDesign:Card}" x:Key="CategoryCard">
@@ -97,7 +103,7 @@
         <DockPanel HorizontalAlignment="Stretch" Margin="20,0,20,20" VerticalAlignment="Top" Grid.Row="2">
             <Grid DockPanel.Dock="Top" Margin="0,0,0,5">
                 <TextBlock Text="Categories" FontSize="22" FontWeight="Normal" DockPanel.Dock="Top" Margin="10,0"/>
-                <TextBlock Text="Show more" HorizontalAlignment="Right" Margin="5" Foreground="Gray" FontSize="13"/>
+                <TextBlock Text="Show more" HorizontalAlignment="Right" Margin="0,5,10,0" Foreground="Gray" FontSize="13"/>
             </Grid>
 
             <ItemsControl ItemsSource="{Binding Categories}" VerticalAlignment="Center" HorizontalAlignment="Left">
@@ -118,9 +124,9 @@
                                 <TextBlock Text="{Binding Name}" Style="{StaticResource CategoryCardName}" />
 
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,0" VerticalAlignment="Bottom" HorizontalAlignment="Left">
-                                    <TextBlock Foreground="{DynamicResource PrimaryHueMidBrush}">
+                                    <TextBlock>
                                         <TextBlock.Text>
-                                            <MultiBinding StringFormat="{}{0}">
+                                            <MultiBinding StringFormat="{}{0:N0} €">
                                                 <Binding Path="TotalExpense"/>
                                                 <Binding Path="Target"/>
                                             </MultiBinding>
@@ -129,29 +135,17 @@
                                             <Style TargetType="TextBlock" BasedOn="{StaticResource ExpenseTextBlock}">
                                                 <Style.Triggers>
                                                     <DataTrigger Binding="{Binding Target}" Value="0">
-                                                        <Setter Property="Text" Value="{Binding TotalExpense, StringFormat={}{0} €}"/>
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding IsOver}" Value="True">
-                                                        <Setter Property="Foreground" Value="Red"/>
+                                                        <Setter Property="Text" Value="{Binding TotalExpense, StringFormat={}{0:N2} €}"/>
                                                     </DataTrigger>
                                                 </Style.Triggers>
                                             </Style>
                                         </TextBlock.Style>
                                     </TextBlock>
 
-                                    <TextBlock Foreground="{DynamicResource PrimaryHueMidBrush}">
-                                        <TextBlock.Text>
-                                            <MultiBinding StringFormat="{} / {1} €">
-                                                <Binding Path="TotalExpense"/>
-                                                <Binding Path="Target"/>
-                                            </MultiBinding>
-                                        </TextBlock.Text>
+                                    <TextBlock Text="{Binding Target, StringFormat={} / {0:N0} €}">                                        
                                         <TextBlock.Style>
                                             <Style TargetType="TextBlock" BasedOn="{StaticResource ExpenseTextBlock}">
                                                 <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding Target}" Value="0">
-                                                        <Setter Property="Text" Value="{Binding TotalExpense, StringFormat={}{0} €}"/>
-                                                    </DataTrigger>
                                                     <DataTrigger Binding="{Binding Target}" Value="0">
                                                         <Setter Property="Visibility" Value="Collapsed"/>
                                                     </DataTrigger>

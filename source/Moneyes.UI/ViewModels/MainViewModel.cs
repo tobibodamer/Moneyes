@@ -14,6 +14,7 @@ using System.Windows;
 using System.Collections;
 using System.Threading;
 using Moneyes.UI.View;
+using Moneyes.UI.Services;
 
 namespace Moneyes.UI.ViewModels
 {
@@ -23,6 +24,7 @@ namespace Moneyes.UI.ViewModels
         private IExpenseIncomeService _expenseIncomeService;
         private readonly ITransactionService _transactionService;
         private readonly IBankingService _bankingService;
+        private readonly IStatusMessageService _statusMessageService;
 
         private AccountDetails _selectedAccount;
         private CategoryViewModel _selectedCategory;
@@ -42,7 +44,11 @@ namespace Moneyes.UI.ViewModels
             get => Categories.FirstOrDefault(c => c.IsSelected);
             //set
             //{
-            //    _selectedCategory = value;
+            //    foreach (var c in Categories)
+            //    {
+
+            //    }
+            //    value.IsSelected = true;
             //    OnPropertyChanged(nameof(SelectedCategory));
             //}
         }
@@ -113,7 +119,8 @@ namespace Moneyes.UI.ViewModels
             LiveDataService liveDataService,
             IExpenseIncomeService expenseIncomeService,
             ITransactionService transactionService,
-            IBankingService bankingService)
+            IBankingService bankingService,
+            IStatusMessageService statusMessageService)
         {
             DisplayName = "Transactions";
 
@@ -121,6 +128,7 @@ namespace Moneyes.UI.ViewModels
             _expenseIncomeService = expenseIncomeService;
             _transactionService = transactionService;
             _bankingService = bankingService;
+            _statusMessageService = statusMessageService;
 
             LoadedCommand = new AsyncCommand(async ct =>
             {
@@ -130,10 +138,12 @@ namespace Moneyes.UI.ViewModels
                     return;
                 }
 
-                await FetchAccounts();
+                Accounts = new(_bankingService.GetAccounts());
 
-                //TODO: Remove
-                //UpdateCategories();
+                if (Accounts.Any())
+                {
+                    return;
+                }
             });
 
             FetchOnlineCommand = new AsyncCommand(async ct =>
@@ -141,10 +151,18 @@ namespace Moneyes.UI.ViewModels
                 Result<int> result = await _liveDataService
                     .FetchOnlineTransactionsAndBalances(SelectedAccount);
 
-                if (result.IsSuccessful && result.Data > 0)
+                if (result.IsSuccessful)
                 {
+                    if (result.Data == 0)
+                    {
+                        _statusMessageService.ShowMessage($"No new transactions available.");
+                        return;
+                    }
+
                     UpdateCategories();
                     UpdateTransactions();
+
+                    _statusMessageService.ShowMessage($"Fetched {result.Data} transactions.");
                 }
             });
 
@@ -259,31 +277,24 @@ namespace Moneyes.UI.ViewModels
                             previouslySelectedCategory.IsSelected = true;
                         }
                     }
+                    else
+                    {
+                        CategoryViewModel allCategory = Categories
+                            .FirstOrDefault(c => c.Category == Category.AllCategory);
+
+                        if (allCategory != null)
+                        {
+                            allCategory.IsSelected = true;
+                            OnPropertyChanged(nameof(SelectedCategory));
+                        }
+                    }
                 });
         }
 
         private void HandleError(string message)
         {
-            MessageBox.Show(message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-        }
-
-        private async Task FetchAccounts()
-        {
-            Accounts = new(_bankingService.GetAccounts());
-
-            if (Accounts.Any())
-            {
-                return;
-            }
-
-            Result result = await _liveDataService.FetchAndImportAccounts();
-
-            if (!result.IsSuccessful)
-            {
-                // TODO: Display message
-            }
-
-            Accounts = new(_bankingService.GetAccounts());
+            _statusMessageService.ShowMessage($"Error: {message}");
+            //MessageBox.Show(message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 }

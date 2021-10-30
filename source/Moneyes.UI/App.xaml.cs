@@ -133,8 +133,10 @@ namespace Moneyes.UI
             services.AddScoped<ITransactionService, TransactionService>();
             services.AddScoped<ICategoryService, CategoryService>();
 
+            services.AddTransient<ITabViewModel, OverviewViewModel>();
             services.AddTransient<ITabViewModel, MainViewModel>();
             services.AddTransient<ITabViewModel, BankingSettingsViewModel>();
+            
             services.AddTransient<MainWindowViewModel>();
             //passwordPrompt = new DialogPasswordPrompt();
 

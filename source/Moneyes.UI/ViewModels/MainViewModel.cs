@@ -115,7 +115,7 @@ namespace Moneyes.UI.ViewModels
             ITransactionService transactionService,
             IBankingService bankingService)
         {
-            DisplayName = "Overview";
+            DisplayName = "Transactions";
 
             _liveDataService = liveDataService;
             _expenseIncomeService = expenseIncomeService;
@@ -131,6 +131,9 @@ namespace Moneyes.UI.ViewModels
                 }
 
                 await FetchAccounts();
+
+                //TODO: Remove
+                //UpdateCategories();
             });
 
             FetchOnlineCommand = new AsyncCommand(async ct =>

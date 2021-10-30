@@ -17,7 +17,7 @@
         Background="{DynamicResource MaterialDesignPaper}"
         FontFamily="{DynamicResource MaterialDesignFont}"
         mc:Ignorable="d"
-        Title="Moneyes" Height="550" Width="1000" WindowStyle="None"
+        Title="Moneyes" Height="650" Width="1100" WindowStyle="None"
         >
     <Window.Style>
         <Style TargetType="Window">
@@ -58,6 +58,9 @@
                 </DataTemplate>
             </dragablz:TabablzControl.HeaderItemTemplate>
             <dragablz:TabablzControl.Resources>
+                <DataTemplate DataType="{x:Type vm:OverviewViewModel}">
+                    <local:Overview/>
+                </DataTemplate>
                 <DataTemplate DataType="{x:Type vm:MainViewModel}">
                     <local:MainPage/>
                 </DataTemplate>

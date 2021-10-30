@@ -1,5 +1,6 @@
 ﻿using Moneyes.Core;
 using Moneyes.Data;
+using System;
 using System.Collections.Generic;
 using System.Windows.Input;
 
@@ -57,6 +58,10 @@ namespace Moneyes.UI.ViewModels
                 OnPropertyChanged(nameof(Target));
             }
         }
+
+        public bool IsOver => Target > 0 && TotalExpense > Target;
+
+        public decimal Difference => Math.Abs(Target - TotalExpense);
 
         public CategoryViewModel(Category category, decimal totalExpense)
         {

@@ -10,6 +10,7 @@ namespace Moneyes.UI
         bool HasBankingDetails { get; }
         OnlineBankingDetails BankingDetails { get; set; }
         IEnumerable<AccountDetails> GetAccounts();
+        int ImportAccounts(IEnumerable<AccountDetails> accounts);
         Balance GetBalance(DateTime date, AccountDetails account);
     }
 }

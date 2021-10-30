@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Moneyes.UI.ViewModels;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -20,7 +21,7 @@ namespace Moneyes.UI.View
     /// </summary>
     public partial class MainWindow : Window
     {
-        public MainWindow(object dataContext)
+        public MainWindow(MainWindowViewModel dataContext)
         {
             InitializeComponent();
 
@@ -29,6 +30,20 @@ namespace Moneyes.UI.View
             CloseButton.Click += (s, args) =>
             {
                 this.Close();
+            };
+
+            Snackbar.MessageQueue = new(TimeSpan.FromSeconds(5));
+
+            dataContext.NewStatusMessage += (message, actionText, action) =>
+            {
+                if (actionText == null || action == null)
+                {
+                    Snackbar.MessageQueue.Enqueue(message);
+                }
+                else
+                {
+                    Snackbar.MessageQueue.Enqueue(message, actionText, action);
+                }
             };
         }
 

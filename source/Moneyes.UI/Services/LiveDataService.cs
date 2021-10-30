@@ -227,5 +227,30 @@ namespace Moneyes.UI
 
             return Result.Failed();
         }
+
+        public async Task<Result<IEnumerable<AccountDetails>>> FetchAccounts()
+        {
+            try
+            {
+                Result initResult = await InitOnlineBankingService();
+
+                if (!initResult.IsSuccessful)
+                {
+                    return Result.Failed<IEnumerable<AccountDetails>>();
+                }
+
+                await EnsurePassword();
+
+                IEnumerable<AccountDetails> accounts = (await _bankingService.Accounts()).GetOrNull();
+
+                return Result.Successful(accounts);
+            }
+            catch (Exception ex)
+            {
+                //TODO: Log
+            }
+
+            return Result.Failed<IEnumerable<AccountDetails>>();
+        }
     }
 }

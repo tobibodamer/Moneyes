@@ -1,6 +1,6 @@
 ﻿namespace Moneyes.UI.ViewModels
 {
-    internal interface ITabViewModel
+    public interface ITabViewModel
     {
 
     }

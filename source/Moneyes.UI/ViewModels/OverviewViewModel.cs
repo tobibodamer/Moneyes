@@ -86,22 +86,24 @@ namespace Moneyes.UI.ViewModels
         private void UpdateCategories()
         {
             // Get expenses per category
-            _expenseIncomeService.GetExpensePerCategory(_bankingService.GetAccounts().First(), false)
+            _expenseIncomeService.GetExpensePerCategory(_bankingService.GetAccounts().First(), true)
                 .OnError(() => { })
                 .OnSuccess(expenses =>
                 {
                     Categories.Clear();
 
-                    foreach ((Category category, decimal amt) in expenses)
+                    foreach ((Category category, decimal amt) in expenses
+                        .OrderBy(p => p.Category.Target == 0)
+                        .ThenByDescending(p => p.Category == Category.NoCategory))
                     {
-                        if (category.Target == 0)
-                        {
-                            continue;
-                        }
+                        //if (category.Target == 0)
+                        //{
+                        //    continue;
+                        //}
 
                         Categories.Add(
                             new CategoryViewModel(category, amt)
-                            {                                
+                            {
                             });
                     }
 

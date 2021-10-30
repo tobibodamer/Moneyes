@@ -1,4 +1,5 @@
 ﻿using Moneyes.Data;
+using Moneyes.UI.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,12 +8,13 @@ using System.Threading.Tasks;
 
 namespace Moneyes.UI.ViewModels
 {
-    class MainWindowViewModel : ViewModelBase
+    public class MainWindowViewModel : ViewModelBase
     {
         public List<ITabViewModel> Tabs { get; set; }
         public ITabViewModel CurrentViewModel { get; set; }
 
-        public MainWindowViewModel(IEnumerable<ITabViewModel> tabs, BankConnectionStore bankingConfigStore)
+        public MainWindowViewModel(IEnumerable<ITabViewModel> tabs, BankConnectionStore bankingConfigStore,
+            IStatusMessageService statusMessageService)
         {
             Tabs = new(tabs);
 
@@ -24,6 +26,10 @@ namespace Moneyes.UI.ViewModels
             {
                 CurrentViewModel = tabs.OfType<MainViewModel>().FirstOrDefault();
             }
+
+            statusMessageService.NewMessage += (msg, actText, act) => NewStatusMessage?.Invoke(msg, actText, act);
         }
+
+        public event Action<string, string?, Action?> NewStatusMessage;
     }
 }

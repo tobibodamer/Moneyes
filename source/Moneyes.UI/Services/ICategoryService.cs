@@ -12,12 +12,13 @@ namespace Moneyes.UI
             AssignMethod assignMethod = AssignMethod.KeepPrevious,
             bool updateDatabase = false);
 
-        void ReassignCategories(AssignMethod assignMethod = AssignMethod.Simple);
-        
+        void ReassignCategories(AssignMethod assignMethod = AssignMethod.Simple);        
 
         Result<Category> GetCategoryByName(string name);
 
         Result<IEnumerable<Category>> GetCategories(
             CategoryFlags includeCategories = CategoryFlags.All);
+
+        bool AddCategory(Category category);
     }
 }

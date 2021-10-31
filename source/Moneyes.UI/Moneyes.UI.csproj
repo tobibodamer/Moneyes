@@ -25,16 +25,20 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Update="View\SettingsPage.xaml.cs">
+    <Compile Update="View\Tabs\SettingsPage.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>
 
   <ItemGroup>
-    <Page Update="View\SettingsPage.xaml">
+    <Page Update="View\Tabs\SettingsPage.xaml">
       <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
       <SubType>Designer</SubType>
     </Page>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="View\NewFolder\" />
   </ItemGroup>
 
 </Project>

@@ -7,7 +7,7 @@ using System.Windows;
 
 namespace Moneyes.UI.View
 {
-    public class ProgressArc : ViewModels.ViewModelBase
+    public class ProgressArc
     {
         private Point _startPosition = new (50, 0);
         private Point _endPosition = new (100, 0);
@@ -20,7 +20,6 @@ namespace Moneyes.UI.View
             get => _startPosition; set
             {
                 _startPosition = value;
-                OnPropertyChanged();
             }
         }
         public Point EndPosition
@@ -28,7 +27,6 @@ namespace Moneyes.UI.View
             get => _endPosition; set
             {
                 _endPosition = value;
-                OnPropertyChanged();
             }
         }
         public Size Radius
@@ -36,7 +34,6 @@ namespace Moneyes.UI.View
             get => _radius; set
             {
                 _radius = value;
-                OnPropertyChanged();
             }
         }
         public double Thickness
@@ -44,7 +41,6 @@ namespace Moneyes.UI.View
             get => _thickness; set
             {
                 _thickness = value;
-                OnPropertyChanged();
             }
         }
         public double Angle
@@ -52,7 +48,6 @@ namespace Moneyes.UI.View
             get => _angle; set
             {
                 _angle = value;
-                OnPropertyChanged();
             }
         }
     }

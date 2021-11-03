@@ -1,5 +1,6 @@
 ﻿using Moneyes.Core;
 using Moneyes.LiveData;
+using System;
 using System.Collections.Generic;
 
 namespace Moneyes.UI
@@ -12,7 +13,7 @@ namespace Moneyes.UI
             AssignMethod assignMethod = AssignMethod.KeepPrevious,
             bool updateDatabase = false);
 
-        void ReassignCategories(AssignMethod assignMethod = AssignMethod.Simple);        
+        void ReassignCategories(AssignMethod assignMethod = AssignMethod.Simple);
 
         Result<Category> GetCategoryByName(string name);
 
@@ -20,5 +21,9 @@ namespace Moneyes.UI
             CategoryFlags includeCategories = CategoryFlags.All);
 
         bool AddCategory(Category category);
+        bool UpdateCategory(Category category);
+        bool DeleteCategory(Category category);
+
+        event Action<Category> CategoryChanged;
     }
 }

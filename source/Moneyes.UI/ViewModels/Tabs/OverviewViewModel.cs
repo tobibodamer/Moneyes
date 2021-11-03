@@ -17,12 +17,12 @@ namespace Moneyes.UI.ViewModels
         private readonly ITransactionService _transactionService;
         private readonly IBankingService _bankingService;
 
-        private ObservableCollection<CategoryViewModel> _categories = new();
+        private ObservableCollection<CategoryExpenseViewModel> _categories = new();
         decimal _totalExpense;
         decimal _totalIncome;
         public ICommand LoadedCommand { get; }
 
-        public ObservableCollection<CategoryViewModel> Categories
+        public ObservableCollection<CategoryExpenseViewModel> Categories
         {
             get => _categories;
             set
@@ -102,13 +102,13 @@ namespace Moneyes.UI.ViewModels
                         //}
 
                         Categories.Add(
-                            new CategoryViewModel(category, amt)
+                            new CategoryExpenseViewModel(category, amt)
                             {
                             });
                     }
 
                     // Set sub categories
-                    foreach (CategoryViewModel category in Categories)
+                    foreach (CategoryExpenseViewModel category in Categories)
                     {
                         Category parent = category.Category?.Parent;
                         if (parent == null) { continue; }

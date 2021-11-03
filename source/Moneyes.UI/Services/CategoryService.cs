@@ -12,6 +12,10 @@ namespace Moneyes.UI
         private readonly TransactionRepository _transactionRepo;
         private readonly CategoryRepository _categoryRepo;
 
+        public event Action<Category> CategoryChanged;
+        public event Action<Category> CategoryAdded;
+        public event Action<Category> CategoryDeleted;
+
         public CategoryService(TransactionRepository transactionRepo,
             CategoryRepository categoryRepo)
         {
@@ -184,6 +188,53 @@ namespace Moneyes.UI
             IEnumerable<Transaction> transactions = _transactionRepo.All();
 
             AssignCategories(transactions, assignMethod, true);
+        }
+
+        public bool AddCategory(Category category)
+        {
+            //TODO: Use real insert and dont update if existing (return false)
+            if (_categoryRepo.Set(category))
+            {
+                OnCategoryAdded(category);
+                return true;
+            }
+
+            return false;
+        }
+
+        public bool UpdateCategory(Category category)
+        {
+            if (_categoryRepo.Set(category))
+            {
+                OnCategoryAdded(category);
+            }
+            else
+            {
+                OnCategoryChanged(category);
+            }
+
+            return true;
+        }
+
+        public bool DeleteCategory(Category category)
+        {
+            OnCategoryDeleted(category);
+            throw new NotImplementedException();
+        }
+
+        protected virtual void OnCategoryChanged(Category c)
+        {
+            CategoryChanged?.Invoke(c);
+        }
+
+        protected virtual void OnCategoryAdded(Category c)
+        {
+            CategoryAdded?.Invoke(c);
+        }
+
+        protected virtual void OnCategoryDeleted(Category c)
+        {
+            CategoryDeleted?.Invoke(c);
         }
     }
 }

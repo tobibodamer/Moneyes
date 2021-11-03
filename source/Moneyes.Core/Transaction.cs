@@ -9,6 +9,24 @@ using System.Text.RegularExpressions;
 
 namespace Moneyes.Core
 {
+    [AttributeUsage(AttributeTargets.Property, Inherited = false, AllowMultiple = false)]
+    public sealed class FilterPropertyAttribute : Attribute
+    {
+        // See the attribute guidelines at 
+        //  http://go.microsoft.com/fwlink/?LinkId=85236
+        readonly string _descriptiveName;
+
+        public FilterPropertyAttribute(string descriptiveName)
+        {
+            _descriptiveName = descriptiveName;
+        }
+
+        public string DescriptiveName
+        {
+            get { return _descriptiveName; }
+        }
+    }
+
     /// <summary>
     /// Represents a banking transaction.
     /// </summary>
@@ -36,16 +54,19 @@ namespace Moneyes.Core
         /// <summary>
         /// The purpose of this transaction.
         /// </summary>
+        [FilterProperty("Purpose")]
         public string Purpose { get; init; }
 
         /// <summary>
         /// The booking type.
         /// </summary>
+        [FilterProperty("Booking type")]
         public string BookingType { get; init; }
 
         /// <summary>
         /// The transaction amount.
         /// </summary>
+        [FilterProperty("Amount")]
         public decimal Amount { get; init; }
 
         /// <summary>
@@ -59,7 +80,7 @@ namespace Moneyes.Core
 
         /// <summary>
         /// IBAN of the account this transaction belongs to.
-        /// </summary>
+        /// </summary>        
         public string IBAN { get; init; }
 
         #region Partner
@@ -67,21 +88,25 @@ namespace Moneyes.Core
         /// <summary>
         /// IBAN of the partners account.
         /// </summary>
+        [FilterProperty("IBAN")]
         public string PartnerIBAN { get; init; }
 
         /// <summary>
         /// BIC of the partners bank.
         /// </summary>
+        [FilterProperty("BIC")]
         public string BIC { get; init; }
 
         /// <summary>
         /// The partner account name.
         /// </summary>
+        [FilterProperty("Name")]
         public string Name { get; init; }
 
         /// <summary>
         /// Alternative partner account name.
         /// </summary>
+        [FilterProperty("Alt. Name")]
         public string AltName { get; init; }
 
         #endregion
@@ -89,13 +114,13 @@ namespace Moneyes.Core
         /// <summary>
         /// The city provided with the transaction.
         /// </summary>
+        [FilterProperty("City")]
         public string City => ParseCityAndCountry()?.City;
 
         /// <summary>
         /// The country code provided with the transaction.
         /// </summary>
-        public string CountryCode => ParseCityAndCountry()?.Country;
-
+        public string CountryCode => ParseCityAndCountry()?.Country; 
         /// <summary>
         /// Gets the categories of this transaction.
         /// </summary>

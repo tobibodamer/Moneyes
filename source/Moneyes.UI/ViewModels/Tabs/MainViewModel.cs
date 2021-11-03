@@ -25,33 +25,35 @@ namespace Moneyes.UI.ViewModels
         private readonly ITransactionService _transactionService;
         private readonly IBankingService _bankingService;
         private readonly IStatusMessageService _statusMessageService;
-
+        private readonly IDialogService<EditCategoryViewModel> _editCategoryDialogService;
         private AccountDetails _selectedAccount;
-        private CategoryViewModel _selectedCategory;
+        private CategoryExpenseViewModel _selectedCategory;
         private Balance _currentBalance;
 
         private ObservableCollection<AccountDetails> _accounts = new();
         private ObservableCollection<Transaction> _transactions = new();
-        private ObservableCollection<CategoryViewModel> _categories = new();
+        //private ObservableCollection<CategoryExpenseViewModel> _categories = new();
 
         #region UI Properties
         public ICommand LoadedCommand { get; }
         public ICommand FetchOnlineCommand { get; }
         public ICommand SelectCategoryCommand { get; }
 
-        public CategoryViewModel SelectedCategory
-        {
-            get => Categories.FirstOrDefault(c => c.IsSelected);
-            //set
-            //{
-            //    foreach (var c in Categories)
-            //    {
 
-            //    }
-            //    value.IsSelected = true;
-            //    OnPropertyChanged(nameof(SelectedCategory));
-            //}
-        }
+        public ExpenseCategoriesViewModel ExpenseCategories { get; }
+        //public CategoryExpenseViewModel SelectedCategory
+        //{
+        //    get => Categories.FirstOrDefault(c => c.IsSelected);
+        //    //set
+        //    //{
+        //    //    foreach (var c in Categories)
+        //    //    {
+
+        //    //    }
+        //    //    value.IsSelected = true;
+        //    //    OnPropertyChanged(nameof(SelectedCategory));
+        //    //}
+        //}
 
         public AccountDetails SelectedAccount
         {
@@ -59,7 +61,7 @@ namespace Moneyes.UI.ViewModels
             set
             {
                 _selectedAccount = value;
-                OnPropertyChanged(nameof(SelectedAccount));
+                OnPropertyChanged();
                 UpdateCategories();
                 UpdateTransactions();
             }
@@ -77,20 +79,19 @@ namespace Moneyes.UI.ViewModels
                     SelectedAccount = value.First();
                 }
 
-                OnPropertyChanged(nameof(Accounts));
+                OnPropertyChanged();
             }
         }
 
-        public ObservableCollection<CategoryViewModel> Categories
-        {
-            get => _categories;
-            set
-            {
-                _categories = value;
-
-                OnPropertyChanged(nameof(Accounts));
-            }
-        }
+        //public ObservableCollection<CategoryExpenseViewModel> Categories
+        //{
+        //    get => _categories;
+        //    set
+        //    {
+        //        _categories = value;
+        //        OnPropertyChanged();
+        //    }
+        //}
 
         public ObservableCollection<Transaction> Transactions
         {
@@ -98,8 +99,7 @@ namespace Moneyes.UI.ViewModels
             set
             {
                 _transactions = value;
-
-                OnPropertyChanged(nameof(Transactions));
+                OnPropertyChanged();
             }
         }
 
@@ -109,27 +109,39 @@ namespace Moneyes.UI.ViewModels
             set
             {
                 _currentBalance = value;
-
-                OnPropertyChanged(nameof(CurrentBalance));
+                OnPropertyChanged();
             }
         }
+        //private EditCategoryViewModel _editCategory;
+        //public EditCategoryViewModel EditCategory
+        //{
+        //    get => _editCategory;
+        //    set
+        //    {
+        //        _editCategory = value;
+        //        OnPropertyChanged();
+        //    }
+        //}
 
-#endregion
+        #endregion
         public MainViewModel(
             LiveDataService liveDataService,
             IExpenseIncomeService expenseIncomeService,
             ITransactionService transactionService,
             IBankingService bankingService,
-            IStatusMessageService statusMessageService)
+            IStatusMessageService statusMessageService,
+            IDialogService<EditCategoryViewModel> editCategoryDialogService,
+            ExpenseCategoriesViewModel expenseCategoriesViewModel,
+            ICategoryService categoryService)
         {
             DisplayName = "Transactions";
-
+            ExpenseCategories = expenseCategoriesViewModel;
             _liveDataService = liveDataService;
             _expenseIncomeService = expenseIncomeService;
             _transactionService = transactionService;
             _bankingService = bankingService;
             _statusMessageService = statusMessageService;
-
+            this._editCategoryDialogService = editCategoryDialogService;
             LoadedCommand = new AsyncCommand(async ct =>
             {
                 if (!bankingService.HasBankingDetails)
@@ -166,11 +178,25 @@ namespace Moneyes.UI.ViewModels
                 }
             });
 
-            SelectCategoryCommand = new AsyncCommand<CategoryViewModel>(async (viewModel, ct) =>
+            ExpenseCategories.PropertyChanged += (sender, args) =>
             {
-                await Task.Run(() => UpdateTransactions());
-                OnPropertyChanged(nameof(SelectedCategory));
-            });
+                if (args.PropertyName == nameof(ExpenseCategories.SelectedCategory))
+                {
+                    Task.Run(() => UpdateTransactions());
+                }
+            };
+
+            //SelectCategoryCommand = new AsyncCommand<CategoryExpenseViewModel>(async (viewModel, ct) =>
+            //{
+            //    await Task.Run(() => UpdateTransactions());
+            //    OnPropertyChanged(nameof(SelectedCategory));
+            //});
+
+            categoryService.CategoryChanged += (c) =>
+            {
+                UpdateCategories();
+                UpdateTransactions();
+            };
         }
 
         private void UpdateTransactions()
@@ -180,7 +206,7 @@ namespace Moneyes.UI.ViewModels
             //    .Select(c => c.Category)
             //    .ToArray();
 
-            Category selectedCategory = SelectedCategory?.Category;
+            Category selectedCategory = ExpenseCategories.SelectedCategory?.Category;
 
             // Get all transactions for selected category and filter
             IEnumerable<Transaction> transactions = _transactionService.GetTransactions(
@@ -200,96 +226,183 @@ namespace Moneyes.UI.ViewModels
             };
         }
 
-        
         private void UpdateCategories()
         {
-            // Get expenses per category
-            _expenseIncomeService.GetExpensePerCategory(SelectedAccount)
-                .OnError(() => HandleError("Could not get expenses for this category"))
-                .OnSuccess(expenses =>
-                {
-                    int? selectedCategoryId = SelectedCategory?.Category?.Id;
+            ExpenseCategories.UpdateCategories(SelectedAccount);
 
-                    Categories.Clear();
+            //// Get expenses per category
+            //_expenseIncomeService.GetExpensePerCategory(SelectedAccount)
+            //    .OnError(() => HandleError("Could not get expenses for this category"))
+            //    .OnSuccess(expenses =>
+            //    {
+            //        int? selectedCategoryId = SelectedCategory?.Category?.Id;
 
-                    foreach ((Category category, decimal amt) in expenses)
-                    {
-                        Categories.Add(
-                            new CategoryViewModel(category, amt)
-                            {
-                                AddToCategoryCommand = new AsyncCommand<Transaction>(async (transaction, ct) =>
-                                {
-                                    Category targetCategory = category;
-                                    Category currentCategory = SelectedCategory?.Category;
+            //        ExpenseCategories.Categories.Clear();
 
-                                    if (_transactionService.MoveToCategory(transaction, currentCategory, targetCategory))
-                                    {
-                                        UpdateCategories();
-                                        UpdateTransactions();
-                                    }
+            //        foreach ((Category category, decimal amt) in expenses)
+            //        {
+            //            ExpenseCategories.Add(category, amt);
+            //        }
 
-                                    await Task.CompletedTask;
-                                }, 
-                                (transaction) =>
-                                {
-                                    Category targetCategory = category;
+            //        // Get total expenses
+            //        _expenseIncomeService.GetTotalExpense(SelectedAccount)
+            //                        .OnSuccess(totalAmt =>
+            //                        {
+            //                            ExpenseCategories.Add(Category.AllCategory, totalAmt);
+            //                        })
+            //                        .OnError(() => HandleError("Could not get total expense"));
 
-                                    // cant change null transaction
-                                    if (transaction == null) { return false; }
+            //        // Set sub categories
+            //        foreach (CategoryExpenseViewModel category in Categories)
+            //        {
+            //            Category parent = category.Category?.Parent;
+            //            if (parent == null) { continue; }
 
-                                    // cant add to 'All' category
-                                    if (targetCategory == Category.AllCategory) { return false; }
+            //            // Add category as sub category in parent
+            //            Categories.FirstOrDefault(c => c.Category.Equals(parent))
+            //                .SubCatgeories.Add(category);
+            //        }
 
-                                    // cant add to own category
-                                    if (transaction.Categories.Contains(targetCategory)) { return false; }
+            //        if (selectedCategoryId.HasValue)
+            //        {
+            //            CategoryExpenseViewModel previouslySelectedCategory = Categories
+            //                .FirstOrDefault(c => c.Category.Id == selectedCategoryId);
 
-                                    return true;
-                                })
-                            });
-                    }
+            //            if (previouslySelectedCategory != null)
+            //            {
+            //                previouslySelectedCategory.IsSelected = true;
+            //            }
+            //        }
+            //        else
+            //        {
+            //            CategoryExpenseViewModel allCategory = Categories
+            //                .FirstOrDefault(c => c.Category == Category.AllCategory);
 
-                    // Get total expenses
-                    _expenseIncomeService.GetTotalExpense(SelectedAccount)
-                        .OnSuccess(totalAmt =>
-                        {
-                            Categories.Add(new(Category.AllCategory, totalAmt));
-                        })
-                        .OnError(() => HandleError("Could not get total expense"));
-
-                    // Set sub categories
-                    foreach (CategoryViewModel category in Categories)
-                    {
-                        Category parent = category.Category?.Parent;
-                        if (parent == null) { continue; }
-
-                        // Add category as sub category in parent
-                        Categories.FirstOrDefault(c => c.Category.Equals(parent))
-                            .SubCatgeories.Add(category);
-                    }
-
-                    if (selectedCategoryId.HasValue)
-                    {
-                        CategoryViewModel previouslySelectedCategory = Categories
-                            .FirstOrDefault(c => c.Category.Id == selectedCategoryId);
-
-                        if (previouslySelectedCategory != null)
-                        {
-                            previouslySelectedCategory.IsSelected = true;
-                        }
-                    }
-                    else
-                    {
-                        CategoryViewModel allCategory = Categories
-                            .FirstOrDefault(c => c.Category == Category.AllCategory);
-
-                        if (allCategory != null)
-                        {
-                            allCategory.IsSelected = true;
-                            OnPropertyChanged(nameof(SelectedCategory));
-                        }
-                    }
-                });
+            //            if (allCategory != null)
+            //            {
+            //                allCategory.IsSelected = true;
+            //                OnPropertyChanged(nameof(SelectedCategory));
+            //            }
+            //        }
+            //    });
         }
+
+        //private void UpdateCategories()
+        //{
+        //    // Get expenses per category
+        //    _expenseIncomeService.GetExpensePerCategory(SelectedAccount)
+        //        .OnError(() => HandleError("Could not get expenses for this category"))
+        //        .OnSuccess(expenses =>
+        //        {
+        //            int? selectedCategoryId = SelectedCategory?.Category?.Id;
+
+        //            Categories.Clear();
+
+        //            foreach ((Category category, decimal amt) in expenses)
+        //            {
+        //                Categories.Add(
+        //                    new CategoryExpenseViewModel(category, amt)
+        //                    {
+        //                        AssignToTransaction = new AsyncCommand<Transaction>(async (transaction, ct) =>
+        //                        {
+        //                            Category targetCategory = category;
+        //                            Category currentCategory = SelectedCategory?.Category;
+
+        //                            if (_transactionService.MoveToCategory(transaction, currentCategory, targetCategory))
+        //                            {
+        //                                UpdateCategories();
+        //                                UpdateTransactions();
+        //                            }
+
+        //                            await Task.CompletedTask;
+        //                        },
+        //                        (transaction) =>
+        //                        {
+        //                            Category targetCategory = category;
+
+        //                            // cant change null transaction
+        //                            if (transaction == null) { return false; }
+
+        //                            // cant add to 'All' category
+        //                            if (targetCategory == Category.AllCategory) { return false; }
+
+        //                            // cant add to own category
+        //                            if (transaction.Categories.Contains(targetCategory)) { return false; }
+
+        //                            return true;
+        //                        }),
+        //                        EditCommand = new AsyncCommand(async ct =>
+        //                        {
+        //                            Category targetCategory = category;
+
+        //                            var editCategoryViewModel = new EditCategoryViewModel();
+
+        //                            editCategoryViewModel.ApplyCommand = new AsyncCommand(async ct =>
+        //                            {
+        //                                if (!editCategoryViewModel.Validate(_))
+        //                                {
+        //                                    return;
+        //                                }
+
+        //                                if (!categoryService.UpdateCategory(Category))
+        //                                {
+        //                                    return;
+        //                                }
+
+        //                                if (AssignTransactions)
+        //                                {
+
+        //                                }
+        //                            });
+
+
+        //                            //_editCategoryDialogService.ShowDialog(EditCategory);
+        //                        })
+        //                    });
+        //            }
+
+        //            // Get total expenses
+        //            _expenseIncomeService.GetTotalExpense(SelectedAccount)
+        //                            .OnSuccess(totalAmt =>
+        //                            {
+        //                                Categories.Add(new(Category.AllCategory, totalAmt));
+        //                            })
+        //                            .OnError(() => HandleError("Could not get total expense"));
+
+        //            // Set sub categories
+        //            foreach (CategoryExpenseViewModel category in Categories)
+        //            {
+        //                Category parent = category.Category?.Parent;
+        //                if (parent == null) { continue; }
+
+        //                // Add category as sub category in parent
+        //                Categories.FirstOrDefault(c => c.Category.Equals(parent))
+        //                    .SubCatgeories.Add(category);
+        //            }
+
+        //            if (selectedCategoryId.HasValue)
+        //            {
+        //                CategoryExpenseViewModel previouslySelectedCategory = Categories
+        //                    .FirstOrDefault(c => c.Category.Id == selectedCategoryId);
+
+        //                if (previouslySelectedCategory != null)
+        //                {
+        //                    previouslySelectedCategory.IsSelected = true;
+        //                }
+        //            }
+        //            else
+        //            {
+        //                CategoryExpenseViewModel allCategory = Categories
+        //                    .FirstOrDefault(c => c.Category == Category.AllCategory);
+
+        //                if (allCategory != null)
+        //                {
+        //                    allCategory.IsSelected = true;
+        //                    OnPropertyChanged(nameof(SelectedCategory));
+        //                }
+        //            }
+        //        });
+        //}
 
         private void HandleError(string message)
         {

@@ -113,7 +113,7 @@
                     </ItemsPanelTemplate>
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
-                    <DataTemplate DataType="{x:Type vm:CategoryViewModel}">
+                    <DataTemplate DataType="{x:Type vm:CategoryExpenseViewModel}">
                         <materialDesign:Card Width="175" Height="90" Style="{StaticResource CategoryCard}">
                             <Grid Margin="15">
                                 <Grid.RowDefinitions>

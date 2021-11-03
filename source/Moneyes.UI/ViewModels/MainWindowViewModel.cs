@@ -28,6 +28,8 @@ namespace Moneyes.UI.ViewModels
             }
 
             statusMessageService.NewMessage += (msg, actText, act) => NewStatusMessage?.Invoke(msg, actText, act);
+
+            //new View.CategoryView() { DataContext = new AddCategoryViewModel() }
         }
 
         public event Action<string, string?, Action?> NewStatusMessage;

@@ -8,8 +8,8 @@
       xmlns:vm="clr-namespace:Moneyes.UI.ViewModels"
       xmlns:m="clr-namespace:Moneyes.Core;assembly=Moneyes.Core"
       xmlns:controls="clr-namespace:System.Windows.Controls;assembly=MultiSelectTreeView"
-      xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-      TextElement.Foreground="{DynamicResource MaterialDesignBody}"
+      xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes" d:DataContext="{d:DesignInstance Type=vm:MainViewModel}"
+             TextElement.Foreground="{DynamicResource MaterialDesignBody}"
       TextElement.FontWeight="Regular"
       TextElement.FontSize="13"
       TextOptions.TextFormattingMode="Ideal"
@@ -24,6 +24,9 @@
         </i:EventTrigger>
     </i:Interaction.Triggers>
     <UserControl.Resources>
+
+        <local:AddCategoryDialog x:Key="AddCategoryDialog"/>
+
         <Style x:Key="NoCategoryStyle" TargetType="{x:Type TreeViewItem}" BasedOn="{StaticResource MaterialDesignTreeViewItem}">
             <Style.Triggers>
                 <DataTrigger Binding="{Binding IsNoCategory}" Value="True">
@@ -190,7 +193,7 @@
             <DockPanel Grid.Row="0" Margin="10,0" LastChildFill="true" HorizontalAlignment="Stretch" >
                 <StackPanel Orientation="Vertical" Grid.Column="0" VerticalAlignment="Center">
                     <!--<TextBlock FontSize="15" Text="{Binding Date, StringFormat={}'Balance / 'dd.MM.yyyy}" Foreground="#333" />-->
-                    <TextBlock FontSize="15" Text="{Binding SelectedCategory, UpdateSourceTrigger=PropertyChanged}" Foreground="#333" />
+                    <TextBlock FontSize="15" Text="{Binding ExpenseCategories.SelectedCategory, UpdateSourceTrigger=PropertyChanged}" Foreground="#333" />
                     <!--<TextBlock Text="{Binding Date, StringFormat=dd.MM.yyyy}" Foreground="Gray" />-->
                 </StackPanel>
                 <StackPanel Orientation="Vertical" HorizontalAlignment="Right" Grid.Column="1" DataContext="{Binding CurrentBalance}">
@@ -304,8 +307,14 @@
                 </Style>
             </TextBlock.Style>
         </TextBlock>-->
-        
-        <TreeView Name="treeView" ItemsSource="{Binding Categories}" Grid.Row="1"
+
+        <local:DialogBehavior ViewModel="{Binding ExpenseCategories.EditCategoryViewModel}"
+                              Dialog="{x:Type local:AddCategoryDialog}"/>
+
+        <local:DialogBehavior ViewModel="{Binding ExpenseCategories.AddCategoryViewModel}"
+                              Dialog="{x:Type local:AddCategoryDialog}"/>
+
+        <TreeView Name="treeView" DataContext="{Binding ExpenseCategories}" ItemsSource="{Binding Categories}" Grid.Row="1"
                   AllowDrop="True" MinWidth="200">
             <TreeView.Style>
                 <Style TargetType="TreeView" BasedOn="{StaticResource MaterialDesignTreeView}">
@@ -316,7 +325,14 @@
                 <Style TargetType="{x:Type TreeViewItem}" BasedOn="{StaticResource NoCategoryStyle}">
                     <Setter Property="FontWeight" Value="Normal" />
                     <Setter Property="IsSelected" Value="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" />
-                    <Setter Property="local:DropBehavior.PreviewDropCommand" Value="{Binding AddToCategoryCommand}"/>
+                    <Setter Property="local:DropBehavior.PreviewDropCommand" Value="{Binding AssignToTransaction}"/>
+                    <Setter Property="ContextMenu">
+                        <Setter.Value>
+                            <ContextMenu>
+                                <MenuItem Header="Edit..." Command="{Binding EditCommand}"/>
+                            </ContextMenu>
+                        </Setter.Value>
+                    </Setter>
                     <Style.Triggers>
                         <Trigger Property="local:TreeViewDropHighlighter.IsPossibleDropTarget" Value="True">
                             <Setter Property="Background" Value="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}" />
@@ -325,10 +341,10 @@
                 </Style>
             </TreeView.ItemContainerStyle>
             <i:Interaction.Behaviors>
-                <!--<local:BindableSelectedItemBehavior SelectedItem="{Binding SelectedCategory, Mode=TwoWay}"/>-->
+                <local:BindableSelectedItemBehavior SelectedItem="{Binding SelectedCategory, Mode=TwoWay}"/>
             </i:Interaction.Behaviors>
-            <TreeView.ItemTemplate>
-                <HierarchicalDataTemplate ItemsSource="{Binding SubCatgeories}" DataType="{x:Type vm:CategoryViewModel}">
+            <TreeView.ItemTemplate>                
+                <HierarchicalDataTemplate ItemsSource="{Binding SubCatgeories}" DataType="{x:Type vm:CategoryExpenseViewModel}">
                     <TextBlock Text="{Binding DisplayName}"/>
                 </HierarchicalDataTemplate>
             </TreeView.ItemTemplate>

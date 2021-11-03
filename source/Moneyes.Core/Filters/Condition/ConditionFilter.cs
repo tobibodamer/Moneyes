@@ -7,6 +7,33 @@ using System.Linq.Expressions;
 
 namespace Moneyes.Core.Filters
 {
+    public static class ConditionFilters
+    {
+        /// <summary>
+        /// Creates a condition filter instance from a selector.
+        /// </summary>
+        /// <param name="selector"></param>
+        /// <returns></returns>
+        public static IConditionFilter<T> Create<T>(string selector)
+        {
+            // Getting type of selector
+            Type selectorType = typeof(T).GetProperty(selector).PropertyType;
+
+            // Make generic condition filter type
+            Type conditionFilterType = typeof(ConditionFilter<,>).MakeGenericType(typeof(T), selectorType);
+
+            dynamic conditionFilter = Activator.CreateInstance(conditionFilterType);
+
+            if (conditionFilter != null)
+            {
+                conditionFilter.Selector = selector;
+            }
+
+            return conditionFilter as IConditionFilter<T>;
+        }
+    }
+
+
     /// <summary>
     /// Implementation of a conditional filter for objects of type <typeparamref name="T"/>,
     /// filtered by a value of type <typeparamref name="TValue"/>.
@@ -40,15 +67,23 @@ namespace Moneyes.Core.Filters
         /// <summary>
         /// The values used for the condition.
         /// </summary>
-        public List<TValue> Values { get; init; } = new List<TValue>();
-        public ConditionOperator Operator { get; init; }
+        public List<TValue> Values { get; set; } = new List<TValue>();
+        public ConditionOperator Operator { get; set; }
         public bool CaseSensitive { get; set; }
         public bool CompareAll { get; set; }
 
         #region Explicit implementations 
-        IEnumerable IConditionFilter<T>.Values => Values;
+        IEnumerable IConditionFilter<T>.Values
+        {
+            get => Values;
+            set
+            {
+                Values = new(value.Cast<TValue>());
+            }
+        }
 
         #endregion
+        
         public bool Evaluate(T input)
         {
             TValue target = _selector.Invoke(input);

@@ -21,307 +21,190 @@
         <local:EnumDescriptionConverter x:Key="EnumDescriptionConverter"/>
         <local:CompositeCollectionConverter x:Key="CompositeCollectionConverter"/>
         <local:SingleToCollectionConverter x:Key="SingleToCollectionConverter"/>
+        <local:EmptyStringNullConverter x:Key="EmptyStringNullConverter"/>
     </UserControl.Resources>
-    <Grid Width="500">
+    <Grid Width="500" Margin="10">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="0"/>
             <ColumnDefinition/>
         </Grid.ColumnDefinitions>
 
-        <StackPanel Grid.Row="0" Margin="5">
-            <Label FontSize="13" Content="Name:" VerticalAlignment="Center" Padding="4,4,4,0"/>
-            <!--<Label FontSize="10" Content="The name of this category" Foreground="DimGray" Padding="4,0"/>-->
+        <TextBox x:Name="NameField" Style="{StaticResource MaterialDesignFloatingHintTextBox}" Text="{Binding Name}" Grid.Column="1" 
+                 materialDesign:HintAssist.Hint="Name" FontSize="20" FontWeight="SemiBold"
+                 HorizontalAlignment="Left" VerticalAlignment="Top" Margin="5" Width="200"
+                 IsReadOnly="{Binding IsRealCategory, Converter={StaticResource InvertBooleanConverter}}"/>
+
+        <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="1" Margin="0,5,0,20">
+            <ComboBox Text="No category" ItemsSource="{Binding PossibleParents}" SelectedItem="{Binding Parent}" DisplayMemberPath="Name"
+                  Grid.Row="1" Grid.Column="1" Width="150" VerticalAlignment="Top" materialDesign:HintAssist.Hint="Parent category"
+                  materialDesign:HintAssist.IsFloating="True" FontSize="15" materialDesign:ComboBoxAssist.ShowSelectedItem="True"
+                  HorizontalAlignment="Left" Margin="5,5,20,5" Style="{StaticResource MaterialDesignFloatingHintComboBox}" 
+                      IsEnabled="{Binding IsRealCategory}">
+            </ComboBox>
+
+            <StackPanel Grid.Column="1" Grid.Row="3" Orientation="Horizontal" VerticalAlignment="Top" Margin="5">
+                <TextBox Text="{Binding Target, Converter={StaticResource EmptyStringNullConverter}}"
+                         Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                Grid.Column="1" Grid.Row="3" Width="80" materialDesign:TextFieldAssist.SuffixText="EUR"
+                HorizontalAlignment="Stretch" VerticalAlignment="Top" materialDesign:HintAssist.Hint="Budget" 
+                FontSize="15"/>
+            </StackPanel>
         </StackPanel>
 
+        <GroupBox Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Margin="5" Header="Filter" Style="{StaticResource MaterialDesignCardGroupBox}"
+                  Visibility="{Binding IsRealCategory, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <Grid Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2" Margin="0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="3*"/>
+                        <ColumnDefinition Width="3*"/>
+                        <ColumnDefinition Width="3*"/>
+                    </Grid.ColumnDefinitions>
+                    <ComboBox Name="TransactionTypeComboBox" Style="{StaticResource MaterialDesignFloatingHintComboBox}"
+                          SelectedItem="{Binding TransactionType}" Grid.Column="0"
+                          materialDesign:HintAssist.Hint="Transaction type" materialDesign:ComboBoxAssist.ShowSelectedItem="True"
+                          Grid.Row="0" Width="130" HorizontalAlignment="Left" Margin="10,0,0,20"/>
 
-        <TextBox x:Name="NameField" Text="{Binding Name}" Grid.Column="1" materialDesign:HintAssist.Hint="New category"
-                 HorizontalAlignment="Left" VerticalAlignment="Top" Margin="5" Cursor="IBeam" Width="200"/>
+                    <TextBox Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                          Text="{Binding MinAmount, Converter={StaticResource EmptyStringNullConverter}}" Grid.Column="1"
+                          materialDesign:HintAssist.Hint="Min amount" materialDesign:ComboBoxAssist.ShowSelectedItem="True"
+                          Grid.Row="0" Width="130" HorizontalAlignment="Left" Margin="10,0,0,20"/>
 
-        <StackPanel Grid.Row="1" Margin="5">
-            <Label FontSize="13" Content="Parent category:" VerticalAlignment="Center" Padding="4,4,4,0"/>
-            <!--<Label FontSize="10" Content="Select a parent category" Foreground="DimGray" Padding="4,0"/>-->
-        </StackPanel>
-        <ComboBox ItemsSource="{Binding PossibleParents}" SelectedItem="{Binding Parent}" DisplayMemberPath="Name"
-                  Grid.Row="1" Grid.Column="1" Width="200" VerticalAlignment="Top"
-                  HorizontalAlignment="Left" Margin="5"/>
+                    <TextBox Style="{StaticResource MaterialDesignFloatingHintTextBox}"                             
+                          Text="{Binding MaxAmount, Converter={StaticResource EmptyStringNullConverter}}" Grid.Column="2"
+                          materialDesign:HintAssist.Hint="Max amount" materialDesign:ComboBoxAssist.ShowSelectedItem="True"
+                          Grid.Row="0" Width="130" HorizontalAlignment="Left" Margin="10,0,0,20" Cursor="IBeam"/>
+                </Grid>
 
-        <StackPanel Grid.Row="3" Margin="5" >
-            <Label FontSize="13" Content="Spending budget:" VerticalAlignment="Center" Padding="4,4,4,0"/>
-            <!--<Label FontSize="10" Content="Your expense budget" Foreground="DimGray" Padding="4,0"/>-->
-        </StackPanel>
-        <StackPanel Grid.Column="1" Grid.Row="3"  Orientation="Horizontal" VerticalAlignment="Top" Margin="5">
-            <TextBox Text="{Binding Target}"
-                Grid.Column="1" Grid.Row="3" materialDesign:HintAssist.Hint="550" Width="50"
-                HorizontalAlignment="Stretch" VerticalAlignment="Top" Cursor="IBeam"/>
-            <TextBlock Text="EUR" VerticalAlignment="Center"/>
-        </StackPanel>
+                <TreeView Grid.Row="4" ItemsSource="{Binding Filter, Converter={StaticResource SingleToCollectionConverter}}" Grid.Column="0"
+                      materialDesign:RippleAssist.IsDisabled="True" HorizontalAlignment="Stretch" ScrollViewer.HorizontalScrollBarVisibility="Hidden"
+                      BorderBrush="#ddd" BorderThickness="0">
+                    <TreeView.Resources>
+                        <Style TargetType="ComboBox" BasedOn="{StaticResource MaterialDesignComboBox}">
+                            <Setter Property="Padding" Value="5"/>
+                            <Style.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Background" Value="AliceBlue"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                        <Style TargetType="Button" x:Key="AddButtonStyle" BasedOn="{StaticResource MaterialDesignAddItemCommandButtonStyle}">
+                            <Setter Property="Width" Value="25"/>
+                            <Setter Property="Height" Value="25"/>
+                            <Setter Property="Padding" Value="0"/>
+                            <Setter Property="VerticalContentAlignment" Value="Center"/>
+                        </Style>
+                        <Style TargetType="Button" x:Key="RemoveButtonStyle" BasedOn="{StaticResource MaterialDesignCloseItemCommandButtonStyle}">
+                            <Setter Property="Width" Value="25"/>
+                            <Setter Property="Height" Value="25"/>
+                            <Setter Property="Padding" Value="0"/>
+                            <Setter Property="VerticalContentAlignment" Value="Center"/>
+                        </Style>
+                        <DataTemplate DataType="{x:Type vm:ConditionFilterViewModel}">
+                            <Border BorderBrush="Gray" BorderThickness="0" CornerRadius="3" Padding="0">
+                                <Grid Margin="5" HorizontalAlignment="Stretch">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="4*" SharedSizeGroup="A"/>
+                                        <ColumnDefinition Width="4*" SharedSizeGroup="B"/>
+                                        <ColumnDefinition Width="5*" SharedSizeGroup="C"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
 
-        <StackPanel Grid.Row="4" Margin="5" Height="25">
-            <Label FontSize="13" Content="Transaction Filter:" VerticalAlignment="Center" Padding="4,4,4,0"/>
-            <!--<Label FontSize="10" Content="Sort transactions" Foreground="DimGray" Padding="4,0"/>-->
-        </StackPanel>
-
-        <!--<StackPanel Grid.Row="4" Grid.Column="1" Margin="5" Orientation="Horizontal" DataContext="{Binding Filter}">
-            <RadioButton Content="No Filter" VerticalAlignment="Center" Margin="0,0,10,0" GroupName="FilterOperator"
-                         IsChecked="{Binding HasFilter, Converter={StaticResource InvertBooleanConverter}}"/>
-            <RadioButton Content="Match any below" VerticalAlignment="Center" Margin="0,0,10,0" GroupName="FilterOperator"
-                         IsChecked="{Binding LogicalOperator, Converter={StaticResource EnumBoolConverter}, 
-                                    ConverterParameter={x:Static filters:LogicalOperator.Or}}"/>
-            <RadioButton Content="Match all below" VerticalAlignment="Center" Margin="0,0,10,0" GroupName="FilterOperator"
-                         IsChecked="{Binding LogicalOperator, Converter={StaticResource EnumBoolConverter}, 
-                                    ConverterParameter={x:Static filters:LogicalOperator.And}}"/>
-        </StackPanel>-->
-
-        <Grid Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2" Margin="5">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-            </Grid.RowDefinitions>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-
-            <!--<TextBlock Text="Transaction type:" VerticalAlignment="Center" Margin="5" FontSize="13"/>
-            <ComboBox Grid.Column="1" Width="100" HorizontalAlignment="Left">
-                Both,
-                Expense,
-                Income               
-            </ComboBox>-->
-
-            <TreeView Grid.Row="4" ItemsSource="{Binding Filter, Converter={StaticResource SingleToCollectionConverter}}" Grid.Column="0"
-                      materialDesign:RippleAssist.IsDisabled="True" HorizontalAlignment="Stretch" ScrollViewer.HorizontalScrollBarVisibility="Hidden">
-                <TreeView.Resources>
-                    <Style TargetType="Expander" BasedOn="{StaticResource MaterialDesignExpander}"/>
-                    <Style TargetType="ComboBox" BasedOn="{StaticResource MaterialDesignComboBox}">
-                        <Setter Property="Padding" Value="5"/>
-                        <Style.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="AliceBlue"/>
-                            </Trigger>
-                        </Style.Triggers>
-                    </Style>
-                    <Style TargetType="Button" x:Key="AddButtonStyle" BasedOn="{StaticResource MaterialDesignAddItemCommandButtonStyle}">
-                        <Setter Property="Width" Value="25"/>
-                        <Setter Property="Height" Value="25"/>
-                        <Setter Property="Padding" Value="0"/>
-                        <Setter Property="VerticalContentAlignment" Value="Center"/>
-                    </Style>
-                    <Style TargetType="Button" x:Key="RemoveButtonStyle" BasedOn="{StaticResource MaterialDesignCloseItemCommandButtonStyle}">
-                        <Setter Property="Width" Value="25"/>
-                        <Setter Property="Height" Value="25"/>
-                        <Setter Property="Padding" Value="0"/>
-                        <Setter Property="VerticalContentAlignment" Value="Center"/>
-                    </Style>
-                    <DataTemplate DataType="{x:Type vm:ConditionFilterViewModel}">
-                        <Border BorderBrush="Gray" BorderThickness="0" CornerRadius="3" Padding="0">
-                            <Grid Margin="5" HorizontalAlignment="Stretch">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="4*" SharedSizeGroup="A"/>
-                                    <ColumnDefinition Width="4*" SharedSizeGroup="B"/>
-                                    <ColumnDefinition Width="5*" SharedSizeGroup="C"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-
-                                <ComboBox Grid.Column="0"
+                                    <ComboBox Grid.Column="0"
                                 ItemsSource="{Binding FilterProperties}" 
                                 SelectedValue="{Binding Property, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                 VerticalContentAlignment="Center"
                                 Margin="0,0,15,0"/>
 
-                                <ComboBox Grid.Column="1"
+                                    <ComboBox Grid.Column="1"
                                 ItemsSource="{Binding Operators}"
                                 SelectedValue="{Binding Operator, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                 VerticalContentAlignment="Center"                                          
                                 Margin="0,0,15,0"/>
 
-                                <TextBox Height="24" VerticalContentAlignment="Center" Grid.Column="2"
+                                    <TextBox Height="24" VerticalContentAlignment="Center" Grid.Column="2"
                                      Style="{StaticResource MaterialDesignTextBox}"
                                      Text="{Binding Content, Converter={StaticResource CollectionStringConverter}}"
                                      Margin="0,0,15,0"/>
 
-                                <StackPanel Grid.Column="3" Orientation="Horizontal">
-                                    <Button Command="{Binding AddCommand}" Style="{StaticResource AddButtonStyle}" Content="+"/>
-                                    <Button Command="{Binding DeleteCommand}" Style="{StaticResource RemoveButtonStyle}" Content="-"/>
-                                </StackPanel>
-                            </Grid>
-                        </Border>
-                    </DataTemplate>
-                    <HierarchicalDataTemplate DataType="{x:Type vm:FilterViewModel}">
-                        <HierarchicalDataTemplate.ItemsSource>
-                            <MultiBinding Converter="{StaticResource CompositeCollectionConverter}">
-                                <Binding Path="Conditions"/>
-                                <Binding Path="ChildFilters"/>
-                            </MultiBinding>
-                        </HierarchicalDataTemplate.ItemsSource>
-                        <Border BorderBrush="Gray" BorderThickness="0" CornerRadius="3" Padding="5">
-                            <StackPanel Orientation="Horizontal">
-                                <RadioButton Content="Match any below" VerticalAlignment="Center" Margin="0,0,10,0"
+                                    <StackPanel Grid.Column="3" Orientation="Horizontal">
+                                        <Button Command="{Binding AddCommand}" Style="{StaticResource AddButtonStyle}" Content="+"/>
+                                        <Button Command="{Binding DeleteCommand}" Style="{StaticResource RemoveButtonStyle}" Content="-"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                        <HierarchicalDataTemplate DataType="{x:Type vm:FilterViewModel}">
+                            <HierarchicalDataTemplate.ItemsSource>
+                                <MultiBinding Converter="{StaticResource CompositeCollectionConverter}">
+                                    <Binding Path="Conditions"/>
+                                    <Binding Path="ChildFilters"/>
+                                </MultiBinding>
+                            </HierarchicalDataTemplate.ItemsSource>
+                            <Border BorderBrush="Gray" BorderThickness="0" CornerRadius="3" Padding="5">
+                                <Grid>
+                                    <StackPanel Orientation="Horizontal">
+                                        <RadioButton Content="Match any below" VerticalAlignment="Center" Margin="0,0,10,0"
                          IsChecked="{Binding LogicalOperator, Converter={StaticResource EnumBoolConverter}, 
                                     ConverterParameter={x:Static filters:LogicalOperator.Or}, UpdateSourceTrigger=PropertyChanged}"/>
-                                <RadioButton Content="Match all below" VerticalAlignment="Center" Margin="0,0,10,0"
+                                        <RadioButton Content="Match all below" VerticalAlignment="Center" Margin="0,0,10,0"
                          IsChecked="{Binding LogicalOperator, Converter={StaticResource EnumBoolConverter}, 
                                     ConverterParameter={x:Static filters:LogicalOperator.And}, UpdateSourceTrigger=PropertyChanged}"/>
 
-                                <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
-                                    <Button Command="{Binding AddCommand}" Style="{StaticResource AddButtonStyle}" Content="+"/>
-                                    <Button Command="{Binding DeleteCommand}" Style="{StaticResource RemoveButtonStyle}" Content="-"/>
-                                </StackPanel>
-                            </StackPanel>
-                        </Border>
-                    </HierarchicalDataTemplate>
-                </TreeView.Resources>
-                <TreeView.ItemContainerStyle>
-                    <Style TargetType="TreeViewItem" BasedOn="{StaticResource MaterialDesignTreeViewItem}">
-                        <Setter Property="Focusable" Value="False" />
-                        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                        <Setter Property="Padding" Value="1"/>
-                        <Setter Property="IsExpanded" Value="True" />                        
-                        <Setter Property="Width" Value="{Binding Width, 
+                                    </StackPanel>
+
+                                    <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
+                                        <Button Command="{Binding AddCommand}" Style="{StaticResource AddButtonStyle}" Content="+"/>
+                                        <Button Command="{Binding DeleteCommand}" Style="{StaticResource RemoveButtonStyle}" Content="-"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                        </HierarchicalDataTemplate>
+                    </TreeView.Resources>
+                    <TreeView.ItemContainerStyle>
+                        <Style TargetType="TreeViewItem" BasedOn="{StaticResource MaterialDesignTreeViewItem}">
+                            <Setter Property="Focusable" Value="False" />
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                            <Setter Property="Padding" Value="1"/>
+                            <Setter Property="IsExpanded" Value="True" />
+                            <Setter Property="Width" Value="{Binding Width, 
                             RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type TreeView}}}" />
-                        <Style.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="white"/>
-                            </Trigger>
-                            <Trigger Property="IsMouseOver" Value="False">
-                                <Setter Property="Background" Value="white"/>
-                            </Trigger>
-                            <Trigger Property="IsMouseCaptured" Value="True">
-                                <Setter Property="Background" Value="white"/>
-                            </Trigger>
-                            <Trigger Property="IsSelected" Value="True">
-                                <Setter Property="Background" Value="white"/>
-                            </Trigger>
-                            <Trigger Property="IsSelected" Value="False">
-                                <Setter Property="Background" Value="white"/>
-                            </Trigger>
-                        </Style.Triggers>
-                    </Style>
-                </TreeView.ItemContainerStyle>
-            </TreeView>
-
-            <!--<TreeView Grid.Row="4" ItemsSource="{Binding Filter}" Grid.Column="0" BorderBrush="black" BorderThickness="1">
-                <TreeView.Resources>
-
-                </TreeView.Resources>
-                <TreeView.ItemContainerStyle>
-                    <Style TargetType="TreeViewItem">
-                        <Setter Property="Focusable" Value="False" />
-                        <Setter Property="VerticalContentAlignment" Value="Top"/>
-                    </Style>
-                </TreeView.ItemContainerStyle>
-                <TreeView.ItemTemplate>
-                    <HierarchicalDataTemplate DataType="{x:Type vm:FilterViewModel}" ItemsSource="{Binding ChildFilters}">
-                        <StackPanel Orientation="Vertical">
-                            <TextBlock Text="{Binding LogicalOperator}" Margin="0,10"/>
-                            <DataGrid ItemsSource="{Binding Filters}" AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False"
-                                      CanUserSortColumns="False" CanUserResizeRows="False" HeadersVisibility="None">
-                                <DataGrid.Columns>
-                                    <DataGridTemplateColumn>
-                                        <DataGridTemplateColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <ComboBox
-                                                    ItemsSource="{Binding FilterProperties}" 
-                                                    SelectedValue="{Binding Property, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                    Style="{StaticResource MaterialDesignDataGridComboBox}"
-                                                    VerticalContentAlignment="Center"/>
-                                            </DataTemplate>
-                                        </DataGridTemplateColumn.CellTemplate>
-                                    </DataGridTemplateColumn>
-                                    <DataGridTemplateColumn>
-                                        <DataGridTemplateColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <ComboBox ItemsSource="{Binding Operators}"
-                                                        SelectedValue="{Binding Operator, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                        Style="{StaticResource MaterialDesignDataGridComboBox}"
-                                                        VerticalContentAlignment="Center"/>
-                                            </DataTemplate>
-                                        </DataGridTemplateColumn.CellTemplate>
-                                    </DataGridTemplateColumn>
-                                    <DataGridTemplateColumn Header="Content" Width="180">
-                                        <DataGridTemplateColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <TextBox Height="24" VerticalContentAlignment="Center" Style="{StaticResource MaterialDesignComboBoxEditableTextBox}"
-                                                      Text="{Binding Content, Converter={StaticResource CollectionStringConverter}}" >
-                                                </TextBox>
-                                            </DataTemplate>
-                                        </DataGridTemplateColumn.CellTemplate>
-                                    </DataGridTemplateColumn>
-                                </DataGrid.Columns>
-                                -->
-            <!--<DataGrid.ItemTemplate>
-                                    <DataTemplate>
-                                        <StackPanel Orientation="Horizontal">
-                                            <ComboBox ItemsSource="{Binding Source={StaticResource Properties}}" 
-                                                      SelectedItem="{Binding Property}" 
-                                                      Style="{StaticResource MaterialDesignDataGridComboBox}"
-                                                      Margin="0,0,10,0"/>
-                                            <ComboBox ItemsSource="{Binding Source={StaticResource Operators}}"
-                                                      SelectedItem="{Binding Operator}" 
-                                                      Style="{StaticResource MaterialDesignDataGridComboBox}"/>
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </DataGrid.ItemTemplate>-->
-            <!--
-                            </DataGrid>
-                        </StackPanel>
-                    </HierarchicalDataTemplate>
-                </TreeView.ItemTemplate>
-            </TreeView>-->
-
-            <!--<DataGrid Grid.Row="4" ItemsSource="{Binding Filters}" Grid.Column="0" AutoGenerateColumns="False" HeadersVisibility="None"
-                      Grid.ColumnSpan="2" IsReadOnly="False" CanUserAddRows="False" CanUserDeleteRows="False" x:Name="asd">
-                <DataGrid.Resources>
-                    <CollectionViewSource x:Key="Properties" Source="{Binding FilterProperties}"/>
-                    <CollectionViewSource x:Key="Operators" Source="{Binding Operators}"/>
-                </DataGrid.Resources>
-                <DataGrid.CellStyle>
-                    <Style TargetType="DataGridCell" BasedOn="{StaticResource MaterialDesignDataGridCell}">
-                        <Setter Property="VerticalAlignment" Value="Center"/>
-                        <Setter Property="VerticalContentAlignment" Value="Center"/>
-                        <Setter Property="Padding" Value="10,7"/>
-                    </Style>
-                </DataGrid.CellStyle>
-                <DataGrid.Columns>
-                    <materialDesign:DataGridComboBoxColumn 
-                        Header="Property" SelectedItemBinding="{Binding Property, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                        ItemsSource="{Binding Source={StaticResource Properties}}" Width="120"/>
-
-                    <materialDesign:DataGridComboBoxColumn 
-                        Header="Operator" SelectedItemBinding="{Binding Operator, UpdateSourceTrigger=PropertyChanged}"
-                        ItemsSource="{Binding Source={StaticResource Operators}}" Width="120"/>
-
-
-
-                    <DataGridTemplateColumn Header="Content" Width="180">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate>
-
-                                <controls:EditTextBox Height="24" VerticalContentAlignment="Center"
-                                                      Text="{Binding Content, Converter={StaticResource CollectionStringConverter}}" >
-
-                                </controls:EditTextBox>
-
-                                -->
-            <!--<controls:EditTextBox Background="{DynamicResource MaterialDesignPaper}" 
-                                                      Margin="0" Text="{Binding Content}"/>-->
-            <!--
-
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                    </DataGridTemplateColumn>
-                </DataGrid.Columns>
-            </DataGrid>-->
-        </Grid>
+                            <Style.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Background" Value="white"/>
+                                </Trigger>
+                                <Trigger Property="IsMouseOver" Value="False">
+                                    <Setter Property="Background" Value="white"/>
+                                </Trigger>
+                                <Trigger Property="IsMouseCaptured" Value="True">
+                                    <Setter Property="Background" Value="white"/>
+                                </Trigger>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter Property="Background" Value="white"/>
+                                </Trigger>
+                                <Trigger Property="IsSelected" Value="False">
+                                    <Setter Property="Background" Value="white"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TreeView.ItemContainerStyle>
+                </TreeView>
+            </Grid>
+        </GroupBox>
     </Grid>
 </UserControl>

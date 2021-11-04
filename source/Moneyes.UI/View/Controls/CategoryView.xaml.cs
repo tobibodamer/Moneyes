@@ -23,6 +23,8 @@ namespace Moneyes.UI.View
         public CategoryView()
         {
             InitializeComponent();
+
+            TransactionTypeComboBox.ItemsSource = Enum.GetValues<Moneyes.Core.TransactionType>();
         }
     }
 }

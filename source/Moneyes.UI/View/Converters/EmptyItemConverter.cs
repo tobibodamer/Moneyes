@@ -10,23 +10,12 @@ namespace Moneyes.UI.View
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            var res = new CompositeCollection();
-
-            if (value is IEnumerable && value != null)
-
-                res.Add(new CollectionContainer()
-                {
-                    Collection = value as IEnumerable
-                });
-
-            res.Add(new ComboBoxItem() { Content = parameter });
-
-            return res;
+            return value ?? parameter;
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            throw new NotImplementedException();
+            return value.Equals(parameter) ? null : value;
         }
     }
 }

@@ -9,7 +9,8 @@ using System.Text;
 using System.Windows.Input;
 
 namespace Moneyes.UI.ViewModels
-{    internal class EditCategoryViewModel : CategoryViewModel
+{
+    internal class EditCategoryViewModel : CategoryViewModel
     {
 
         private List<Category> _possibleParents;
@@ -121,7 +122,7 @@ namespace Moneyes.UI.ViewModels
             }
         }
 
-        public decimal? _minAmount;
+        private decimal? _minAmount;
         public decimal? MinAmount
         {
             get => _minAmount;
@@ -132,7 +133,7 @@ namespace Moneyes.UI.ViewModels
             }
         }
 
-        public decimal? _maxAmount;
+        private decimal? _maxAmount;
         public decimal? MaxAmount
         {
             get => _maxAmount;

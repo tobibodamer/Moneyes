@@ -1,6 +1,7 @@
 ﻿using Moneyes.Core;
 using Moneyes.LiveData;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Moneyes.UI.ViewModels
@@ -45,14 +46,18 @@ namespace Moneyes.UI.ViewModels
 
         private EditCategoryViewModel CreateEditCategoryViewModel(Category category, bool isCreated)
         {
-            var possibleParents = _categoryService.GetCategories(CategoryFlags.Real).GetOrNull()
-                .Where(c => c.Id != category.Id);
+            List<Category> possibleParents = _categoryService.GetCategories(CategoryFlags.Real).GetOrNull()
+                .Where(c => c.Id != category.Id).ToList();
+
+            // Add no category to select no category
+            //possibleParents.Insert(0, Category.NoCategory);
 
             var editCategoryViewModel = new EditCategoryViewModel()
             {
                 Category = category,
                 IsCreated = isCreated,
-                PossibleParents = possibleParents
+                PossibleParents = possibleParents,
+                AssignTransactions = !isCreated
             };
 
             editCategoryViewModel.ApplyCommand = new AsyncCommand(async ct =>
@@ -62,14 +67,17 @@ namespace Moneyes.UI.ViewModels
                     return;
                 }
 
-                if (!_categoryService.UpdateCategory(editCategoryViewModel.Category))
+                Category category = editCategoryViewModel.Category;
+
+                if (!_categoryService.UpdateCategory(category))
                 {
                     return;
                 }
-
+                
                 if (editCategoryViewModel.AssignTransactions)
                 {
                     // Call method to assign transactions
+                    _categoryService.AssignCategory(category);
                 }
             });
 

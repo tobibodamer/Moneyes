@@ -22,6 +22,7 @@
         <local:CompositeCollectionConverter x:Key="CompositeCollectionConverter"/>
         <local:SingleToCollectionConverter x:Key="SingleToCollectionConverter"/>
         <local:EmptyStringNullConverter x:Key="EmptyStringNullConverter"/>
+        <local:EmptyItemConverter x:Key="EmptyItemConverter"/>
     </UserControl.Resources>
     <Grid Width="500" Margin="10">
         <Grid.RowDefinitions>
@@ -37,14 +38,37 @@
         <TextBox x:Name="NameField" Style="{StaticResource MaterialDesignFloatingHintTextBox}" Text="{Binding Name}" Grid.Column="1" 
                  materialDesign:HintAssist.Hint="Name" FontSize="20" FontWeight="SemiBold"
                  HorizontalAlignment="Left" VerticalAlignment="Top" Margin="5" Width="200"
-                 IsReadOnly="{Binding IsRealCategory, Converter={StaticResource InvertBooleanConverter}}"/>
+                 IsReadOnly="{Binding IsRealCategory, Converter={StaticResource InvertBooleanConverter}}" Cursor="IBeam"/>
 
         <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="1" Margin="0,5,0,20">
-            <ComboBox Text="No category" ItemsSource="{Binding PossibleParents}" SelectedItem="{Binding Parent}" DisplayMemberPath="Name"
+            <StackPanel.Resources>
+                <ComboBoxItem x:Key="NullItem" IsEnabled="True" Foreground="{StaticResource PrimaryHueMidBrush}">
+                    &lt;No category&gt;
+                </ComboBoxItem>
+                <CompositeCollection x:Key="ParentsCollection">
+                    <StaticResource ResourceKey="NullItem"/>
+                    <CollectionContainer Collection="{Binding DataContext.PossibleParents, 
+                            Source={x:Reference ParentComboBox}}"/>
+                </CompositeCollection>
+            </StackPanel.Resources>
+            <ComboBox Name="ParentComboBox" Text="No category" ItemsSource="{DynamicResource ParentsCollection}" 
+                      SelectedItem="{Binding Parent, Converter={StaticResource EmptyItemConverter}, ConverterParameter={StaticResource NullItem}}"
+                      DisplayMemberPath="Name"
                   Grid.Row="1" Grid.Column="1" Width="150" VerticalAlignment="Top" materialDesign:HintAssist.Hint="Parent category"
                   materialDesign:HintAssist.IsFloating="True" FontSize="15" materialDesign:ComboBoxAssist.ShowSelectedItem="True"
-                  HorizontalAlignment="Left" Margin="5,5,20,5" Style="{StaticResource MaterialDesignFloatingHintComboBox}" 
+                  HorizontalAlignment="Left" Margin="5,5,20,5" Style="{StaticResource MaterialDesignFloatingHintComboBox}"
                       IsEnabled="{Binding IsRealCategory}">
+                <ComboBox.Resources>
+                </ComboBox.Resources>
+                <!--<ComboBox.Style>
+                    <Style TargetType="ComboBox" BasedOn="{StaticResource MaterialDesignFloatingHintComboBox}">
+                        <Style.Triggers>
+                            <Trigger Property="SelectedItem" Value="{StaticResource NullItem}">
+                                <Setter Property="SelectedValue" Value="{x:Null}"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </ComboBox.Style>-->
             </ComboBox>
 
             <StackPanel Grid.Column="1" Grid.Row="3" Orientation="Horizontal" VerticalAlignment="Top" Margin="5">
@@ -161,8 +185,11 @@
                                     <StackPanel Orientation="Horizontal">
                                         <RadioButton Content="Match any below" VerticalAlignment="Center" Margin="0,0,10,0"
                          IsChecked="{Binding LogicalOperator, Converter={StaticResource EnumBoolConverter}, 
-                                    ConverterParameter={x:Static filters:LogicalOperator.Or}, UpdateSourceTrigger=PropertyChanged}"/>
+                                    ConverterParameter={x:Static filters:LogicalOperator.Or}, UpdateSourceTrigger=PropertyChanged}"
+                                                     Style="{StaticResource MaterialDesignToolRadioButton}"/>
+                                        
                                         <RadioButton Content="Match all below" VerticalAlignment="Center" Margin="0,0,10,0"
+                                                     Style="{StaticResource MaterialDesignToolRadioButton}"
                          IsChecked="{Binding LogicalOperator, Converter={StaticResource EnumBoolConverter}, 
                                     ConverterParameter={x:Static filters:LogicalOperator.And}, UpdateSourceTrigger=PropertyChanged}"/>
 

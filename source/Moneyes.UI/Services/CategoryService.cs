@@ -77,7 +77,7 @@ namespace Moneyes.UI
             // Get old transaction
             Transaction oldTransaction = null;
 
-            if (assignMethod is not AssignMethod.Simple)
+            if (assignMethod is not AssignMethod.Simple or AssignMethod.Reset)
             {
                 oldTransaction = _transactionRepo.FindById(transaction.UID);
             }
@@ -87,6 +87,11 @@ namespace Moneyes.UI
             List<Category> categories = GetCategories(CategoryFlags.Real).Data
                 .OrderBy(c => c.IsExlusive)
                 .ToList();
+
+            if (assignMethod is AssignMethod.Reset)
+            {
+                transaction.Categories.Clear();
+            }
 
             if (assignMethod is not AssignMethod.Simple && oldTransaction != null)
             {
@@ -134,7 +139,7 @@ namespace Moneyes.UI
             // Get old transactions
             Dictionary<string, Transaction> oldTransactions = null;
 
-            if (assignMethod is not AssignMethod.Simple)
+            if (assignMethod is not AssignMethod.Simple or AssignMethod.Reset)
             {
                 oldTransactions = _transactionRepo.All()
                     .ToDictionary(t => t.UID, t => t);
@@ -148,7 +153,12 @@ namespace Moneyes.UI
 
             foreach (Transaction transaction in transactions)
             {
-                if (assignMethod is not AssignMethod.Simple &&
+                if (assignMethod is AssignMethod.Reset)
+                {
+                    transaction.Categories.Clear();
+                }
+
+                if (assignMethod is not AssignMethod.Simple or AssignMethod.Reset &&
                     oldTransactions.TryGetValue(transaction.UID, out Transaction oldTransaction))
                 {
                     // Transaction already imported -> keep old categories
@@ -188,6 +198,31 @@ namespace Moneyes.UI
             IEnumerable<Transaction> transactions = _transactionRepo.All();
 
             AssignCategories(transactions, assignMethod, true);
+        }
+
+        public void AssignCategory(Category category)
+        {
+            // Get transactions
+            var transactions = _transactionRepo.All();
+
+            if (category.Filter == null) { return; }
+
+            foreach (Transaction transaction in transactions)
+            {
+                if (category.IsExlusive && transaction.Categories.Any())
+                {
+                    // Exclusive category and already assigned
+                    continue;
+                }
+
+                if (category.Filter != null && category.Filter.Evaluate(transaction))
+                {
+                    transaction.Categories.Add(category);
+                }
+            }
+
+            // Store
+            _transactionRepo.Set(transactions);
         }
 
         public bool AddCategory(Category category)

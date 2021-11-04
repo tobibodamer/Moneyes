@@ -36,7 +36,8 @@ namespace Moneyes.UI.ViewModels
             get => _parent;
             set
             {
-                _parent = value;
+                _parent = (value == Category.NoCategory) ? null : value;
+
                 OnPropertyChanged();
             }
         }
@@ -45,10 +46,7 @@ namespace Moneyes.UI.ViewModels
 
         public virtual Category Category
         {
-            get
-            {
-                return _category;
-            }
+            get => _category;
             set
             {
                 _category = value;
@@ -67,8 +65,8 @@ namespace Moneyes.UI.ViewModels
         public ICommand DeleteCommand { get; set; }
         public bool IsNoCategory => _category == Category.NoCategory;
 
-        public bool IsRealCategory => _category != Category.NoCategory
-            && Category != Category.AllCategory;
+        public bool IsRealCategory => !_category.Equals(Category.NoCategory)
+            && !_category.Equals(Category.AllCategory);
 
         public CategoryViewModel()
         {

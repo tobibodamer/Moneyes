@@ -15,6 +15,11 @@ namespace Moneyes.UI
 
         void ReassignCategories(AssignMethod assignMethod = AssignMethod.Simple);
 
+        /// <summary>
+        /// Assigns a given category to all transactions matching, and updates the database.
+        /// </summary>
+        /// <param name="category"></param>
+        void AssignCategory(Category category);
         Result<Category> GetCategoryByName(string name);
 
         Result<IEnumerable<Category>> GetCategories(

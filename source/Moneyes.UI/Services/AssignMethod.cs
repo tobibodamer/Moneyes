@@ -6,7 +6,7 @@
     public enum AssignMethod
     {
         /// <summary>
-        /// Assigns only all matching categories, don't care existing transactions.
+        /// Assigns only all matching categories, don't care about existing transactions.
         /// </summary>
         Simple,
         /// <summary>
@@ -16,6 +16,10 @@
         /// <summary>
         /// Assign categories to new transactions only.
         /// </summary>
-        KeepPrevious
+        KeepPrevious,
+        /// <summary>
+        /// Resets and reassigns all categories.
+        /// </summary>
+        Reset
     }
 }

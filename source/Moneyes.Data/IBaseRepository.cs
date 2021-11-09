@@ -1,15 +1,19 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace Moneyes.Data
 {
     public interface IBaseRepository<T>
     {
-        T Create(T data);
-        IEnumerable<T> All();
-        T FindById(int id);
-        T FindById(string id);
+        T Create(T entity);
+        IEnumerable<T> GetAll();
+        T FindById(object id);
         bool Set(T entity);
-        void Set(IEnumerable<T> entities);
-        bool Delete(int id);
+        int Set(IEnumerable<T> entities);
+        bool Delete(object id);
+
+        event Action<T> EntityAdded;
+        event Action<T> EntityUpdated;
+        event Action<T> EntityDeleted;
     }
 }

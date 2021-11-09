@@ -57,13 +57,7 @@ namespace Moneyes.UI.ViewModels
 
             LoadedCommand = new AsyncCommand(async ct =>
             {
-                if (!bankingService.HasBankingDetails)
-                {
-                    // No bank connection configured -> show message?
-                    return;
-                }
-
-                Accounts = new(_bankingService.GetAccounts());
+                
             });
 
             ImportAccountsCommand = new AsyncCommand(async ct =>
@@ -97,6 +91,17 @@ namespace Moneyes.UI.ViewModels
             },
             () => _bankingService.HasBankingDetails,
             errorHandler: (ex) => _statusMessageService.ShowMessage("Error while importing accounts"));
+        }
+
+        public void OnSelect()
+        {
+            if (!_bankingService.HasBankingDetails)
+            {
+                // No bank connection configured -> show message?
+                return;
+            }
+
+            Accounts = new(_bankingService.GetAccounts());
         }
     }
 }

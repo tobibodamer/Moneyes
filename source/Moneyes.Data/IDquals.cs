@@ -8,7 +8,7 @@ namespace Moneyes.Data
 {
     public static class IDSelectors
     {
-        private static readonly Dictionary<Type, Func<object, object>> _selectors;
+        private static readonly Dictionary<Type, Func<object, object>> _selectors = new();
 
         public static void Register<T>(Func<T, object> selector)
         {
@@ -23,6 +23,7 @@ namespace Moneyes.Data
             if (_selectors.ContainsKey(type))
             {
                 _selectors[type] = weakTypeSelector;
+                return;
             }
 
             _selectors.Add(type, weakTypeSelector);
@@ -39,7 +40,8 @@ namespace Moneyes.Data
 
             if (!_selectors.ContainsKey(type))
             {
-                throw new KeyNotFoundException("Selector not registered.");
+                //throw new KeyNotFoundException("Selector not registered.");
+                return null;
             }
 
             return _selectors[type](instance);

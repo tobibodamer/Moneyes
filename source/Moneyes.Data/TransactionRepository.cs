@@ -6,7 +6,7 @@ using Moneyes.Core.Filters;
 
 namespace Moneyes.Data
 {
-    public class TransactionRepository : BaseRepository<Transaction>
+    public class TransactionRepository : CachedRepository<Transaction>
     {
         public TransactionRepository(ILiteDatabase db) : base(db)
         {
@@ -22,30 +22,43 @@ namespace Moneyes.Data
 
             if (category == Category.NoCategory)
             {
-                return Collection.Query()
+                //return Collection.Query()
+                //    .Where(t => t.Categories == null || t.Categories.Count == 0)
+                //    .OrderByDescending(t => t.BookingDate)
+                //    .ToEnumerable();
+
+                return base.GetAll()
                     .Where(t => t.Categories == null || t.Categories.Count == 0)
-                    .OrderByDescending(t => t.BookingDate)
-                    .ToEnumerable();
+                    .OrderByDescending(t => t.BookingDate);
             }
 
-            return Collection.Query()
+            //return Collection.Query()
+            //    .Where(t => t.Categories != null && t.Categories.Count > 0)
+            //    .OrderByDescending(t => t.BookingDate)
+            //    .ToEnumerable()
+            //    .Where(t => t.Categories.Any(c => c.Id == category.Id));
+
+            return base.GetAll()
                 .Where(t => t.Categories != null && t.Categories.Count > 0)
                 .OrderByDescending(t => t.BookingDate)
-                .ToEnumerable()
                 .Where(t => t.Categories.Any(c => c.Id == category.Id));
         }
 
         private IEnumerable<Transaction> GetByTransactionType(TransactionType transactionType)
         {
-            return Collection.Find(t => t.Type == transactionType);
+            //return Collection.Find(t => t.Type == transactionType);
+            return Cache.Values.Where(t => t.Type == transactionType);
         }
 
 
         public IEnumerable<Transaction> AllOrderedByDate()
         {
-            return Collection.Query()
-                .OrderByDescending(t => t.BookingDate)
-                .ToEnumerable();
+            //return Collection.Query()
+            //    .OrderByDescending(t => t.BookingDate)
+            //    .ToEnumerable();
+
+            return GetAll()
+                .OrderByDescending(t => t.BookingDate);
         }
         public IEnumerable<Transaction> All(TransactionFilter filter)
         {
@@ -85,10 +98,17 @@ namespace Moneyes.Data
 
             // Sort into category
 
-            return Collection.Query()
+            //return Collection.Query()
+            //    .Where(t => t.Categories != null && t.Categories.Count > 0)
+            //    .OrderByDescending(t => t.BookingDate)
+            //    .ToEnumerable()
+            //    .Where(t => t.Categories.Any(category =>
+            //        notNullCategories.Any(c => c.Id == category.Id)) ||
+            //        hasNoCategory);
+
+            return GetAll()
                 .Where(t => t.Categories != null && t.Categories.Count > 0)
                 .OrderByDescending(t => t.BookingDate)
-                .ToEnumerable()
                 .Where(t => t.Categories.Any(category =>
                     notNullCategories.Any(c => c.Id == category.Id)) ||
                     hasNoCategory);
@@ -106,21 +126,6 @@ namespace Moneyes.Data
 
             // Apply filter
             return transactions.Where(t => filter.Evaluate(t));
-        }
-
-        public int InsertAll(IEnumerable<Transaction> transactions)
-        {
-            int counter = 0;
-
-            foreach (var t in transactions)
-            {
-                if (Collection.FindById(t.UID) != null) { continue; }
-
-                Collection.Insert(t);
-                counter++;
-            }
-
-            return counter;
         }
     }
 }

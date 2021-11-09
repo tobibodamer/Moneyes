@@ -1,6 +1,7 @@
 ﻿using Moneyes.Core;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Windows.Input;
 
 namespace Moneyes.UI.ViewModels
@@ -29,7 +30,7 @@ namespace Moneyes.UI.ViewModels
             }
         }
 
-        public List<CategoryExpenseViewModel> SubCatgeories { get; set; } = new();
+        public ObservableCollection<CategoryExpenseViewModel> SubCatgeories { get; set; } = new();
 
         public ICommand AssignToTransaction { get; set; }
 

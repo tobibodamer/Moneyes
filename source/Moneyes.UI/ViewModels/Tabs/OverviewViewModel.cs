@@ -1,4 +1,6 @@
 ﻿using Moneyes.Core;
+using Moneyes.Core.Filters;
+using Moneyes.Data;
 using Moneyes.LiveData;
 using System;
 using System.Collections.Generic;
@@ -14,7 +16,7 @@ namespace Moneyes.UI.ViewModels
     {
         private LiveDataService _liveDataService;
         private IExpenseIncomeService _expenseIncomeService;
-        private readonly ITransactionService _transactionService;
+        private readonly TransactionRepository _transactionRepository;
         private readonly IBankingService _bankingService;
 
         private ObservableCollection<CategoryExpenseViewModel> _categories = new();
@@ -51,42 +53,81 @@ namespace Moneyes.UI.ViewModels
                 OnPropertyChanged();
             }
         }
+
+        private DateTime _fromDate;
+        public DateTime FromDate
+        {
+            get => _fromDate;
+            set
+            {
+                _fromDate = value;
+                OnPropertyChanged();
+            }
+        }
+
+        private DateTime _endDate;
+        public DateTime EndDate
+        {
+            get => _endDate;
+            set
+            {
+                _endDate = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public ICommand DateChangedCommand { get; }
+
+        public ExpenseCategoriesViewModel ExpenseCategories { get; }
         public OverviewViewModel(
             LiveDataService liveDataService,
             IExpenseIncomeService expenseIncomeService,
-            ITransactionService transactionService,
-            IBankingService bankingService)
+            TransactionRepository transactionRepository,
+            IBankingService bankingService,
+            ExpenseCategoriesViewModel expenseCategoriesViewModel)
         {
             DisplayName = "Overview";
 
+            ExpenseCategories = expenseCategoriesViewModel;
             _liveDataService = liveDataService;
             _expenseIncomeService = expenseIncomeService;
-            _transactionService = transactionService;
+            _transactionRepository = transactionRepository;
             _bankingService = bankingService;
 
             LoadedCommand = new AsyncCommand(async ct =>
             {
-                if (!bankingService.HasBankingDetails)
-                {
-                    // No bank connection configured -> show message?
-                    return;
-                }
-
-                //TODO: Remove
-                UpdateCategories();
-
-                _expenseIncomeService.GetTotalExpense(_bankingService.GetAccounts().First())
-                    .OnSuccess(total => TotalExpense = total);
-
-                _expenseIncomeService.GetTotalIncome(_bankingService.GetAccounts().First())
-                    .OnSuccess(total => TotalIncome = total);
+                
             });
+
+            FromDate = new(DateTime.Now.Year, DateTime.Now.Month, 1); ;
+            EndDate = DateTime.Now;
+
+            DateChangedCommand = new AsyncCommand(async ct =>
+            {
+                UpdateCategories();
+            });
+        }
+
+        private TransactionFilter GetFilter()
+        {
+            return new TransactionFilter()
+            {
+                AccountNumber = _bankingService.GetAccounts().First().Number,
+                StartDate = FromDate,
+                EndDate = EndDate
+            };
         }
 
         private void UpdateCategories()
         {
+            _expenseIncomeService.GetTotalExpense(GetFilter())
+                    .OnSuccess(total => TotalExpense = total);
+
+            _expenseIncomeService.GetTotalIncome(GetFilter())
+                .OnSuccess(total => TotalIncome = total);
+
             // Get expenses per category
-            _expenseIncomeService.GetExpensePerCategory(_bankingService.GetAccounts().First(), true)
+            _expenseIncomeService.GetExpensePerCategory(GetFilter(), true)
                 .OnError(() => { })
                 .OnSuccess(expenses =>
                 {
@@ -96,10 +137,6 @@ namespace Moneyes.UI.ViewModels
                         .OrderBy(p => p.Category.Target == 0)
                         .ThenByDescending(p => p.Category == Category.NoCategory))
                     {
-                        //if (category.Target == 0)
-                        //{
-                        //    continue;
-                        //}
 
                         Categories.Add(
                             new CategoryExpenseViewModel(category, amt)
@@ -118,6 +155,23 @@ namespace Moneyes.UI.ViewModels
                             .SubCatgeories.Add(category);
                     }
                 });
+        }
+
+        public void OnSelect()
+        {
+            Load();
+        }
+
+        void Load()
+        {
+            if (!_bankingService.HasBankingDetails)
+            {
+                // No bank connection configured -> show message?
+                return;
+            }
+
+            //TODO: Remove
+            UpdateCategories();
         }
     }
 }

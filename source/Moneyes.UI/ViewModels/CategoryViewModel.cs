@@ -63,6 +63,8 @@ namespace Moneyes.UI.ViewModels
 
         public ICommand EditCommand { get; set; }
         public ICommand DeleteCommand { get; set; }
+
+        public ICommand ReassignCommand { get; set; }
         public bool IsNoCategory => _category == Category.NoCategory;
 
         public bool IsRealCategory => !_category.Equals(Category.NoCategory)

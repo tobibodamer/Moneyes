@@ -8,7 +8,7 @@
       xmlns:vm="clr-namespace:Moneyes.UI.ViewModels"
       xmlns:m="clr-namespace:Moneyes.Core;assembly=Moneyes.Core"
       xmlns:controls="clr-namespace:System.Windows.Controls;assembly=MultiSelectTreeView"
-      xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes" d:DataContext="{d:DesignInstance Type=vm:MainViewModel}"
+      xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes" d:DataContext="{d:DesignInstance Type=vm:TransactionsViewModel}"
              TextElement.Foreground="{DynamicResource MaterialDesignBody}"
       TextElement.FontWeight="Regular"
       TextElement.FontSize="13"
@@ -183,7 +183,7 @@
             <RowDefinition Height="85"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
-        
+
         <Grid Grid.Column="1" Grid.Row="1">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
@@ -292,7 +292,7 @@
                 <DataGridTextColumn Header="Amount" Binding="{Binding Amount}"/>
             </DataGrid.Columns>
         </DataGrid>-->
-        
+
         <!--<TextBlock Text="No categories" Foreground="Gray" VerticalAlignment="Center" HorizontalAlignment="Center"
                    Grid.Row="1">
             <TextBlock.Style>                
@@ -324,12 +324,14 @@
             <TreeView.ItemContainerStyle>
                 <Style TargetType="{x:Type TreeViewItem}" BasedOn="{StaticResource NoCategoryStyle}">
                     <Setter Property="FontWeight" Value="Normal" />
-                    <Setter Property="IsSelected" Value="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" />
+                    <!--<Setter Property="IsSelected" Value="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" />-->
+                    <Setter Property="IsExpanded" Value="True"/>
                     <Setter Property="local:DropBehavior.PreviewDropCommand" Value="{Binding AssignToTransaction}"/>
                     <Setter Property="ContextMenu">
                         <Setter.Value>
                             <ContextMenu>
                                 <MenuItem Header="Edit..." Command="{Binding EditCommand}"/>
+                                <MenuItem Header="Reevaluate" Command="{Binding ReassignCommand}"/>
                             </ContextMenu>
                         </Setter.Value>
                     </Setter>
@@ -343,7 +345,7 @@
             <i:Interaction.Behaviors>
                 <local:BindableSelectedItemBehavior SelectedItem="{Binding SelectedCategory, Mode=TwoWay}"/>
             </i:Interaction.Behaviors>
-            <TreeView.ItemTemplate>                
+            <TreeView.ItemTemplate>
                 <HierarchicalDataTemplate ItemsSource="{Binding SubCatgeories}" DataType="{x:Type vm:CategoryExpenseViewModel}">
                     <TextBlock Text="{Binding DisplayName}"/>
                 </HierarchicalDataTemplate>
@@ -378,31 +380,53 @@
         <materialDesign:ColorZone Mode="Standard" Padding="12" Grid.ColumnSpan="2" Height="60">
             <Grid>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <Button Style="{StaticResource MaterialDesignPaperButton}" Grid.Column="1" 
+                <StackPanel Orientation="Horizontal" Grid.Column="2">
+                    <DatePicker SelectedDate="{Binding FromDate}" IsTodayHighlighted="False" Grid.Column="1">
+                        <i:Interaction.Triggers>
+                            <i:EventTrigger EventName="SelectedDateChanged">
+                                <i:InvokeCommandAction Command="{Binding DateChangedCommand}"/>
+                            </i:EventTrigger>
+                        </i:Interaction.Triggers>
+                    </DatePicker>
+                    
+                    <TextBlock Text="-" Margin="10,0" VerticalAlignment="Center"/>
+                    
+                    <DatePicker SelectedDate="{Binding EndDate}" IsTodayHighlighted="True" Grid.Column="2">
+                        <i:Interaction.Triggers>
+                            <i:EventTrigger EventName="SelectedDateChanged">
+                                <i:InvokeCommandAction Command="{Binding DateChangedCommand}"/>
+                            </i:EventTrigger>
+                        </i:Interaction.Triggers>
+                    </DatePicker>
+                </StackPanel>
+
+                <Button Style="{StaticResource MaterialDesignPaperButton}" Grid.Column="3" 
                     Width="25" Height="25" Padding="0" Margin="5,0" HorizontalAlignment="Right">
                     <materialDesign:PackIcon Kind="File" Margin="0"/>
                 </Button>
-                
+
                 <ComboBox ItemsSource="{Binding Accounts}" Margin="20,0" SelectedItem="{Binding SelectedAccount}" DisplayMemberPath="Type"
-                  Height="24" VerticalAlignment="Center" HorizontalAlignment="Right" Width="175" Grid.Column="2"/>
+                  Height="24" VerticalAlignment="Center" HorizontalAlignment="Right" Width="175" Grid.Column="4"/>
 
                 <Button Content="Fetch online" Command="{Binding FetchOnlineCommand}" HorizontalAlignment="Center"
-                Height="24" Margin="5" VerticalAlignment="Center" Width="122" Grid.Column="3"/>
+                Height="24" Margin="5" VerticalAlignment="Center" Width="122" Grid.Column="5"/>
             </Grid>
             <materialDesign:ColorZone.Effect>
                 <DropShadowEffect BlurRadius="14" ShadowDepth="4.5" Direction="270" Color="{StaticResource MaterialDesignShadow}"
                                   Opacity=".22" RenderingBias="Performance" />
             </materialDesign:ColorZone.Effect>
         </materialDesign:ColorZone>
-        
+
         <StackPanel Grid.Column="1" HorizontalAlignment="Right" Orientation="Horizontal">
-            
+
         </StackPanel>
     </Grid>
 </UserControl>

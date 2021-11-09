@@ -11,7 +11,23 @@ namespace Moneyes.UI.ViewModels
     public class MainWindowViewModel : ViewModelBase
     {
         public List<ITabViewModel> Tabs { get; set; }
-        public ITabViewModel CurrentViewModel { get; set; }
+
+        private ITabViewModel _currentViewModel;
+        public ITabViewModel CurrentViewModel
+        {
+            get => _currentViewModel;
+            set
+            {
+                if (_currentViewModel == value)
+                {
+                    return;
+                }
+
+                value.OnSelect();
+                OnPropertyChanged();
+                _currentViewModel = value;
+            }
+        }
 
         public MainWindowViewModel(IEnumerable<ITabViewModel> tabs, BankConnectionStore bankingConfigStore,
             IStatusMessageService statusMessageService)
@@ -24,7 +40,7 @@ namespace Moneyes.UI.ViewModels
             }
             else
             {
-                CurrentViewModel = tabs.OfType<MainViewModel>().FirstOrDefault();
+                CurrentViewModel = tabs.OfType<TransactionsViewModel>().FirstOrDefault();
             }
 
             statusMessageService.NewMessage += (msg, actText, act) => NewStatusMessage?.Invoke(msg, actText, act);

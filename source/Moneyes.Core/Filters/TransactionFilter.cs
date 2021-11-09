@@ -54,7 +54,7 @@ namespace Moneyes.Core.Filters
                && (AccountNumber is null || (input.IBAN?.EndsWith(AccountNumber) ?? true))
                && (MinAmount is null || input.Amount >= MinAmount)
                && (MaxAmount is null || input.Amount <= MaxAmount)
-               && Criteria.Evaluate(input);
+               && (Criteria is null || Criteria.Evaluate(input));
         }
     }
 }

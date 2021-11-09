@@ -138,19 +138,7 @@ namespace Moneyes.UI.ViewModels
 
             LoadedCommand = new AsyncCommand(async ct =>
             {
-                if (_bankingService.HasBankingDetails)
-                {
-                    OnlineBankingDetails bankingDetails = _bankingService.BankingDetails;
-
-                    // Set UI fields
-                    BankCode = bankingDetails.BankCode;
-                    UserId = bankingDetails.UserId;
-                    PIN = bankingDetails.Pin;
-
-                    IsDirty = false;
-
-                    await Task.Run(() => LookupBank());
-                }
+                
             });
 
             FindBankCommand = new AsyncCommand(async ct =>
@@ -227,6 +215,22 @@ namespace Moneyes.UI.ViewModels
             BankLookupCompleted = true;
         }
 
+        public void OnSelect()
+        {
+            if (_bankingService.HasBankingDetails)
+            {
+                OnlineBankingDetails bankingDetails = _bankingService.BankingDetails;
+
+                // Set UI fields
+                BankCode = bankingDetails.BankCode;
+                UserId = bankingDetails.UserId;
+                PIN = bankingDetails.Pin;
+
+                IsDirty = false;
+
+                Task.Run(() => LookupBank());
+            }
+        }
 
         #region Validation
 
@@ -265,6 +269,8 @@ namespace Moneyes.UI.ViewModels
             _errors.TryGetValue(propertyName, out errorsForName);
             return errorsForName;
         }
+
+        
 
         #endregion
     }

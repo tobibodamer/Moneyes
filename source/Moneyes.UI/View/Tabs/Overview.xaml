@@ -33,7 +33,7 @@
                 </DataTrigger>
             </Style.Triggers>
         </Style>
-        
+
         <Style TargetType="TextBlock" x:Key="CategoryCardName">
             <Setter Property="Margin" Value="0"/>
             <Setter Property="FontSize" Value="13"/>
@@ -52,7 +52,7 @@
             <Style.Triggers>
                 <DataTrigger Binding="{Binding IsOver}" Value="True">
                     <Setter Property="Foreground" Value="#d41204"/>
-                </DataTrigger>                
+                </DataTrigger>
             </Style.Triggers>
         </Style>
 
@@ -77,6 +77,26 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
+                <StackPanel Orientation="Horizontal" Grid.Column="1">
+                    <DatePicker SelectedDate="{Binding FromDate}" IsTodayHighlighted="False" Grid.Column="1">
+                        <i:Interaction.Triggers>
+                            <i:EventTrigger EventName="SelectedDateChanged">
+                                <i:InvokeCommandAction Command="{Binding DateChangedCommand}"/>
+                            </i:EventTrigger>
+                        </i:Interaction.Triggers>
+                    </DatePicker>
+
+                    <TextBlock Text="-" Margin="10,0" VerticalAlignment="Center"/>
+
+                    <DatePicker SelectedDate="{Binding EndDate}" IsTodayHighlighted="True" Grid.Column="2">
+                        <i:Interaction.Triggers>
+                            <i:EventTrigger EventName="SelectedDateChanged">
+                                <i:InvokeCommandAction Command="{Binding DateChangedCommand}"/>
+                            </i:EventTrigger>
+                        </i:Interaction.Triggers>
+                    </DatePicker>
+                </StackPanel>
+
                 <ComboBox Grid.Column="1" Width="100" Height="24" HorizontalAlignment="Right" Margin="10,0">
                     <ComboBoxItem Content="This month"/>
                     <ComboBoxItem Content="Last month"/>
@@ -99,6 +119,7 @@
                                   Opacity=".22" RenderingBias="Performance" />
             </materialDesign:ColorZone.Effect>
         </materialDesign:ColorZone>
+
 
         <DockPanel HorizontalAlignment="Stretch" Margin="20,0,20,20" VerticalAlignment="Top" Grid.Row="2">
             <Grid DockPanel.Dock="Top" Margin="0,0,0,5">
@@ -142,7 +163,7 @@
                                         </TextBlock.Style>
                                     </TextBlock>
 
-                                    <TextBlock Text="{Binding Target, StringFormat={} / {0:N0} €}">                                        
+                                    <TextBlock Text="{Binding Target, StringFormat={} / {0:N0} €}">
                                         <TextBlock.Style>
                                             <Style TargetType="TextBlock" BasedOn="{StaticResource ExpenseTextBlock}">
                                                 <Style.Triggers>
@@ -166,7 +187,7 @@
         </DockPanel>
         <DockPanel HorizontalAlignment="Center" Margin="20,20,20,20" VerticalAlignment="Top" Grid.Row="1">
             <!--<TextBlock Text="Spending" FontSize="22" FontWeight="Normal" DockPanel.Dock="Top" Margin="0"/>-->
-            
+
             <materialDesign:Card Width="220" Height="110" UniformCornerRadius="10" HorizontalAlignment="Left" Margin="0,15">
                 <Grid Margin="18">
                     <materialDesign:PackIcon Kind="ArrowDown" Height="20" Width="20" HorizontalAlignment="Right"/>
@@ -183,10 +204,8 @@
                 </Grid>
             </materialDesign:Card>
         </DockPanel>
-        
-        
-        
-        
+
+
         <!--<WrapPanel>
             <ItemsControl ItemsSource="{Binding Categories}">
                 <ItemsControl.ItemsPanel>

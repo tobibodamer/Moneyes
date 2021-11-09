@@ -9,17 +9,13 @@ namespace Moneyes.UI
 {
     public class CategoryService : ICategoryService
     {
-        private readonly TransactionRepository _transactionRepo;
+        private readonly TransactionRepository _transactionRepository;
         private readonly CategoryRepository _categoryRepo;
-
-        public event Action<Category> CategoryChanged;
-        public event Action<Category> CategoryAdded;
-        public event Action<Category> CategoryDeleted;
 
         public CategoryService(TransactionRepository transactionRepo,
             CategoryRepository categoryRepo)
         {
-            _transactionRepo = transactionRepo;
+            _transactionRepository = transactionRepo;
             _categoryRepo = categoryRepo;
         }
 
@@ -41,7 +37,7 @@ namespace Moneyes.UI
             try
             {
                 IEnumerable<Category> categories =
-                    _categoryRepo.All();
+                    _categoryRepo.GetAll();
 
                 if (!includeCategories.HasFlag(CategoryFlags.Real))
                 {
@@ -79,7 +75,7 @@ namespace Moneyes.UI
 
             if (assignMethod is not AssignMethod.Simple or AssignMethod.Reset)
             {
-                oldTransaction = _transactionRepo.FindById(transaction.UID);
+                oldTransaction = _transactionRepository.FindById(transaction.UID);
             }
 
             // Assign categories
@@ -103,7 +99,7 @@ namespace Moneyes.UI
                 {
                     if (updateDatabase)
                     {
-                        _transactionRepo.Set(transaction);
+                        _transactionRepository.Set(transaction);
                     }
 
                     return;
@@ -127,7 +123,7 @@ namespace Moneyes.UI
 
             if (updateDatabase)
             {
-                _transactionRepo.Set(transaction);
+                _transactionRepository.Set(transaction);
             }
         }
 
@@ -141,7 +137,7 @@ namespace Moneyes.UI
 
             if (assignMethod is not AssignMethod.Simple or AssignMethod.Reset)
             {
-                oldTransactions = _transactionRepo.All()
+                oldTransactions = _transactionRepository.All()
                     .ToDictionary(t => t.UID, t => t);
             }
 
@@ -150,6 +146,8 @@ namespace Moneyes.UI
             List<Category> categories = GetCategories(CategoryFlags.Real).Data
                 .OrderBy(c => c.IsExlusive)
                 .ToList();
+
+            List<Transaction> transactionsToUpdate = new();
 
             foreach (Transaction transaction in transactions)
             {
@@ -186,8 +184,10 @@ namespace Moneyes.UI
                     }
                 }
 
+                transactionsToUpdate.Add(transaction);
+
                 // Store
-                _transactionRepo.Set(transactions);
+                _transactionRepository.Set(transactionsToUpdate);
             }
         }
 
@@ -195,7 +195,7 @@ namespace Moneyes.UI
         {
             if (assignMethod is AssignMethod.KeepPrevious) { return; }
 
-            IEnumerable<Transaction> transactions = _transactionRepo.All();
+            IEnumerable<Transaction> transactions = _transactionRepository.All();
 
             AssignCategories(transactions, assignMethod, true);
         }
@@ -203,7 +203,8 @@ namespace Moneyes.UI
         public void AssignCategory(Category category)
         {
             // Get transactions
-            var transactions = _transactionRepo.All();
+            var transactions = _transactionRepository.All().ToList();
+            var transactionsToUpdate = new List<Transaction>();
 
             if (category.Filter == null) { return; }
 
@@ -215,61 +216,102 @@ namespace Moneyes.UI
                     continue;
                 }
 
-                if (category.Filter != null && category.Filter.Evaluate(transaction))
+                if (!transaction.Categories.Any(c => category.Idquals(c)) &&
+                    category.Filter != null && category.Filter.Evaluate(transaction))
                 {
                     transaction.Categories.Add(category);
+                    transactionsToUpdate.Add(transaction);
                 }
             }
 
             // Store
-            _transactionRepo.Set(transactions);
+            _transactionRepository.Set(transactionsToUpdate);
         }
 
         public bool AddCategory(Category category)
         {
-            //TODO: Use real insert and dont update if existing (return false)
-            if (_categoryRepo.Set(category))
-            {
-                OnCategoryAdded(category);
-                return true;
-            }
-
-            return false;
+            return _categoryRepo.Create(category) != null;
         }
 
         public bool UpdateCategory(Category category)
         {
-            if (_categoryRepo.Set(category))
-            {
-                OnCategoryAdded(category);
-            }
-            else
-            {
-                OnCategoryChanged(category);
-            }
-
-            return true;
+            return _categoryRepo.Set(category);
         }
 
         public bool DeleteCategory(Category category)
         {
-            OnCategoryDeleted(category);
-            throw new NotImplementedException();
+            return _categoryRepo.Delete(category.Id);
         }
 
-        protected virtual void OnCategoryChanged(Category c)
+        public bool AddToCategory(Transaction transaction, Category category)
         {
-            CategoryChanged?.Invoke(c);
+            return MoveToCategory(transaction, null, category);
+        }
+        public bool MoveToCategory(Transaction transaction, Category currentCategory, Category targetCategory)
+        {
+            if (targetCategory == null || targetCategory == Category.AllCategory) { return false; }
+            if (transaction == null) { return false; }
+            if (transaction.Categories.Contains(targetCategory)) { return false; }
+
+
+            if (targetCategory == Category.NoCategory)
+            {
+                transaction.Categories.Clear();
+            }
+            else
+            {
+                // Remove from current category if set
+                transaction.Categories.Remove(currentCategory);
+
+                // Add category to transaction
+                transaction.Categories.Add(targetCategory);
+            }
+
+            // Update transaction in repo
+            _transactionRepository.Set(transaction);
+
+            return true;
         }
 
-        protected virtual void OnCategoryAdded(Category c)
+        public IEnumerable<Category> GetSubCategories(Category category, int depth = -1)
         {
-            CategoryAdded?.Invoke(c);
+            if (category == Category.NoCategory || category == Category.AllCategory)
+            {
+                return Enumerable.Empty<Category>();
+            }
+
+            IEnumerable<Category> categories = GetCategories(CategoryFlags.Real)
+                .GetOrNull();
+
+            return GetSubCategoriesRecursive(category, categories, depth, 0);
         }
 
-        protected virtual void OnCategoryDeleted(Category c)
+        private IEnumerable<Category> GetSubCategoriesRecursive(
+            Category current, IEnumerable<Category> allCategories,
+            int maxDepth, int currentDepth)
         {
-            CategoryDeleted?.Invoke(c);
+            foreach (Category category in allCategories)
+            {
+                if (!category.Parent.Idquals(current))
+                {
+                    continue;
+                }
+
+                yield return category;
+
+                if (maxDepth > 0 && currentDepth >= maxDepth)
+                {
+                    continue;
+                }
+
+                IEnumerable<Category> subCategories = GetSubCategoriesRecursive(
+                    category, allCategories, maxDepth, currentDepth++);
+
+                foreach (Category subCategory in subCategories)
+                {
+                    yield return subCategory;
+                }
+            }
         }
     }
 }

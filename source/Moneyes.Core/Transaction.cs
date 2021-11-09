@@ -9,32 +9,25 @@ using System.Text.RegularExpressions;
 
 namespace Moneyes.Core
 {
-    [AttributeUsage(AttributeTargets.Property, Inherited = false, AllowMultiple = false)]
-    public sealed class FilterPropertyAttribute : Attribute
-    {
-        // See the attribute guidelines at 
-        //  http://go.microsoft.com/fwlink/?LinkId=85236
-        readonly string _descriptiveName;
-
-        public FilterPropertyAttribute(string descriptiveName)
-        {
-            _descriptiveName = descriptiveName;
-        }
-
-        public string DescriptiveName
-        {
-            get { return _descriptiveName; }
-        }
-    }
-
     /// <summary>
     /// Represents a banking transaction.
     /// </summary>
     public class Transaction
     {
         private readonly int _index;
-        private Lazy<string> _id;
-        public string UID => _id.Value;
+        private Lazy<string> _idLazy;
+        private string _id;
+        public string UID
+        {
+            get
+            {
+                return _idLazy.Value;
+            }
+            init
+            {
+                _id = value;
+            }
+        }
 
         /// <summary>
         /// The date this transaction was valued.
@@ -120,7 +113,7 @@ namespace Moneyes.Core
         /// <summary>
         /// The country code provided with the transaction.
         /// </summary>
-        public string CountryCode => ParseCityAndCountry()?.Country; 
+        public string CountryCode => ParseCityAndCountry()?.Country;
         /// <summary>
         /// Gets the categories of this transaction.
         /// </summary>
@@ -129,18 +122,19 @@ namespace Moneyes.Core
         /// <summary>
         /// Gets the index of this transactions. For identical transactions only!
         /// </summary>
-        public int Index {
+        public int Index
+        {
             get => _index;
             init
             {
                 _index = value;
-                _id = new(GenerateUID);
+                _idLazy = new(GenerateUID);
             }
         }
 
         public Transaction()
         {
-            _id = new(GenerateUID);
+            _idLazy = new(() => _id ?? GenerateUID());
         }
 
         private DateTime? ParseDate()
@@ -217,7 +211,7 @@ namespace Moneyes.Core
         /// <returns></returns>
         public string GetUID()
         {
-            return _id.Value;
+            return _idLazy.Value;
         }
 
         public override bool Equals(object obj)

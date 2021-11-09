@@ -23,9 +23,21 @@ namespace Moneyes.UI
         public Result<IEnumerable<(Category Category, decimal TotalAmt)>> GetExpensePerCategory(
             AccountDetails account, bool includeNoCategory = true)
         {
+            TransactionFilter filter = new()
+            {
+                AccountNumber = account.Number,
+                TransactionType = TransactionType.Expense
+            };
+
+            return GetExpensePerCategory(filter, includeNoCategory);
+        }
+
+        public Result<IEnumerable<(Category Category, decimal TotalAmt)>> GetExpensePerCategory(
+            TransactionFilter filter, bool includeNoCategory = true)
+        {
             try
             {
-                List<Category> categories = _categoryRepo.All()
+                List<Category> categories = _categoryRepo.GetAll()
                     .OrderBy(c => c.Name)
                     .OrderBy(c => c.IsExlusive ? 1 : 0)
                     .ToList();
@@ -35,16 +47,12 @@ namespace Moneyes.UI
                     categories.Insert(0, Category.NoCategory);
                 }
 
+                filter.TransactionType = TransactionType.Expense;
+
                 List<(Category, decimal)> results = new();
 
                 foreach (Category c in categories)
                 {
-                    TransactionFilter filter = new()
-                    {
-                        AccountNumber = account.Number,
-                        TransactionType = TransactionType.Expense
-                    };
-
                     List<Transaction> transactions = _transactionRepo.All(filter, c)
                         .ToList();
 
@@ -53,52 +61,7 @@ namespace Moneyes.UI
                     results.Add((c, sum));
                 }
 
-                //return results;
-
                 return Result.Successful(results.AsEnumerable());
-
-                //IEnumerable<Transaction> transactions = await _transactionRepo.GetAll();
-
-                //Dictionary<string, decimal> categoryAmtMap = categories.ToDictionary(c => c.Name, c => 0m);
-                //Dictionary<string, Category> categoryNameMap = categories.ToDictionary(c => c.Name, c => c);
-
-                //if (includeNoCategory)
-                //{
-                //    categoryAmtMap.Add(Category.NoCategory.Name, 0);
-                //    categoryNameMap.Add(Category.NoCategory.Name, Category.NoCategory);
-                //}
-
-                //foreach (Transaction t in transactions)
-                //{
-                //    if (t.Type != TransactionType.Expense) { continue; }
-                //    if (includeNoCategory && (t.Categories == null || !t.Categories.Any()))
-                //    {
-                //        categoryAmtMap[Category.NoCategory.Name] += t.Amount;
-
-                //        continue;
-                //    }
-
-                //    bool anyMatch = false;
-
-                //    foreach (Category c in t.Categories)
-                //    {
-                //        if (!categoryAmtMap.ContainsKey(c.Name))
-                //        {
-                //            continue;
-                //        }
-
-                //        anyMatch = true;
-                //        categoryAmtMap[c.Name] += t.Amount;
-                //    }
-
-                //    if (!anyMatch && includeNoCategory)
-                //    {
-                //        categoryAmtMap[Category.NoCategory.Name] += t.Amount;
-                //    }
-                //}
-
-                //return Result.Successful(categoryAmtMap.Select(
-                //    kv => (categoryNameMap[kv.Key], Math.Abs(kv.Value))));
             }
             catch
             {
@@ -106,35 +69,35 @@ namespace Moneyes.UI
             }
         }
 
-        public Result<decimal> GetTotalExpense(AccountDetails account)
+        public Result<decimal> GetTotalExpense(TransactionFilter filter)
         {
-            return GetTotalInternal(account, TransactionType.Expense);
+            return GetTotalInternal(filter, TransactionType.Expense);
         }
-        public Result<decimal> GetTotalExpense(AccountDetails account, Category category)
+        public Result<decimal> GetTotalExpense(TransactionFilter filter, Category category)
         {
             if (category == Category.NoCategory)
             {
-                return GetExpensePerCategory(account, true).Data
+                return GetExpensePerCategory(filter, true).Data
                     .First(item => item.Category == Category.NoCategory).TotalAmt;
             }
 
-            return GetTotalInternal(account, category, TransactionType.Expense);
+            return GetTotalInternal(filter, category, TransactionType.Expense);
         }
 
-        public Result<decimal> GetTotalIncome(AccountDetails account)
+        public Result<decimal> GetTotalIncome(TransactionFilter filter)
         {
-            return GetTotalInternal(account, TransactionType.Income);
+            return GetTotalInternal(filter, TransactionType.Income);
         }
-        public Result<decimal> GetTotalIncome(AccountDetails account, Category category)
+        public Result<decimal> GetTotalIncome(TransactionFilter filter, Category category)
         {
-            return GetTotalInternal(account, category, TransactionType.Income);
+            return GetTotalInternal(filter, category, TransactionType.Income);
         }
-        private Result<decimal> GetTotalInternal(AccountDetails account, TransactionType transactionType)
+        private Result<decimal> GetTotalInternal(TransactionFilter filter, TransactionType transactionType)
         {
             try
             {
                 IEnumerable<Transaction> transactions = _transactionRepo
-                    .All(new TransactionFilter { AccountNumber = account.Number });
+                    .All(filter);
 
                 return Math.Abs(transactions
                     .Where(t => t.Type == transactionType)
@@ -146,12 +109,12 @@ namespace Moneyes.UI
             }
         }
 
-        private Result<decimal> GetTotalInternal(AccountDetails account, Category category, TransactionType transactionType)
+        private Result<decimal> GetTotalInternal(TransactionFilter filter, Category category, TransactionType transactionType)
         {
             try
             {
                 IEnumerable<Transaction> transactions = _transactionRepo
-                    .All(new TransactionFilter { AccountNumber = account.Number });
+                    .All(filter);
 
                 return Math.Abs(transactions.Where(t =>
                        t.Type == transactionType &&

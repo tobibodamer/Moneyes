@@ -13,5 +13,20 @@ namespace Moneyes.Core
         public decimal Amount { get; init; }
         public string Currency { get; init; }
         public bool IsNegative => Amount < 0;
+
+        public override bool Equals(object obj)
+        {
+            return obj is Balance balance &&
+                   EqualityComparer<AccountDetails>.Default.Equals(Account, balance.Account) &&
+                   Date == balance.Date &&
+                   Amount == balance.Amount &&
+                   Currency == balance.Currency &&
+                   IsNegative == balance.IsNegative;
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Account, Date, Amount, Currency, IsNegative);
+        }
     }
 }

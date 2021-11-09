@@ -64,7 +64,7 @@
                 <DataTemplate DataType="{x:Type vm:OverviewViewModel}">
                     <local:Overview/>
                 </DataTemplate>
-                <DataTemplate DataType="{x:Type vm:MainViewModel}">
+                <DataTemplate DataType="{x:Type vm:TransactionsViewModel}">
                     <local:MainPage/>
                 </DataTemplate>
                 <DataTemplate DataType="{x:Type vm:AccountsViewModel}">

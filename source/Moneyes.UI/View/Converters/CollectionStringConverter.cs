@@ -23,7 +23,7 @@ namespace Moneyes.UI.View
             if (value is not string s) { return Binding.DoNothing; }
 
             return s.Split(",", 
-                StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).ToList();
+                StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).Cast<object>().ToList();
         }
     }
 }

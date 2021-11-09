@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using LiteDB;
 
 namespace Moneyes.Data
@@ -14,40 +16,87 @@ namespace Moneyes.Data
             Collection = db.GetCollection<T>();
         }
 
+        public event Action<T> EntityAdded;
+        public event Action<T> EntityUpdated;
+        public event Action<T> EntityDeleted;
+
         public virtual T Create(T entity)
         {
-            var newId = Collection.Insert(entity);
-            return Collection.FindById(newId.AsInt32);
+            BsonValue newId = Collection.Insert(entity);
+
+            T createdEntity = Collection.FindById(newId.AsInt32);
+
+            if (createdEntity is null)
+            {
+                return default;
+            }
+
+            OnEntityAdded(createdEntity);
+
+            return createdEntity;
         }
 
-        public virtual IEnumerable<T> All()
+        public virtual IEnumerable<T> GetAll()
         {
             return Collection.FindAll();
         }
 
-        public virtual T FindById(int id)
+        public virtual T FindById(object id)
         {
-            return Collection.FindById(id);
-        }
-
-        public virtual T FindById(string id)
-        {
-            return Collection.FindById(id);
+            return Collection.FindById(new BsonValue(id));
         }
 
         public virtual bool Set(T entity)
         {
-            return Collection.Upsert(entity);
+            if (Collection.Upsert(entity))
+            {
+                OnEntityAdded(entity);
+                return true;
+            }
+
+            OnEntityUpdated(entity);
+            return false;
         }
 
-        public virtual void Set(IEnumerable<T> entities)
+        public virtual int Set(IEnumerable<T> entities)
         {
-            Collection.Upsert(entities);
+            int count = 0;
+
+            foreach (T entity in entities)
+            {
+                if (Set(entity))
+                {
+                    count++;
+                }
+            }
+
+            return count;
         }
 
-        public virtual bool Delete(int id)
+        public virtual bool Delete(object id)
         {
-            return Collection.Delete(id);
+            if (Collection.Delete(new BsonValue(id)))
+            {
+                OnEntityDeleted(FindById(id));
+                return true;
+            }
+
+            return false;
+        }
+
+        protected virtual void OnEntityUpdated(T entity)
+        {
+            EntityUpdated?.Invoke(entity);
+        }
+
+        protected virtual void OnEntityAdded(T entity)
+        {
+            EntityAdded?.Invoke(entity);
+        }
+
+        protected virtual void OnEntityDeleted(T entity)
+        {
+            EntityDeleted?.Invoke(entity);
         }
     }
 }

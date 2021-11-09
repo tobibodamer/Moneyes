@@ -143,9 +143,9 @@
                             <Border BorderBrush="Gray" BorderThickness="0" CornerRadius="3" Padding="0">
                                 <Grid Margin="5" HorizontalAlignment="Stretch">
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="4*" SharedSizeGroup="A"/>
-                                        <ColumnDefinition Width="4*" SharedSizeGroup="B"/>
-                                        <ColumnDefinition Width="5*" SharedSizeGroup="C"/>
+                                        <ColumnDefinition Width="100"/>
+                                        <ColumnDefinition Width="100"/>
+                                        <ColumnDefinition Width="150"/>
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
 

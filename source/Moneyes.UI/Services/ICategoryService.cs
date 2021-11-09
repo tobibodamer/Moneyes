@@ -20,6 +20,11 @@ namespace Moneyes.UI
         /// </summary>
         /// <param name="category"></param>
         void AssignCategory(Category category);
+
+        bool AddToCategory(Transaction transaction, Category category);
+
+        bool MoveToCategory(Transaction transaction, Category currentCategory, Category targetCategory);
+
         Result<Category> GetCategoryByName(string name);
 
         Result<IEnumerable<Category>> GetCategories(
@@ -29,6 +34,13 @@ namespace Moneyes.UI
         bool UpdateCategory(Category category);
         bool DeleteCategory(Category category);
 
-        event Action<Category> CategoryChanged;
+        /// <summary>
+        /// Get alls sub categories of a category up to a certain depth.
+        /// </summary>
+        /// <param name="category">The trunk category.</param>
+        /// <param name="depth">The max depth of sub categories to search <br></br>
+        /// (0 - no sub categories, -1 - all) </param>
+        /// <returns></returns>
+        IEnumerable<Category> GetSubCategories(Category category, int depth = -1);
     }
 }

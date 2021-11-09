@@ -22,6 +22,10 @@ namespace Moneyes.UI.ViewModels
                     EditCategoryViewModel editViewModel = CreateEditCategoryViewModel(category);
 
                     editAction?.Invoke(editViewModel);
+                }),
+                ReassignCommand = new AsyncCommand(async ct =>
+                {
+                    _categoryService.AssignCategory(category);
                 })
             };
 
@@ -54,9 +58,9 @@ namespace Moneyes.UI.ViewModels
 
             var editCategoryViewModel = new EditCategoryViewModel()
             {
-                Category = category,
-                IsCreated = isCreated,
                 PossibleParents = possibleParents,
+                Category = category,
+                IsCreated = isCreated,                
                 AssignTransactions = !isCreated
             };
 
@@ -69,10 +73,8 @@ namespace Moneyes.UI.ViewModels
 
                 Category category = editCategoryViewModel.Category;
 
-                if (!_categoryService.UpdateCategory(category))
-                {
-                    return;
-                }
+                _categoryService.UpdateCategory(category);
+                
                 
                 if (editCategoryViewModel.AssignTransactions)
                 {

@@ -2,6 +2,6 @@
 {
     public interface ITabViewModel
     {
-
+        void OnSelect();
     }
 }

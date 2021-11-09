@@ -73,6 +73,10 @@ namespace Moneyes.UI
         {
             base.OnStartup(e);
 
+            IDSelectors.Register<Category>(c => c.Id);
+            IDSelectors.Register<AccountDetails>(acc => acc.IBAN);
+            IDSelectors.Register<Transaction>(t => t.UID);
+
             //var categories = Categories.LoadFromJson();
 
             IServiceCollection services = new ServiceCollection();
@@ -122,8 +126,6 @@ namespace Moneyes.UI
             //var transactionStore = new JsonDatabase<Transaction>("E:\\transcationsTest.json", transaction => transaction.GetUID());
             //var accountStore = new JsonDatabase<AccountDetails>("E:\\accountTest.json", account => account.IBAN);
 
-
-
             services.AddTransient<IPasswordPrompt, DialogPasswordPrompt>(p => 
                 new DialogPasswordPrompt("Password required", "Enter your online banking password / PIN:"));
             services.AddSingleton<OnlineBankingServiceFactory>();
@@ -131,7 +133,7 @@ namespace Moneyes.UI
             services.AddScoped<LiveDataService>();
             services.AddScoped<IExpenseIncomeService, ExpenseIncomServieUsingDb>();
             services.AddScoped<IBankingService, BankingService>();
-            services.AddScoped<ITransactionService, TransactionService>();
+            //services.AddScoped<ITransactionService, TransactionService>();
             services.AddScoped<ICategoryService, CategoryService>();
 
             // UI services
@@ -143,7 +145,7 @@ namespace Moneyes.UI
                 DialogService<AddCategoryDialog, EditCategoryViewModel>>();
 
             services.AddTransient<ITabViewModel, OverviewViewModel>();
-            services.AddTransient<ITabViewModel, MainViewModel>();
+            services.AddTransient<ITabViewModel, TransactionsViewModel>();
             services.AddTransient<ITabViewModel, AccountsViewModel>();
             services.AddTransient<ITabViewModel, BankingSettingsViewModel>();
 
@@ -158,7 +160,7 @@ namespace Moneyes.UI
             //    configStore, new OnlineBankingServiceFactory(), passwordPrompt);
 
             //ExpenseIncomServieUsingDb expenseIncomeService = new(categoryRepo, transactionRepo);
-            //TransactionService transactionService = new(transactionRepo);
+            //TransactionService transactionRepository = new(transactionRepo);
 
             //var mainViewModel = new MainViewModel(liveDataService, expenseIncomeService, transactionRepo,
             //    accountRepo, configStore);
@@ -174,15 +176,15 @@ namespace Moneyes.UI
             IServiceProvider serviceProvider = services.BuildServiceProvider();
 
             var categoryRepo = serviceProvider.GetService<CategoryRepository>();
-            var categoryStore = new CategoryDatabase("categories.json");
+            //var categoryStore = new CategoryDatabase("categories.json");
 
-            foreach (var c in await categoryStore.GetAll())
-            {
-                if (categoryRepo.FindByName(c.Name) == null)
-                {
-                    categoryRepo.Set(c);
-                }
-            }
+            //foreach (var c in await categoryStore.GetAll())
+            //{
+            //    if (categoryRepo.FindByName(c.Name) == null)
+            //    {
+            //        categoryRepo.Set(c);
+            //    }
+            //}
 
             MainWindowViewModel mainWindowViewModel = serviceProvider.GetRequiredService<MainWindowViewModel>();
 

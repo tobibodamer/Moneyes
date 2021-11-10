@@ -2,6 +2,7 @@
 using Moneyes.Core;
 using Moneyes.Data;
 using Moneyes.LiveData;
+using Moneyes.UI.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,6 +24,8 @@ namespace Moneyes.UI
         private readonly BankConnectionStore _configStore;
         private readonly ILogger<LiveDataService> _logger;
 
+        private readonly IStatusMessageService _statusMessageService;
+
         private OnlineBankingService _bankingService;
 
         public event Action<OnlineBankingDetails> BankingInitialized;
@@ -34,7 +37,8 @@ namespace Moneyes.UI
             BalanceRepository balanceRepo,
             BankConnectionStore bankConnectionStore,
             OnlineBankingServiceFactory bankingServiceFactory,
-            IPasswordPrompt passwordPrompt)
+            IPasswordPrompt passwordPrompt,
+            IStatusMessageService statusMessageService)
         {
             _transactionRepo = transactionStore;
             _categoryService = categoryService;
@@ -43,23 +47,73 @@ namespace Moneyes.UI
             _configStore = bankConnectionStore;
             _bankingServiceFactory = bankingServiceFactory;
             _passwordProvider = passwordPrompt;
+            _statusMessageService = statusMessageService;
         }
 
         private static DateTime FirstOfMonth => new(DateTime.Now.Year, DateTime.Now.Month, 1);
 
-        private async Task EnsurePassword()
+        /// <summary>
+        /// Ensures a valid password is set: <br></br>
+        /// If a password is already stored in cache, accept. <br></br>
+        /// If no password is set, request with <paramref name="numRetries"/> retries.
+        /// </summary>
+        /// <param name="numRetries"></param>
+        /// <returns></returns>
+        private async Task EnsurePassword(int numRetries = 3)
         {
-            if (_bankingService.BankingDetails.Pin.IsNullOrEmpty())
+            if (!_bankingService.BankingDetails.Pin.IsNullOrEmpty())
             {
-                SecureString password = await _passwordProvider.WaitForPasswordAsync();
-
-                if (password == null || password.Length == 0)
-                {
-                    throw new OperationCanceledException();
-                }
-
-                _bankingService.BankingDetails.Pin = password;
+                // Password already set (could be wrong, but d/c)
+                return;
             }
+
+            // Password not set -> try to request it
+            for (int i = 0; i < numRetries; i++)
+            {
+                try
+                {
+                    SecureString password = await _passwordProvider.WaitForPasswordAsync();
+
+                    if (password == null || password.Length == 0)
+                    {
+                        throw new OperationCanceledException();
+                    }
+
+                    // Set password and try to sync
+                    _bankingService.BankingDetails.Pin = password;
+
+                    await _bankingService.Sync();
+
+                    // Sync successful -> password ensured
+                    return;
+                }
+                catch (OnlineBankingException ex)
+                when (ex.ErrorCode is OnlineBankingErrorCode.InvalidPin 
+                    or OnlineBankingErrorCode.InvalidUsernameOrPin)
+                {
+                    // Invalid password -> ?
+                    _statusMessageService.ShowMessage("Invalid username or PIN");
+                }
+                catch (OnlineBankingException ex)
+                {
+                    if (ex.Message != null)
+                    {
+                        _statusMessageService.ShowMessage(ex.Message);
+                    }
+                }
+                catch
+                {
+                    // Clear wrong password when something else went wrong
+                    _bankingService.BankingDetails.Pin = null;
+
+                    throw;
+                }
+            }
+
+            // Clear wrong password after all retries failed
+            _bankingService.BankingDetails.Pin = null;
+
+            throw new OperationCanceledException();
         }
 
         public Result<IBankInstitute> FindBank(int bankCode)
@@ -81,7 +135,7 @@ namespace Moneyes.UI
             return Result.Failed<IBankInstitute>();
         }
 
-        public async Task<Result> CreateBankConnection(OnlineBankingDetails bankingDetails, bool sync = false)
+        public async Task<Result> CreateBankConnection(OnlineBankingDetails bankingDetails, bool testConnection = false)
         {
             try
             {
@@ -90,11 +144,10 @@ namespace Moneyes.UI
 
                 _bankingService = _bankingServiceFactory.CreateService(bankingDetails);
 
-                if (sync)
+                if (testConnection)
                 {
                     await EnsurePassword();
-
-                    return await _bankingService.Sync();
+                    await _bankingService.Sync();
                 }
 
                 BankingInitialized?.Invoke(bankingDetails);
@@ -129,7 +182,7 @@ namespace Moneyes.UI
                 !_bankingService.BankingDetails.BankCode.Equals(bankingDetails.BankCode))
             {
                 // Bank changed or not initialized, create new banking connection
-                Result createConnectionResult = await CreateBankConnection(bankingDetails, sync: true);
+                Result createConnectionResult = await CreateBankConnection(bankingDetails, testConnection: true);
 
                 if (!createConnectionResult.IsSuccessful)
                 {
@@ -153,7 +206,7 @@ namespace Moneyes.UI
         }
 
         public async Task<Result<int>> FetchOnlineTransactionsAndBalances(
-            AccountDetails account, 
+            AccountDetails account,
             AssignMethod categoryAssignMethod = AssignMethod.KeepPrevious)
         {
             try

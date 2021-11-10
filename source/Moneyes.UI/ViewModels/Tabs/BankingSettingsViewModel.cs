@@ -185,7 +185,7 @@ namespace Moneyes.UI.ViewModels
 
             if (!PIN.IsNullOrEmpty())
             {
-                Result result = await _liveDataService.CreateBankConnection(bankingDetails, sync: true);
+                Result result = await _liveDataService.CreateBankConnection(bankingDetails, testConnection: true);
 
                 if (!result.IsSuccessful)
                 {
@@ -195,6 +195,7 @@ namespace Moneyes.UI.ViewModels
                 }
             }
 
+            // If sync was established -> save configuration
             _bankingService.BankingDetails = bankingDetails;
         } 
 

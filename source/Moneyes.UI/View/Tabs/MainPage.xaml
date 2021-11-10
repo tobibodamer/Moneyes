@@ -318,7 +318,13 @@
                   AllowDrop="True" MinWidth="200">
             <TreeView.Style>
                 <Style TargetType="TreeView" BasedOn="{StaticResource MaterialDesignTreeView}">
-
+                    <Setter Property="ContextMenu">
+                        <Setter.Value>
+                            <ContextMenu>
+                                <MenuItem Header="Add category..." Command="{Binding AddCommand}"/>
+                            </ContextMenu>
+                        </Setter.Value>
+                    </Setter>
                 </Style>
             </TreeView.Style>
             <TreeView.ItemContainerStyle>
@@ -331,6 +337,7 @@
                         <Setter.Value>
                             <ContextMenu>
                                 <MenuItem Header="Edit..." Command="{Binding EditCommand}"/>
+                                <MenuItem Header="Delete" Command="{Binding DeleteCommand}"/>
                                 <MenuItem Header="Reevaluate" Command="{Binding ReassignCommand}"/>
                             </ContextMenu>
                         </Setter.Value>

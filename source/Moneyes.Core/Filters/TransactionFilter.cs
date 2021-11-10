@@ -9,7 +9,8 @@ namespace Moneyes.Core.Filters
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
         public TransactionType TransactionType { get; set; }
-        public double? TotalDays {
+        public double? TotalDays
+        {
             get
             {
                 if (StartDate is not null && EndDate is not null)
@@ -55,6 +56,17 @@ namespace Moneyes.Core.Filters
                && (MinAmount is null || input.Amount >= MinAmount)
                && (MaxAmount is null || input.Amount <= MaxAmount)
                && (Criteria is null || Criteria.Evaluate(input));
+        }
+
+        public bool IsNull()
+        {
+            return TransactionType is TransactionType.None &&
+                StartDate is null &&
+                EndDate is null &&
+                AccountNumber is null &&
+                MinAmount is null &&
+                MaxAmount is null &&
+                (Criteria is null || (Criteria.ChildFilters.Count == 0 && Criteria.Conditions.Count == 0));
         }
     }
 }

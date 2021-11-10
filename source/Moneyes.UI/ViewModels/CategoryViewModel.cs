@@ -69,9 +69,5 @@ namespace Moneyes.UI.ViewModels
 
         public bool IsRealCategory => !_category.Equals(Category.NoCategory)
             && !_category.Equals(Category.AllCategory);
-
-        public CategoryViewModel()
-        {
-        }
     }
 }

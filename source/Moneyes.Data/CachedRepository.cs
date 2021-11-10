@@ -87,16 +87,21 @@ namespace Moneyes.Data
 
         public virtual bool Set(T entity)
         {
-            object id = GetIdOrHash(entity);
+            object id;
 
             if (Collection.Upsert(entity))
             {
+                // Get id after insert -> auto id set
+                id = GetIdOrHash(entity);
+
                 _ = Cache.AddOrUpdate(id, id => entity, (id, oldValue) => entity);
 
                 OnEntityAdded(entity);
 
                 return true;
             }
+
+            id = GetIdOrHash(entity);
 
             // Key exists -> update
             Cache[id] = entity;

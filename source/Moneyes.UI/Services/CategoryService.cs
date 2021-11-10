@@ -240,7 +240,27 @@ namespace Moneyes.UI
 
         public bool DeleteCategory(Category category)
         {
-            return _categoryRepo.Delete(category.Id);
+            if (_categoryRepo.Delete(category.Id))
+            {
+                var transactions = _transactionRepository.GetByCategory(category).ToList();
+                
+                foreach (var transaction in transactions)
+                {
+                    transaction.Categories.RemoveAll(c => c.Idquals(category));
+                }
+
+                var directSubCategories = GetCategories().Data
+                    .Where(c => c.Parent?.Idquals(category) ?? false);
+
+                foreach (var subCategory in directSubCategories)
+                {
+                    DeleteCategory(subCategory);
+                }
+
+                return true;
+            }
+
+            return false;
         }
 
         public bool AddToCategory(Transaction transaction, Category category)
@@ -292,7 +312,7 @@ namespace Moneyes.UI
         {
             foreach (Category category in allCategories)
             {
-                if (!category.Parent.Idquals(current))
+                if (!category.Parent?.Idquals(current) ?? false)
                 {
                     continue;
                 }

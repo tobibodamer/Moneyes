@@ -1,4 +1,5 @@
 ﻿using Moneyes.Core;
+using Moneyes.Data;
 using Moneyes.LiveData;
 using System;
 using System.Collections.Generic;
@@ -6,15 +7,16 @@ using System.Linq;
 
 namespace Moneyes.UI.ViewModels
 {
-    class CategoryViewModelFactory
+    internal class CategoryViewModelFactory
     {
+        private readonly ICategoryService _categoryService;
         public CategoryViewModelFactory(ICategoryService categoryService)
         {
             _categoryService = categoryService;
         }
         public CategoryViewModel CreateCategoryViewModel(Category category, Action<EditCategoryViewModel> editAction)
         {
-            var categoryViewModel = new CategoryViewModel
+            CategoryViewModel categoryViewModel = new()
             {
                 Category = category,
                 EditCommand = new AsyncCommand(async ct =>
@@ -51,41 +53,17 @@ namespace Moneyes.UI.ViewModels
         private EditCategoryViewModel CreateEditCategoryViewModel(Category category, bool isCreated)
         {
             List<Category> possibleParents = _categoryService.GetCategories(CategoryFlags.Real).GetOrNull()
-                .Where(c => c.Id != category.Id).ToList();
+                .Where(c => !c.Idquals(category)).ToList();
 
-            // Add no category to select no category
-            //possibleParents.Insert(0, Category.NoCategory);
-
-            var editCategoryViewModel = new EditCategoryViewModel()
+            EditCategoryViewModel editCategoryViewModel = new(_categoryService)
             {
                 PossibleParents = possibleParents,
                 Category = category,
-                IsCreated = isCreated,                
+                IsCreated = isCreated,
                 AssignTransactions = !isCreated
             };
 
-            editCategoryViewModel.ApplyCommand = new AsyncCommand(async ct =>
-            {
-                if (!editCategoryViewModel.Validate(_categoryService))
-                {
-                    return;
-                }
-
-                Category category = editCategoryViewModel.Category;
-
-                _categoryService.UpdateCategory(category);
-                
-                
-                if (editCategoryViewModel.AssignTransactions)
-                {
-                    // Call method to assign transactions
-                    _categoryService.AssignCategory(category);
-                }
-            });
-
             return editCategoryViewModel;
         }
-
-        ICategoryService _categoryService;
     }
 }

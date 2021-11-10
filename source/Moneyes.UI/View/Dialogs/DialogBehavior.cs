@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Moneyes.UI.ViewModels;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -11,41 +12,15 @@ namespace Moneyes.UI.View
 {
     public class DialogBehavior : FrameworkElement
     {
-
-        private INotifyPropertyChanged previous;
-
-        private void SubscribeToFooChanges(INotifyPropertyChanged viewModel)
+        public IDialogViewModel ViewModel
         {
-            if (previous != null)
-                previous.PropertyChanged -= FooChanged;
-            previous = viewModel;
-            if (viewModel != null)
-                viewModel.PropertyChanged += FooChanged;
-        }
-
-        // event handler
-        private void FooChanged(object sender, PropertyChangedEventArgs args)
-        {
-            if (!args.PropertyName.Equals("EditCategory"))
-                return;
-
-            new AddCategoryDialog()
-            {
-                DataContext = ((dynamic)DataContext).EditCategory
-            }.ShowDialog();
-        }
-
-
-
-        public INotifyPropertyChanged ViewModel
-        {
-            get { return (INotifyPropertyChanged)GetValue(ViewModelProperty); }
+            get { return (IDialogViewModel)GetValue(ViewModelProperty); }
             set { SetValue(ViewModelProperty, value); }
         }
 
         // Using a DependencyProperty as the backing store for ViewModel.  This enables animation, styling, binding, etc...
         public static readonly DependencyProperty ViewModelProperty =
-            DependencyProperty.Register("ViewModel", typeof(INotifyPropertyChanged), typeof(DialogBehavior), 
+            DependencyProperty.Register("ViewModel", typeof(IDialogViewModel), typeof(DialogBehavior),
                 new PropertyMetadata(new PropertyChangedCallback(OnViewModelPropertyChanged)));
 
         public Type Dialog
@@ -79,8 +54,25 @@ namespace Moneyes.UI.View
             if (dialogBehavior.Dialog.BaseType.IsEquivalentTo(typeof(Window)))
             {
                 var dlg = Activator.CreateInstance(dialogBehavior.Dialog) as Window;
+                bool isClosed = false;
 
+                dlg.Closed += (sender, args) =>
+                {
+                    isClosed = true;
+                };
+                
                 dlg.DataContext = dialogBehavior.ViewModel;
+                
+                dialogBehavior.ViewModel.RequestClose += (sender, args) =>
+                {
+                    if (isClosed)
+                    {
+                        return;
+                    }
+
+                    dlg.DialogResult = args.Result;
+                };
+
                 dlg.ShowDialog();
             }
         }

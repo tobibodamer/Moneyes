@@ -1,8 +1,11 @@
 ﻿using Moneyes.Core;
 using Moneyes.Core.Filters;
+using Moneyes.Data;
 using Moneyes.LiveData;
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -10,8 +13,9 @@ using System.Windows.Input;
 
 namespace Moneyes.UI.ViewModels
 {
-    internal class EditCategoryViewModel : CategoryViewModel
+    internal class EditCategoryViewModel : CategoryViewModel, INotifyDataErrorInfo, IDialogViewModel
     {
+        private ICategoryService _categoryService;
 
         private List<Category> _possibleParents;
         public IEnumerable<Category> PossibleParents
@@ -25,29 +29,17 @@ namespace Moneyes.UI.ViewModels
         }
 
         public bool IsCreated { get; init; }
-
-        public ICommand ApplyCommand { get; set; }
-
-        public bool Validate(ICategoryService categoryService)
+        public bool IsValid
         {
-            var existingCategory = categoryService.GetCategoryByName(Name).GetOrNull();
-
-            if (existingCategory != null)
+            get
             {
-                if (IsCreated && existingCategory.Id == Category.Id)
-                {
-                    // Update existing
-                }
-                else
-                {
-                    // Already exists
-                    return false;
-                }
+                Category existingCategory = _categoryService
+                    .GetCategoryByName(Name).GetOrNull();
+
+                return !string.IsNullOrEmpty(Name) && existingCategory is null ||
+                    (IsCreated && existingCategory.Idquals(base.Category));
             }
-
-            return true;
         }
-
         public bool AssignTransactions { get; set; }
 
         public override Category Category
@@ -68,6 +60,11 @@ namespace Moneyes.UI.ViewModels
                 if (criteria.ChildFilters.Any() || criteria.Conditions.Any())
                 {
                     filter.Criteria = criteria;
+                }
+
+                if (filter.IsNull())
+                {
+                    filter = null;
                 }
 
                 return new Category
@@ -145,9 +142,97 @@ namespace Moneyes.UI.ViewModels
         }
 
         #endregion
+        public ICommand ApplyCommand { get; set; }
+        public ICommand CancelCommand { get; set; }
 
-        public EditCategoryViewModel()
+        public event EventHandler<RequestCloseDialogEventArgs> RequestClose;
+
+        public EditCategoryViewModel(ICategoryService categoryService)
         {
+            _categoryService = categoryService;
+
+            ApplyCommand = new AsyncCommand(async ct =>
+            {
+                if (!Validate())
+                {
+                    return;
+                }
+
+                Category category = Category;
+
+                _categoryService.UpdateCategory(category);
+
+
+                if (AssignTransactions)
+                {
+                    // Call method to assign transactions
+                    _categoryService.AssignCategory(category);
+                }
+
+                RequestClose?.Invoke(this, new() { Result = true });
+            });
+
+            CancelCommand = new AsyncCommand(async ct =>
+            {
+                RequestClose?.Invoke(this, new() { Result = false });
+            });
         }
+
+        #region Validation
+
+        private Dictionary<string, List<string>> _errors = new();
+        public bool HasErrors => _errors.Any(kv => kv.Value != null && kv.Value.Count > 0);
+        protected void OnErrorsChanged(string propertyName)
+        {
+            ErrorsChanged?.Invoke(this, new DataErrorsChangedEventArgs(propertyName));
+        }
+        public event EventHandler<DataErrorsChangedEventArgs> ErrorsChanged;
+
+        public IEnumerable GetErrors(string propertyName)
+        {
+            _errors.TryGetValue(propertyName, out List<string> errorsForName);
+
+            return errorsForName;
+        }
+
+        public bool Validate()
+        {
+            _errors = new();
+
+            if (string.IsNullOrEmpty(Name))
+            {
+                _errors.TryAdd(nameof(Name), new() { "Cannot be empty" });
+                OnErrorsChanged(nameof(Name));
+
+                return false;
+            }
+
+            Category existingCategory = _categoryService
+                .GetCategoryByName(Name).GetOrNull();
+
+            if (existingCategory != null)
+            {
+                if (IsCreated && existingCategory.Idquals(Category))
+                {
+                    // Update existing
+                }
+                else
+                {
+                    // Already exists
+
+                    _errors.TryAdd(nameof(Name), new() { "Category with this name already exists" });
+                    OnErrorsChanged(nameof(Name));
+                    OnPropertyChanged(nameof(HasErrors));
+
+                    return false;
+                }
+            }
+
+            OnPropertyChanged(nameof(HasErrors));
+
+            return true;
+        }
+
+        #endregion
     }
 }

@@ -77,31 +77,43 @@ namespace Moneyes.UI.ViewModels
                 {
                     int? selectedCategoryId = SelectedCategory?.Category?.Id;
 
-                    List<CategoryExpenseViewModel> flatCategories = new();
-
-                    Categories.Clear();
+                    List<CategoryExpenseViewModel> categories = new();
 
                     foreach ((Category category, decimal amt) in expenses)
                     {
                         CategoryExpenseViewModel categoryViewModel = CreateEntry(category, amt);
 
-                        flatCategories.Add(categoryViewModel);
+                        categories.Add(categoryViewModel);
                     }
 
                     // Set sub categories
-                    SetSubCategories(flatCategories);
-
-                    Categories = new(flatCategories);
+                    SetSubCategories(categories);
 
 
                     // Get total expenses
                     _expenseIncomeService.GetTotalExpense(filter)
                                     .OnSuccess(totalAmt =>
                                     {
-                                        AddEntry(Category.AllCategory, totalAmt);
+                                        var allCategory = CreateEntry(Category.AllCategory, totalAmt);
+                                        categories.Add(allCategory);
                                     })
                                     .OnError(() => { }); //HandleError("Could not get total expense"));
-                    
+
+
+                    var categoriesToRemove = Categories
+                        .Where(oldCategory => !categories.Any(c => c.Category.Idquals(oldCategory.Category)))
+                        .ToList();
+
+                    foreach (var category in categoriesToRemove)
+                    {
+                        Categories.Remove(category);
+                    }
+
+                    foreach (var category in categories)
+                    {
+                        Categories.AddOrUpdate(category, c => c.Category.Idquals(category.Category));
+                    }
+
 
                     if (selectedCategoryId.HasValue)
                     {

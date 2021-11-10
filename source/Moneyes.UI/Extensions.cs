@@ -32,13 +32,21 @@ namespace Moneyes.UI
             return -1;
         }
 
-        public static bool AddOrUpdate<T>(this IList<T> list, T newValue, Func<T, bool> predicate)
+        public static bool AddOrUpdate<T>(this IList<T> list, T newValue, Func<T, bool> predicate, 
+            IComparer<T> comparer = null)
         {
             int index = IndexOfFirst(list, predicate);
 
             if (index == -1)
             {
-                list.Add(newValue);
+                if (comparer == null)
+                {
+                    list.Add(newValue);
+                }
+                else
+                {
+                    InsertUsingComparer(list, comparer, newValue);
+                }
 
                 return true;
             }
@@ -48,12 +56,28 @@ namespace Moneyes.UI
             return false;
         }
 
-        public static bool AddOrUpdate<T, TSelect>(this IList<T> list, T newValue, Func<T, TSelect> selector)
+        private static void InsertUsingComparer<T>(IList<T> list, IComparer<T> comparer, T value)
+        {
+            for (int i = 0; i < list.Count; i++)
+            {
+                if (comparer.Compare(value, list[i]) <= 0)
+                {
+                    list.Insert(i, value);
+
+                    return;
+                }
+            }
+
+            list.Add(value);
+        }
+
+        public static bool AddOrUpdate<T, TSelect>(this IList<T> list, T newValue, Func<T, TSelect> selector, 
+            IComparer<T> comparer = null)
         {
             if (selector == null) { return false; }
 
             return AddOrUpdate(list, newValue, item =>
-                selector.Invoke(item).Equals(selector.Invoke(newValue)));
+                selector.Invoke(item).Equals(selector.Invoke(newValue)), comparer);
         }
     }
 }

@@ -2,9 +2,11 @@
 using Moneyes.Core.Filters;
 using Moneyes.Data;
 using Moneyes.LiveData;
+using Moneyes.UI.Services;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -15,13 +17,17 @@ namespace Moneyes.UI.ViewModels
         CategoryViewModelFactory _factory;
         IExpenseIncomeService _expenseIncomeService;
         ICategoryService _categoryService;
+        IStatusMessageService _statusMessageService;
+
         public ExpenseCategoriesViewModel(CategoryViewModelFactory factory,
             ICategoryService categoryService,
-            IExpenseIncomeService expenseIncomeService)
+            IExpenseIncomeService expenseIncomeService,
+            IStatusMessageService statusMessageService)
             : base(factory)
         {
             _expenseIncomeService = expenseIncomeService;
             _categoryService = categoryService;
+            _statusMessageService = statusMessageService;
             _factory = factory;
         }
 
@@ -61,30 +67,72 @@ namespace Moneyes.UI.ViewModels
             flatCategories.RemoveAll(c => categoriesWithParent.Contains(c));
         }
 
-        public void UpdateCategories(AccountDetails account, DateTime? startDate = null, DateTime? endDate = null)
+        /// <summary>
+        /// Dynamically updates the list of category viewmodels by inserting new and updating existing entries.
+        /// </summary>
+        /// <param name="categorieExpenses"></param>
+        private void UpdateCategories(IList<CategoryExpenseViewModel> categorieExpenses)
         {
-            TransactionFilter filter = new()
-            {
-                AccountNumber = account.Number,
-                StartDate = startDate,
-                EndDate = endDate
-            };
+            int? selectedCategoryId = SelectedCategory?.Category?.Id;
 
+            var categoriesToRemove = Categories
+                        .Where(oldCategory => !categorieExpenses.Any(c => c.Category.Idquals(oldCategory.Category)))
+                        .ToList();
+
+            foreach (var category in categoriesToRemove)
+            {
+                Categories.Remove(category);
+            }
+
+            foreach (var category in categorieExpenses)
+            {
+                Categories.AddOrUpdate(category, c => c.Category.Idquals(category.Category),
+                    new CategoryComparer());
+            }
+
+            if (selectedCategoryId.HasValue)
+            {
+                CategoryExpenseViewModel previouslySelectedCategory = Categories
+                    .FirstOrDefault(c => c.Category.Id == selectedCategoryId);
+
+                if (previouslySelectedCategory != null)
+                {
+                    previouslySelectedCategory.IsSelected = true;
+                }
+            }
+            else
+            {
+                CategoryExpenseViewModel allCategory = Categories
+                    .FirstOrDefault(c => c.Category == Category.AllCategory);
+
+                if (allCategory != null)
+                {
+                    //allCategory.IsSelected = true;
+                    SelectedCategory = allCategory;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Updates the category expenses by reloading them using the given <paramref name="filter"/>.
+        /// </summary>
+        /// <param name="filter"></param>
+        public void UpdateCategories(TransactionFilter filter)
+        {
             // Get expenses per category
             _expenseIncomeService.GetExpensePerCategory(filter)
-                .OnError(() => { })//HandleError("Could not get expenses for this category"))
+                .OnError(() =>
+                {
+                    _statusMessageService.ShowMessage("Could not get expenses of categories", "Retry",
+                        () => UpdateCategories(filter));
+                })
                 .OnSuccess(expenses =>
                 {
-                    int? selectedCategoryId = SelectedCategory?.Category?.Id;
-
                     List<CategoryExpenseViewModel> categories = new();
 
-                    foreach ((Category category, decimal amt) in expenses)
-                    {
-                        CategoryExpenseViewModel categoryViewModel = CreateEntry(category, amt);
-
-                        categories.Add(categoryViewModel);
-                    }
+                    categories.AddRange(
+                        expenses.Select(exp => CreateEntry(exp.Category, exp.TotalAmt))
+                    );
 
                     // Set sub categories
                     SetSubCategories(categories);
@@ -95,47 +143,15 @@ namespace Moneyes.UI.ViewModels
                                     .OnSuccess(totalAmt =>
                                     {
                                         var allCategory = CreateEntry(Category.AllCategory, totalAmt);
+
                                         categories.Add(allCategory);
                                     })
-                                    .OnError(() => { }); //HandleError("Could not get total expense"));
+                                    .OnError(() =>
+                                    {
+                                        _statusMessageService.ShowMessage("Could not get total expense");
+                                    });
 
-
-                    var categoriesToRemove = Categories
-                        .Where(oldCategory => !categories.Any(c => c.Category.Idquals(oldCategory.Category)))
-                        .ToList();
-
-                    foreach (var category in categoriesToRemove)
-                    {
-                        Categories.Remove(category);
-                    }
-
-                    foreach (var category in categories)
-                    {
-                        Categories.AddOrUpdate(category, c => c.Category.Idquals(category.Category));
-                    }
-
-
-                    if (selectedCategoryId.HasValue)
-                    {
-                        CategoryExpenseViewModel previouslySelectedCategory = Categories
-                            .FirstOrDefault(c => c.Category.Id == selectedCategoryId);
-
-                        if (previouslySelectedCategory != null)
-                        {
-                            previouslySelectedCategory.IsSelected = true;
-                        }
-                    }
-                    else
-                    {
-                        CategoryExpenseViewModel allCategory = Categories
-                            .FirstOrDefault(c => c.Category == Category.AllCategory);
-
-                        if (allCategory != null)
-                        {
-                            //allCategory.IsSelected = true;
-                            SelectedCategory = allCategory;
-                        }
-                    }
+                    UpdateCategories(categories);
                 });
         }
 
@@ -187,6 +203,34 @@ namespace Moneyes.UI.ViewModels
         public bool IsSelected(Category category)
         {
             return SelectedCategory?.Category.Id == category.Id;
+        }
+
+        class CategoryComparer : IComparer<CategoryExpenseViewModel>
+        {
+            public int Compare(CategoryExpenseViewModel x, CategoryExpenseViewModel y)
+            {
+                if (x.IsNoCategory)
+                {
+                    return -1;
+                }
+
+                if (y.IsNoCategory)
+                {
+                    return 1;
+                }
+
+                if (x.Category.Idquals(Category.AllCategory))
+                {
+                    return 1;
+                }
+
+                if (y.Category.Idquals(Category.AllCategory))
+                {
+                    return -1;
+                }
+
+                return x.Category.Name.CompareTo(y.Category.Name);
+            }
         }
     }
 }

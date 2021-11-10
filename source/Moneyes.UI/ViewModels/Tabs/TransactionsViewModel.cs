@@ -248,7 +248,7 @@ namespace Moneyes.UI.ViewModels
         {
             Dispatcher.CurrentDispatcher.BeginInvoke(() =>
             {
-                ExpenseCategories.UpdateCategories(SelectedAccount, FromDate, EndDate);
+                ExpenseCategories.UpdateCategories(GetTransactionFilter());
             });
         }
 

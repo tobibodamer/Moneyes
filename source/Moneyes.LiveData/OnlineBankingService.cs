@@ -64,7 +64,7 @@ namespace Moneyes.LiveData
         /// Can be used to check whether a successful connection can be established to the bank.
         /// </summary>
         /// <returns></returns>
-        public async Task<Result> Sync()
+        public async Task Sync()
         {
             ValidateBankingDetails();
 
@@ -82,17 +82,38 @@ namespace Moneyes.LiveData
                 {
                     _logger?.LogWarning("Synchronizing was not successful");
 
-                    return Result.Failed();
+                    var (errorCode, message) = ParseHBCIError(result.Messages);
+                    throw new OnlineBankingException(errorCode, message);
                 }
-
-                return Result.Successful();
             }
-            catch
+            catch (Exception ex) when (ex is not OnlineBankingException)
             {
                 //TODO: Log
+
+                throw new OnlineBankingException(OnlineBankingErrorCode.Unknown);
+            }
+        }
+
+        static (OnlineBankingErrorCode, string) ParseHBCIError(IEnumerable<HBCIBankMessage> messages)
+        {
+            foreach (var msg in messages.Where(msg => msg.IsError))
+            {
+                if (int.TryParse(msg.Code, out var code))
+                {
+                    return ((OnlineBankingErrorCode)code, msg.Message);
+                }
+
+                //switch (msg.Code)
+                //{
+                //    case "9931":
+                //        return (OnlineBankingErrorCode.InvalidUsernameOrPin, msg.Message);
+                //    case "9942":
+                //        return (OnlineBankingErrorCode.InvalidPin, msg.Message);
+                //}
             }
 
-            return Result.Failed();
+            return (OnlineBankingErrorCode.Unknown, null);
+
         }
         public async Task<Result<IEnumerable<AccountDetails>>> Accounts()
         {
@@ -245,7 +266,7 @@ namespace Moneyes.LiveData
         }
 
         private static async Task<string> WaitForTanAsync(TANDialog tanDialog)
-        { 
+        {
             foreach (var msg in tanDialog.DialogResult.Messages)
                 Console.WriteLine(msg);
 

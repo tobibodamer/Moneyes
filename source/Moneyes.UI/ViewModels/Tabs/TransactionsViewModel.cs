@@ -15,6 +15,7 @@ using System.Collections;
 using System.Threading;
 using Moneyes.UI.View;
 using Moneyes.UI.Services;
+using System.Diagnostics;
 
 namespace Moneyes.UI.ViewModels
 {
@@ -44,10 +45,9 @@ namespace Moneyes.UI.ViewModels
             get => _selectedAccount;
             set
             {
-                _selectedAccount = value;
+                _selectedAccount = value;                
                 OnPropertyChanged();
-                UpdateCategories();
-                //UpdateTransactions();
+                UpdateCategories();                
             }
         }
 
@@ -104,6 +104,17 @@ namespace Moneyes.UI.ViewModels
             set
             {
                 _endDate = value;
+                OnPropertyChanged();
+            }
+        }
+
+        private bool _loadingTransactions;
+        public bool Loading
+        {
+            get => _loadingTransactions;
+            set
+            {
+                _loadingTransactions = value;
                 OnPropertyChanged();
             }
         }
@@ -221,20 +232,28 @@ namespace Moneyes.UI.ViewModels
         {
             Dispatcher.CurrentDispatcher.BeginInvoke(() =>
             {
-                Category selectedCategory = ExpenseCategories.SelectedCategory?.Category;
+                Loading = true;
+                try
+                {
+                    Category selectedCategory = ExpenseCategories.SelectedCategory?.Category;
 
-                // Get all transactions for selected category and filter
-                IEnumerable<Transaction> transactions = _transactionRepository.All(
-                    filter: GetTransactionFilter(),
-                    categories: selectedCategory);
+                    // Get all transactions for selected category and filter
+                    IEnumerable<Transaction> transactions = _transactionRepository.All(
+                        filter: GetTransactionFilter(),
+                        categories: selectedCategory);
 
-                CurrentBalance = _bankingService.GetBalance(EndDate, SelectedAccount);
+                    CurrentBalance = _bankingService.GetBalance(EndDate, SelectedAccount);
 
-                Transactions.DynamicUpdate(
-                    transactions,
-                    (t1, t2) => t1.Idquals(t2),
-                    new TransactionSortComparer(),
-                    true);
+                    Transactions.DynamicUpdate(
+                        transactions,
+                        (t1, t2) => t1.Idquals(t2),
+                        new TransactionSortComparer(),
+                        true);
+                }
+                finally
+                {
+                    Loading = false;
+                }
             });
         }
 
@@ -252,7 +271,9 @@ namespace Moneyes.UI.ViewModels
         {
             Dispatcher.CurrentDispatcher.BeginInvoke(() =>
             {
+                Loading = true;
                 ExpenseCategories.UpdateCategories(GetTransactionFilter());
+                Loading = false;
             });
         }
 

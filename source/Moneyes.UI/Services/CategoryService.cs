@@ -185,7 +185,10 @@ namespace Moneyes.UI
                 }
 
                 transactionsToUpdate.Add(transaction);
+            }
 
+            if (updateDatabase)
+            {
                 // Store
                 _transactionRepository.Set(transactionsToUpdate);
             }

@@ -73,44 +73,51 @@ namespace Moneyes.UI.ViewModels
         /// <param name="categorieExpenses"></param>
         private void UpdateCategories(IList<CategoryExpenseViewModel> categorieExpenses)
         {
-            int? selectedCategoryId = SelectedCategory?.Category?.Id;
+            //int? selectedCategoryId = SelectedCategory?.Category?.Id;
 
-            var categoriesToRemove = Categories
-                        .Where(oldCategory => !categorieExpenses.Any(c => c.Category.Idquals(oldCategory.Category)))
-                        .ToList();
+            Categories.DynamicUpdate(
+                categorieExpenses, 
+                (c1, c2) => c1.Category.Idquals(c2.Category),
+                new CategoryComparer());
 
-            foreach (var category in categoriesToRemove)
+            //if (selectedCategoryId.HasValue)
+            //{
+            //    CategoryExpenseViewModel previouslySelectedCategory = Categories
+            //        .FirstOrDefault(c => c.Category.Id == selectedCategoryId);
+
+            //    if (previouslySelectedCategory != null)
+            //    {
+            //        previouslySelectedCategory.IsSelected = true;
+            //    }
+            //}
+            //else
+            //{
+            //    CategoryExpenseViewModel allCategory = Categories
+            //        .FirstOrDefault(c => c.Category == Category.AllCategory);
+
+            //    if (allCategory != null)
+            //    {
+            //        //allCategory.IsSelected = true;
+            //        SelectedCategory = allCategory;
+            //    }
+            //}
+
+            if (SelectedCategory is null)
             {
-                Categories.Remove(category);
+                SelectCategory(Category.AllCategory);
             }
+        }
 
-            foreach (var category in categorieExpenses)
-            {
-                Categories.AddOrUpdate(category, c => c.Category.Idquals(category.Category),
-                    new CategoryComparer());
-            }
+        /// <summary>
+        /// Select the given category using the default ID selector.
+        /// </summary>
+        /// <param name="category"></param>
+        public void SelectCategory(Category category)
+        {
+            var categoryExpense = Categories
+                .FirstOrDefault(c => c.Category != null && c.Category.Idquals(category));
 
-            if (selectedCategoryId.HasValue)
-            {
-                CategoryExpenseViewModel previouslySelectedCategory = Categories
-                    .FirstOrDefault(c => c.Category.Id == selectedCategoryId);
-
-                if (previouslySelectedCategory != null)
-                {
-                    previouslySelectedCategory.IsSelected = true;
-                }
-            }
-            else
-            {
-                CategoryExpenseViewModel allCategory = Categories
-                    .FirstOrDefault(c => c.Category == Category.AllCategory);
-
-                if (allCategory != null)
-                {
-                    //allCategory.IsSelected = true;
-                    SelectedCategory = allCategory;
-                }
-            }
+            SelectedCategory = categoryExpense;
         }
 
         /// <summary>

@@ -265,10 +265,10 @@
             <Separator Grid.Row="1" BorderBrush="Black" BorderThickness="0.5">
                 <Separator.Style>
                     <Style TargetType="Separator">
-                        <Setter Property="Visibility" Value="Hidden"/>
+                        <Setter Property="Visibility" Value="Visible"/>
                         <Style.Triggers>
-                            <DataTrigger Binding="{Binding Transactions, Converter={StaticResource CollectionEmptyBoolConverter}}" Value="False">
-                                <Setter Property="Visibility" Value="Visible"/>
+                            <DataTrigger Binding="{Binding Loading}" Value="True">
+                                <Setter Property="Visibility" Value="Hidden"/>
                             </DataTrigger>
                         </Style.Triggers>
                     </Style>

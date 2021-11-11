@@ -19,9 +19,9 @@ namespace Moneyes.UI.View
     /// <summary>
     /// Interaktionslogik für MainPage.xaml
     /// </summary>
-    public partial class MainPage : UserControl
+    public partial class Transactions : UserControl
     {
-        public MainPage()
+        public Transactions()
         {
             InitializeComponent();
             new ListViewDragDropManager<Moneyes.Core.Transaction>(transactionsListView);

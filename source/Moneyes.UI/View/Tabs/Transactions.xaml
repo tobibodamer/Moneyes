@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="Moneyes.UI.View.MainPage"
+﻿<UserControl x:Class="Moneyes.UI.View.Transactions"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -24,17 +24,6 @@
         </i:EventTrigger>
     </i:Interaction.Triggers>
     <UserControl.Resources>
-
-        <local:AddCategoryDialog x:Key="AddCategoryDialog"/>
-
-        <Style x:Key="NoCategoryStyle" TargetType="{x:Type TreeViewItem}" BasedOn="{StaticResource MaterialDesignTreeViewItem}">
-            <Style.Triggers>
-                <DataTrigger Binding="{Binding IsNoCategory}" Value="True">
-                    <Setter Property="FontWeight" Value="Bold"/>
-                    <Setter Property="Foreground" Value="#FF5F5F5F"/>
-                </DataTrigger>
-            </Style.Triggers>
-        </Style>
         <local:CollectionEmptyBoolConverter x:Key="CollectionEmptyBoolConverter"/>
 
         <Style x:Key="ScrollBarTrackThumb"
@@ -183,7 +172,58 @@
             <RowDefinition Height="85"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
+        
+        <materialDesign:ColorZone Mode="Standard" Padding="12" Grid.ColumnSpan="2" Height="60">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
 
+                <StackPanel Orientation="Horizontal" Grid.Column="2">
+                    <DatePicker SelectedDate="{Binding FromDate}" IsTodayHighlighted="False" Grid.Column="1">
+                        <i:Interaction.Triggers>
+                            <i:EventTrigger EventName="SelectedDateChanged">
+                                <i:InvokeCommandAction Command="{Binding DateChangedCommand}"/>
+                            </i:EventTrigger>
+                        </i:Interaction.Triggers>
+                    </DatePicker>
+
+                    <TextBlock Text="-" Margin="10,0" VerticalAlignment="Center"/>
+
+                    <DatePicker SelectedDate="{Binding EndDate}" IsTodayHighlighted="True" Grid.Column="2">
+                        <i:Interaction.Triggers>
+                            <i:EventTrigger EventName="SelectedDateChanged">
+                                <i:InvokeCommandAction Command="{Binding DateChangedCommand}"/>
+                            </i:EventTrigger>
+                        </i:Interaction.Triggers>
+                    </DatePicker>
+                </StackPanel>
+
+                <Button Style="{StaticResource MaterialDesignPaperButton}" Grid.Column="4" 
+                    Width="90" Height="25" Padding="0" Margin="5,0" HorizontalAlignment="Right">
+                    <StackPanel Orientation="Horizontal">                        
+                        <materialDesign:PackIcon Kind="File" Margin="0"/>
+                        <TextBlock Text="Import..." Margin="5,0"/>
+                    </StackPanel>
+                </Button>
+
+                <ComboBox ItemsSource="{Binding Accounts}" Margin="20,0" SelectedItem="{Binding SelectedAccount}" DisplayMemberPath="Type"
+                  Height="24" VerticalAlignment="Center" HorizontalAlignment="Right" Width="175" Grid.Column="3"/>
+
+                <Button Content="Fetch online" Command="{Binding FetchOnlineCommand}" HorizontalAlignment="Center"
+                Height="24" Margin="5" VerticalAlignment="Center" Width="122" Grid.Column="5"/>
+            </Grid>
+            <materialDesign:ColorZone.Effect>
+                <DropShadowEffect BlurRadius="14" ShadowDepth="4.5" Direction="270" Color="{StaticResource MaterialDesignShadow}"
+                                  Opacity=".22" RenderingBias="Performance" />
+            </materialDesign:ColorZone.Effect>
+        </materialDesign:ColorZone>
+        
         <Grid Grid.Column="1" Grid.Row="1">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
@@ -241,7 +281,7 @@
                     <Style TargetType="TextBlock">
                         <Setter Property="Visibility" Value="Hidden"/>
                         <Style.Triggers>
-                            <DataTrigger Binding="{Binding Transactions, Converter={StaticResource CollectionEmptyBoolConverter}}" Value="True">
+                            <DataTrigger Binding="{Binding Transactions.Count}" Value="0">
                                 <Setter Property="Visibility" Value="Visible"/>
                             </DataTrigger>
                         </Style.Triggers>
@@ -249,7 +289,9 @@
                 </TextBlock.Style>
             </TextBlock>
 
-            <ListView Name="transactionsListView" ItemsSource="{Binding Transactions}" HorizontalContentAlignment="Stretch" Margin="5,5,0,5" Grid.Row="2"  >
+            <ListView Name="transactionsListView" ItemsSource="{Binding Transactions}" 
+                      HorizontalContentAlignment="Stretch" Margin="5,5,0,5" Grid.Row="2" 
+                      SelectionMode="Multiple">
                 <ListView.ItemTemplate>
                     <DataTemplate>
                         <DockPanel>
@@ -308,61 +350,7 @@
             </TextBlock.Style>
         </TextBlock>-->
 
-        <local:DialogBehavior ViewModel="{Binding ExpenseCategories.EditCategoryViewModel}"
-                              Dialog="{x:Type local:AddCategoryDialog}"/>
-
-        <local:DialogBehavior ViewModel="{Binding ExpenseCategories.AddCategoryViewModel}"
-                              Dialog="{x:Type local:AddCategoryDialog}"/>
-
-        <TreeView Name="treeView" DataContext="{Binding ExpenseCategories}" ItemsSource="{Binding Categories}" Grid.Row="1"
-                  AllowDrop="True" MinWidth="200">
-            <TreeView.Style>
-                <Style TargetType="TreeView" BasedOn="{StaticResource MaterialDesignTreeView}">
-                    <Setter Property="ContextMenu">
-                        <Setter.Value>
-                            <ContextMenu>
-                                <MenuItem Header="Add category..." Command="{Binding AddCommand}"/>
-                            </ContextMenu>
-                        </Setter.Value>
-                    </Setter>
-                </Style>
-            </TreeView.Style>
-            <TreeView.ItemContainerStyle>
-                <Style TargetType="{x:Type TreeViewItem}" BasedOn="{StaticResource NoCategoryStyle}">
-                    <Setter Property="FontWeight" Value="Normal" />
-                    <!--<Setter Property="IsSelected" Value="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" />-->
-                    <Setter Property="IsExpanded" Value="True"/>
-                    <Setter Property="local:DropBehavior.PreviewDropCommand" Value="{Binding AssignToTransaction}"/>
-                    <Setter Property="ContextMenu">
-                        <Setter.Value>
-                            <ContextMenu>
-                                <MenuItem Header="Edit..." Command="{Binding EditCommand}"/>
-                                <MenuItem Header="Delete" Command="{Binding DeleteCommand}"/>
-                                <MenuItem Header="Reevaluate" Command="{Binding ReassignCommand}"/>
-                            </ContextMenu>
-                        </Setter.Value>
-                    </Setter>
-                    <Style.Triggers>
-                        <Trigger Property="local:TreeViewDropHighlighter.IsPossibleDropTarget" Value="True">
-                            <Setter Property="Background" Value="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}" />
-                        </Trigger>
-                    </Style.Triggers>
-                </Style>
-            </TreeView.ItemContainerStyle>
-            <i:Interaction.Behaviors>
-                <local:BindableSelectedItemBehavior SelectedItem="{Binding SelectedCategory, Mode=TwoWay}"/>
-            </i:Interaction.Behaviors>
-            <TreeView.ItemTemplate>
-                <HierarchicalDataTemplate ItemsSource="{Binding SubCatgeories}" DataType="{x:Type vm:CategoryExpenseViewModel}">
-                    <TextBlock Text="{Binding DisplayName}"/>
-                </HierarchicalDataTemplate>
-            </TreeView.ItemTemplate>
-            <i:Interaction.Triggers>
-                <i:EventTrigger EventName="SelectedItemChanged">
-                    <i:InvokeCommandAction Command="{Binding SelectCategoryCommand}"/>
-                </i:EventTrigger>
-            </i:Interaction.Triggers>
-        </TreeView>
+        <local:CategoryExpenseTreeView DataContext="{Binding ExpenseCategories}" Grid.Row="1"/>
         <!--<local:BindableMultiSelectDataGrid x:Name="categoryListBox" Margin="5" BorderThickness="1" BorderBrush="AliceBlue"
                  ItemsSource="{Binding Categories}" AutoGenerateColumns="False" SelectedItems="{Binding SelectedCategories, Mode=OneWayToSource}"
                  Grid.Row="1" Style="{StaticResource MaterialDesignDataGrid}">            
@@ -384,56 +372,6 @@
                 </i:EventTrigger>
             </i:Interaction.Triggers>
         </local:BindableMultiSelectDataGrid>-->
-        <materialDesign:ColorZone Mode="Standard" Padding="12" Grid.ColumnSpan="2" Height="60">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
 
-                <StackPanel Orientation="Horizontal" Grid.Column="2">
-                    <DatePicker SelectedDate="{Binding FromDate}" IsTodayHighlighted="False" Grid.Column="1">
-                        <i:Interaction.Triggers>
-                            <i:EventTrigger EventName="SelectedDateChanged">
-                                <i:InvokeCommandAction Command="{Binding DateChangedCommand}"/>
-                            </i:EventTrigger>
-                        </i:Interaction.Triggers>
-                    </DatePicker>
-                    
-                    <TextBlock Text="-" Margin="10,0" VerticalAlignment="Center"/>
-                    
-                    <DatePicker SelectedDate="{Binding EndDate}" IsTodayHighlighted="True" Grid.Column="2">
-                        <i:Interaction.Triggers>
-                            <i:EventTrigger EventName="SelectedDateChanged">
-                                <i:InvokeCommandAction Command="{Binding DateChangedCommand}"/>
-                            </i:EventTrigger>
-                        </i:Interaction.Triggers>
-                    </DatePicker>
-                </StackPanel>
-
-                <Button Style="{StaticResource MaterialDesignPaperButton}" Grid.Column="3" 
-                    Width="25" Height="25" Padding="0" Margin="5,0" HorizontalAlignment="Right">
-                    <materialDesign:PackIcon Kind="File" Margin="0"/>
-                </Button>
-
-                <ComboBox ItemsSource="{Binding Accounts}" Margin="20,0" SelectedItem="{Binding SelectedAccount}" DisplayMemberPath="Type"
-                  Height="24" VerticalAlignment="Center" HorizontalAlignment="Right" Width="175" Grid.Column="4"/>
-
-                <Button Content="Fetch online" Command="{Binding FetchOnlineCommand}" HorizontalAlignment="Center"
-                Height="24" Margin="5" VerticalAlignment="Center" Width="122" Grid.Column="5"/>
-            </Grid>
-            <materialDesign:ColorZone.Effect>
-                <DropShadowEffect BlurRadius="14" ShadowDepth="4.5" Direction="270" Color="{StaticResource MaterialDesignShadow}"
-                                  Opacity=".22" RenderingBias="Performance" />
-            </materialDesign:ColorZone.Effect>
-        </materialDesign:ColorZone>
-
-        <StackPanel Grid.Column="1" HorizontalAlignment="Right" Orientation="Horizontal">
-
-        </StackPanel>
     </Grid>
 </UserControl>

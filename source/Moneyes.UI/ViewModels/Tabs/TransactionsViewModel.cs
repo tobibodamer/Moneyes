@@ -128,13 +128,13 @@ namespace Moneyes.UI.ViewModels
 
             LoadedCommand = new AsyncCommand(async ct =>
             {
-                
+
             });
 
             FetchOnlineCommand = new AsyncCommand(async ct =>
             {
                 Result<int> result = await _liveDataService
-                    .FetchOnlineTransactionsAndBalances(SelectedAccount);
+                    .FetchTransactionsAndBalances(SelectedAccount);
 
                 if (result.IsSuccessful)
                 {
@@ -147,7 +147,7 @@ namespace Moneyes.UI.ViewModels
                     //UpdateCategories();
                     //UpdateTransactions();
 
-                    _statusMessageService.ShowMessage($"Fetched {result.Data} transactions.");
+                    _statusMessageService.ShowMessage($"Fetched {result.Data} new transactions.");
                 }
             });
 
@@ -230,7 +230,11 @@ namespace Moneyes.UI.ViewModels
 
                 CurrentBalance = _bankingService.GetBalance(EndDate, SelectedAccount);
 
-                Transactions = new(transactions);
+                Transactions.DynamicUpdate(
+                    transactions,
+                    (t1, t2) => t1.Idquals(t2),
+                    new TransactionSortComparer(),
+                    true);
             });
         }
 
@@ -271,6 +275,14 @@ namespace Moneyes.UI.ViewModels
             if (Accounts.Any())
             {
                 return;
+            }
+        }
+
+        class TransactionSortComparer : IComparer<Transaction>
+        {
+            public int Compare(Transaction x, Transaction y)
+            {
+                return x.BookingDate.CompareTo(y.BookingDate);
             }
         }
     }

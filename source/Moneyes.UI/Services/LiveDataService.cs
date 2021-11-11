@@ -205,7 +205,7 @@ namespace Moneyes.UI
             return Result.Successful();
         }
 
-        public async Task<Result<int>> FetchOnlineTransactionsAndBalances(
+        public async Task<Result<int>> FetchTransactionsAndBalances(
             AccountDetails account,
             AssignMethod categoryAssignMethod = AssignMethod.KeepPrevious)
         {
@@ -237,10 +237,10 @@ namespace Moneyes.UI
                 _categoryService.AssignCategories(transactions, assignMethod: categoryAssignMethod, updateDatabase: false);
 
                 // Store
-                _transactionRepo.Set(transactions);
+                int numTransactionsAdded = _transactionRepo.Set(transactions);
                 _balanceRepo.Set(balances);
 
-                return transactions.Count;
+                return numTransactionsAdded;
             }
             catch
             {

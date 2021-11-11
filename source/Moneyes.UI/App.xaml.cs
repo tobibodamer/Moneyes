@@ -176,6 +176,12 @@ namespace Moneyes.UI
             IServiceProvider serviceProvider = services.BuildServiceProvider();
 
             var categoryRepo = serviceProvider.GetService<CategoryRepository>();
+            var transactionRepo = serviceProvider.GetService<TransactionRepository>();
+
+            // Preload caches
+            categoryRepo.UpdateCache();
+            transactionRepo.UpdateCache();
+
             //var categoryStore = new CategoryDatabase("categories.json");
 
             //foreach (var c in await categoryStore.GetAll())

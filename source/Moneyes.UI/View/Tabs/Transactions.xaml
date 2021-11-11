@@ -275,14 +275,18 @@
                 </Separator.Style>
             </Separator>
 
-            <TextBlock Text="No transactions" Foreground="Gray" VerticalAlignment="Center" HorizontalAlignment="Center"
+            <TextBlock Foreground="Gray" VerticalAlignment="Center" HorizontalAlignment="Center"
                    Grid.Row="2">
                 <TextBlock.Style>
                     <Style TargetType="TextBlock">
+                        <Setter Property="Text" Value="No transactions"/>
                         <Setter Property="Visibility" Value="Hidden"/>
                         <Style.Triggers>
                             <DataTrigger Binding="{Binding Transactions.Count}" Value="0">
                                 <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Loading}" Value="True">
+                                <Setter Property="Text" Value="Loading..."/>
                             </DataTrigger>
                         </Style.Triggers>
                     </Style>

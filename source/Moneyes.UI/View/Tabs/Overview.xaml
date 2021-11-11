@@ -120,6 +120,25 @@
             </materialDesign:ColorZone.Effect>
         </materialDesign:ColorZone>
 
+        <DockPanel HorizontalAlignment="Center" Margin="20,20,20,20" VerticalAlignment="Top" Grid.Row="1">
+            <!--<TextBlock Text="Spending" FontSize="22" FontWeight="Normal" DockPanel.Dock="Top" Margin="0"/>-->
+
+            <materialDesign:Card Width="220" Height="110" UniformCornerRadius="10" HorizontalAlignment="Left" Margin="0,15">
+                <Grid Margin="18">
+                    <materialDesign:PackIcon Kind="ArrowDown" Height="20" Width="20" HorizontalAlignment="Right"/>
+                    <TextBlock Text="Expense (total)" FontSize="20" FontWeight="SemiBold"/>
+                    <TextBlock Text="{Binding TotalExpense, StringFormat={}{0} €}" VerticalAlignment="Bottom" FontSize="18" Margin="0,7"/>
+                </Grid>
+            </materialDesign:Card>
+
+            <materialDesign:Card Width="220" Height="110" UniformCornerRadius="10" HorizontalAlignment="Left" Margin="20,15">
+                <Grid Margin="18">
+                    <materialDesign:PackIcon Kind="ArrowUp" Height="20" Width="20" HorizontalAlignment="Right"/>
+                    <TextBlock Text="Income (total)" FontSize="20" FontWeight="SemiBold"/>
+                    <TextBlock Text="{Binding TotalIncome, StringFormat={}{0} €}" VerticalAlignment="Bottom" FontSize="18" Margin="0,7"/>
+                </Grid>
+            </materialDesign:Card>
+        </DockPanel>
 
         <DockPanel HorizontalAlignment="Stretch" Margin="20,0,20,20" VerticalAlignment="Top" Grid.Row="2">
             <Grid DockPanel.Dock="Top" Margin="0,0,0,5">
@@ -185,25 +204,8 @@
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
         </DockPanel>
-        <DockPanel HorizontalAlignment="Center" Margin="20,20,20,20" VerticalAlignment="Top" Grid.Row="1">
-            <!--<TextBlock Text="Spending" FontSize="22" FontWeight="Normal" DockPanel.Dock="Top" Margin="0"/>-->
 
-            <materialDesign:Card Width="220" Height="110" UniformCornerRadius="10" HorizontalAlignment="Left" Margin="0,15">
-                <Grid Margin="18">
-                    <materialDesign:PackIcon Kind="ArrowDown" Height="20" Width="20" HorizontalAlignment="Right"/>
-                    <TextBlock Text="Expense (total)" FontSize="20" FontWeight="SemiBold"/>
-                    <TextBlock Text="{Binding TotalExpense, StringFormat={}{0} €}" VerticalAlignment="Bottom" FontSize="18" Margin="0,7"/>
-                </Grid>
-            </materialDesign:Card>
 
-            <materialDesign:Card Width="220" Height="110" UniformCornerRadius="10" HorizontalAlignment="Left" Margin="20,15">
-                <Grid Margin="18">
-                    <materialDesign:PackIcon Kind="ArrowUp" Height="20" Width="20" HorizontalAlignment="Right"/>
-                    <TextBlock Text="Income (total)" FontSize="20" FontWeight="SemiBold"/>
-                    <TextBlock Text="{Binding TotalIncome, StringFormat={}{0} €}" VerticalAlignment="Bottom" FontSize="18" Margin="0,7"/>
-                </Grid>
-            </materialDesign:Card>
-        </DockPanel>
 
 
         <!--<WrapPanel>

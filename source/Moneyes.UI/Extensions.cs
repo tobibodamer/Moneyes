@@ -32,7 +32,7 @@ namespace Moneyes.UI
             return -1;
         }
 
-        public static bool AddOrUpdate<T>(this IList<T> list, T newValue, Func<T, bool> predicate, 
+        public static bool AddOrUpdate<T>(this IList<T> list, T newValue, Func<T, bool> predicate,
             IComparer<T> comparer = null)
         {
             int index = IndexOfFirst(list, predicate);
@@ -71,13 +71,50 @@ namespace Moneyes.UI
             list.Add(value);
         }
 
-        public static bool AddOrUpdate<T, TSelect>(this IList<T> list, T newValue, Func<T, TSelect> selector, 
+        public static bool AddOrUpdate<T, TSelect>(this IList<T> list, T newValue, Func<T, TSelect> selector,
             IComparer<T> comparer = null)
         {
             if (selector == null) { return false; }
 
             return AddOrUpdate(list, newValue, item =>
                 selector.Invoke(item).Equals(selector.Invoke(newValue)), comparer);
+        }
+
+        /// <summary>
+        /// Dynamically update a list with new values by inserting them at the right place using a <paramref name="insertComparer"/>,
+        /// or replacing a existing value matched with the given <paramref name="equalityPredicate"/>.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="list"></param>
+        /// <param name="newValues">The values to merge with the list.</param>
+        /// <param name="equalityPredicate">A predicate that evaluates whether two values are equal.</param>
+        /// <param name="insertComparer">A comparer for inserting the new values at the correct position.</param>
+        /// <param name="removeOldValues">Remove old values that are not replaced by a new value.</param>
+        public static void DynamicUpdate<T>(this IList<T> list,
+            IEnumerable<T> newValues,
+            Func<T, T, bool> equalityPredicate = null,
+            IComparer<T> insertComparer = null,
+            bool removeOldValues = true)
+        {
+            if (removeOldValues)
+            {
+                var valuesToRemove = list
+                            .Where(oldValue => !newValues.Any(newValue =>
+                                equalityPredicate?.Invoke(oldValue, newValue) ?? oldValue.Equals(newValue)))
+                            .ToList();
+
+                foreach (var value in valuesToRemove)
+                {
+                    list.Remove(value);
+                }
+            }
+            foreach (var value in newValues)
+            {
+                list.AddOrUpdate(
+                    value,
+                    oldValue => equalityPredicate?.Invoke(value, oldValue) ?? oldValue.Equals(value),
+                    insertComparer);
+            }
         }
     }
 }

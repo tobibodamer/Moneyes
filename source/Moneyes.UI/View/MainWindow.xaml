@@ -18,7 +18,7 @@
         FontFamily="{DynamicResource MaterialDesignFont}"
         mc:Ignorable="d"
         Title="Moneyes" Height="650" Width="1100" WindowStyle="None"
-        >
+        Icon="../Resources/Icon.png">
     <Window.Style>
         <Style TargetType="Window">
             <Setter Property="WindowChrome.WindowChrome">

@@ -13,7 +13,7 @@ namespace Moneyes.LiveData
     /// <summary>
     /// Service that supports basic online banking read operations.
     /// </summary>
-    public class OnlineBankingService
+    public class OnlineBankingService : IOnlineBankingService
     {
         private readonly IFinTsClient _fintsClient;
         private readonly ILogger<OnlineBankingService> _logger;
@@ -102,6 +102,7 @@ namespace Moneyes.LiveData
                 {
                     return ((OnlineBankingErrorCode)code, msg.Message);
                 }
+                // See codes: https://wiki.windata.de/index.php?title=HBCI-Fehlermeldungen
 
                 //switch (msg.Code)
                 //{

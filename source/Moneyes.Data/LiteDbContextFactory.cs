@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq.Expressions;
 using System.Security;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading.Tasks;
 using LiteDB;
 using Microsoft.Extensions.Options;
@@ -29,7 +31,7 @@ namespace Moneyes.Data
             {
                 BsonMapper bsonMapper = new();
 
-                bsonMapper.Entity<Category>()                    
+                bsonMapper.Entity<Category>()
                     .Id(c => c.Id, true)
                     .DbRef(c => c.Parent, "Category");
                 bsonMapper.Entity<AccountDetails>()
@@ -58,6 +60,15 @@ namespace Moneyes.Data
 
                     connectionString.Password = password;
                 }
+                else
+                {
+                    bsonMapper.RegisterType<SecureString>
+                        (
+                            serialize: str => EncryptionMethods.EncryptString(str.ToUnsecuredString()),
+                            deserialize: value => value.IsString ?
+                                EncryptionMethods.DecryptString(value.AsString).ToSecuredString() : null
+                        );
+                }
 
                 return new LiteDatabase(connectionString, bsonMapper);
             }
@@ -65,6 +76,37 @@ namespace Moneyes.Data
             {
                 //throw new Exception("Can find or create LiteDb database.", ex);
                 throw;
+            }
+        }
+
+        static class EncryptionMethods
+        {
+            public static string EncryptString(string str)
+            {
+                try
+                {
+                    var bytes = Encoding.Default.GetBytes(str);
+
+                    return Convert.ToBase64String(ProtectedData.Protect(bytes, null, DataProtectionScope.CurrentUser));
+                }
+                catch
+                {
+                    return null;
+                }
+            }
+
+            public static string DecryptString(string str)
+            {
+                try
+                {
+                    var bytes = Convert.FromBase64String(str);
+
+                    return Encoding.Default.GetString(ProtectedData.Unprotect(bytes, null, DataProtectionScope.CurrentUser));
+                }
+                catch
+                {
+                    return null;
+                }
             }
         }
     }

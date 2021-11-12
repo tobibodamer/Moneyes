@@ -22,7 +22,7 @@ namespace Moneyes.LiveData
         /// </summary>
         /// <param name="bankingDetails">The online banking details.</param>
         /// <returns></returns>
-        public OnlineBankingService CreateService(OnlineBankingDetails bankingDetails)
+        public IOnlineBankingService CreateService(OnlineBankingDetails bankingDetails)
         {
             ValidateBankingDetails(bankingDetails);
 
@@ -39,8 +39,9 @@ namespace Moneyes.LiveData
             };
 
             FinTsClient client = new(details);
-            
-            return new(client, bankingDetails, _loggerFactory?.CreateLogger<OnlineBankingService>());
+
+            return new OnlineBankingService(
+                client, bankingDetails, _loggerFactory?.CreateLogger<OnlineBankingService>());
         }
 
         private static void ValidateBankingDetails(OnlineBankingDetails bankingDetails)

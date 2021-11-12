@@ -13,6 +13,6 @@ namespace Moneyes.UI
     /// </summary>
     public interface IPasswordPrompt
     {
-        Task<SecureString> WaitForPasswordAsync();
+        Task<(SecureString Password, bool Save)> WaitForPasswordAsync();
     }
 }

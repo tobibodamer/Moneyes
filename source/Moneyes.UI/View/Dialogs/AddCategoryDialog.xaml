@@ -12,7 +12,7 @@
         MinHeight="250"
         ResizeMode="NoResize"
         ShowInTaskbar="True"
-        Title="Add category"
+        Title="Edit / Add category"
         WindowStyle="SingleBorderWindow"
         Icon="{x:Null}">
     <Grid>

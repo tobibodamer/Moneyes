@@ -216,7 +216,7 @@ namespace Moneyes.UI
                 !_bankingService.BankingDetails.BankCode.Equals(bankingDetails.BankCode))
             {
                 // Bank changed or not initialized, create new banking connection
-                Result createConnectionResult = await CreateBankConnection(bankingDetails, testConnection: true);
+                Result createConnectionResult = await CreateBankConnection(bankingDetails, testConnection: false);
 
                 if (!createConnectionResult.IsSuccessful)
                 {

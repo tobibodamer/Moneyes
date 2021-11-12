@@ -28,6 +28,9 @@
     <Compile Update="View\Dialogs\AddCategoryDialog.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Update="View\Dialogs\OnlineBankingPasswordDialog.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Update="View\Tabs\SettingsPage.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -35,6 +38,10 @@
 
   <ItemGroup>
     <Page Update="View\Dialogs\AddCategoryDialog.xaml">
+      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="View\Dialogs\OnlineBankingPasswordDialog.xaml">
       <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
       <SubType>Designer</SubType>
     </Page>

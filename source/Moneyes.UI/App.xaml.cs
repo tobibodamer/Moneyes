@@ -8,6 +8,7 @@ using Moneyes.UI.Services;
 using Moneyes.UI.View;
 using Moneyes.UI.ViewModels;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security;
@@ -15,7 +16,7 @@ using System.Threading.Tasks;
 using System.Windows;
 
 namespace Moneyes.UI
-{
+{    
     /// <summary>
     /// Interaction logic for App.xaml
     /// </summary>
@@ -51,7 +52,7 @@ namespace Moneyes.UI
             {
                 try
                 {
-                    password = await passwordPrompt.WaitForPasswordAsync();
+                    password = (await passwordPrompt.WaitForPasswordAsync()).Password;
 
                     database = databaseFactory
                         .CreateContext(password.ToUnsecuredString());
@@ -126,8 +127,7 @@ namespace Moneyes.UI
             //var transactionStore = new JsonDatabase<Transaction>("E:\\transcationsTest.json", transaction => transaction.GetUID());
             //var accountStore = new JsonDatabase<AccountDetails>("E:\\accountTest.json", account => account.IBAN);
 
-            services.AddTransient<IPasswordPrompt, DialogPasswordPrompt>(p => 
-                new DialogPasswordPrompt("Password required", "Enter your online banking password / PIN:"));
+            services.AddTransient<IPasswordPrompt, OnlineBankingPasswordPrompt>();
             services.AddSingleton<OnlineBankingServiceFactory>();
 
             services.AddScoped<LiveDataService>();

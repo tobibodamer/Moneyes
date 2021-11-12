@@ -26,7 +26,7 @@ namespace Moneyes.UI
 
         private readonly IStatusMessageService _statusMessageService;
 
-        private OnlineBankingService _bankingService;
+        private IOnlineBankingService _bankingService;
 
         public event Action<OnlineBankingDetails> BankingInitialized;
 
@@ -55,65 +55,97 @@ namespace Moneyes.UI
         /// <summary>
         /// Ensures a valid password is set: <br></br>
         /// If a password is already stored in cache, accept. <br></br>
-        /// If no password is set, request with <paramref name="numRetries"/> retries.
+        /// If no password is set, request with <paramref name="maxRetries"/> retries.
         /// </summary>
-        /// <param name="numRetries"></param>
+        /// <param name="maxRetries"></param>
         /// <returns></returns>
-        private async Task EnsurePassword(int numRetries = 3)
+        private async Task EnsurePassword(int maxRetries = 3)
         {
+            int numRetries = 0;
+
             if (!_bankingService.BankingDetails.Pin.IsNullOrEmpty())
             {
-                // Password already set (could be wrong, but d/c)
-                return;
+                // Password is set -> try to sync
+
+                if (await VerifyCredentials())
+                {
+                    // Password verified -> ensured
+                    return;
+                }
+
+                numRetries++;
             }
 
             // Password not set -> try to request it
-            for (int i = 0; i < numRetries; i++)
+            for (; numRetries < maxRetries; numRetries++)
             {
-                try
+                (SecureString password, bool savePassword) = await _passwordProvider.WaitForPasswordAsync();
+
+                if (password.IsNullOrEmpty())
                 {
-                    SecureString password = await _passwordProvider.WaitForPasswordAsync();
-
-                    if (password == null || password.Length == 0)
-                    {
-                        throw new OperationCanceledException();
-                    }
-
-                    // Set password and try to sync
-                    _bankingService.BankingDetails.Pin = password;
-
-                    await _bankingService.Sync();
-
-                    // Sync successful -> password ensured
-                    return;
+                    // Status notification?
+                    throw new OperationCanceledException();
                 }
-                catch (OnlineBankingException ex)
-                when (ex.ErrorCode is OnlineBankingErrorCode.InvalidPin 
-                    or OnlineBankingErrorCode.InvalidUsernameOrPin)
+
+                // Set password and try to sync
+                _bankingService.BankingDetails.Pin = password;
+
+                if (!await VerifyCredentials())
                 {
-                    // Invalid password -> ?
-                    _statusMessageService.ShowMessage("Invalid username or PIN");
+                    continue;
                 }
-                catch (OnlineBankingException ex)
-                {
-                    if (ex.Message != null)
-                    {
-                        _statusMessageService.ShowMessage(ex.Message);
-                    }
-                }
-                catch
-                {
-                    // Clear wrong password when something else went wrong
-                    _bankingService.BankingDetails.Pin = null;
 
-                    throw;
+                // Sync successful -> password ensured
+
+                if (savePassword)
+                {
+                    OnlineBankingDetails bankingDetails = _configStore.GetBankingDetails();
+                    bankingDetails.Pin = password;
+
+                    _configStore.SetBankingDetails(bankingDetails);
+                    _statusMessageService.ShowMessage("Online banking credentials saved");
                 }
+
+                return;
             }
 
             // Clear wrong password after all retries failed
             _bankingService.BankingDetails.Pin = null;
 
             throw new OperationCanceledException();
+        }
+
+        private async Task<bool> VerifyCredentials()
+        {
+            try
+            {
+                await _bankingService.Sync();
+
+                return true;
+            }
+            catch (OnlineBankingException ex)
+            when (ex.ErrorCode is OnlineBankingErrorCode.InvalidPin
+                or OnlineBankingErrorCode.InvalidUsernameOrPin)
+            {
+                // Invalid password -> ?
+                _statusMessageService.ShowMessage("Invalid username or PIN");
+            }
+            catch (OnlineBankingException ex)
+            {
+                if (ex.Message != null)
+                {
+                    _statusMessageService.ShowMessage(ex.Message);
+                }
+            }
+            catch
+            {
+                // Clear wrong password when something else went wrong
+                _bankingService.BankingDetails.Pin = null;
+
+                throw;
+            }
+
+            return false;
         }
 
         public Result<IBankInstitute> FindBank(int bankCode)
@@ -146,8 +178,10 @@ namespace Moneyes.UI
 
                 if (testConnection)
                 {
-                    await EnsurePassword();
-                    await _bankingService.Sync();
+                    if (!await VerifyCredentials())
+                    {
+                        return Result.Failed();
+                    }
                 }
 
                 BankingInitialized?.Invoke(bankingDetails);
@@ -188,16 +222,26 @@ namespace Moneyes.UI
                 {
                     return createConnectionResult;
                 }
-            }
 
-            _logger?.LogInformation("Applying current banking settings");
+                _logger?.LogInformation("Applying current banking settings");
 
-            // Apply banking settings from store
-            _bankingService.BankingDetails.UserId = bankingDetails.UserId;
-
-            if (!bankingDetails.Pin.IsNullOrEmpty())
-            {
+                // Apply credentials from store
+                _bankingService.BankingDetails.UserId = bankingDetails.UserId;
                 _bankingService.BankingDetails.Pin = bankingDetails.Pin;
+            }
+            else
+            {
+                // Apply credentials from store if not set
+
+                if (string.IsNullOrEmpty(_bankingService.BankingDetails.UserId))
+                {
+                    _bankingService.BankingDetails.UserId = _configStore.GetBankingDetails().UserId;
+                }
+
+                if (_bankingService.BankingDetails.Pin.IsNullOrEmpty())
+                {
+                    _bankingService.BankingDetails.Pin = _configStore.GetBankingDetails().Pin;
+                }
             }
 
             _logger?.LogInformation("Online banking service initialized");

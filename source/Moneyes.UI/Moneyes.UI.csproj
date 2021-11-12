@@ -4,10 +4,15 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net5.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
+    <ApplicationIcon>icons8-love-for-money-64.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
     <EmbeddedResource Remove="View\Overview.xaml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Resources\Icon.png" />
   </ItemGroup>
 
   <ItemGroup>
@@ -22,6 +27,10 @@
   <ItemGroup>
     <ProjectReference Include="..\Moneyes.Core\Moneyes.Core.csproj" />
     <ProjectReference Include="..\Moneyes.Data\Moneyes.Data.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Resources\Icon.png" />
   </ItemGroup>
 
   <ItemGroup>

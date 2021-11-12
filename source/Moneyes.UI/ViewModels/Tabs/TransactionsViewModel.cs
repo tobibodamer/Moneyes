@@ -303,7 +303,7 @@ namespace Moneyes.UI.ViewModels
         {
             public int Compare(Transaction x, Transaction y)
             {
-                return x.BookingDate.CompareTo(y.BookingDate);
+                return x.BookingDate.CompareTo(y.BookingDate) * -1;
             }
         }
     }

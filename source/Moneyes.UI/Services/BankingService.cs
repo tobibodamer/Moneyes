@@ -63,9 +63,13 @@ namespace Moneyes.UI
                 {
                     return _balanceRepository.GetByDate(date, acc);
                 }
-            }
 
-            return _balanceRepository.GetByDate(date, account);
+                return null;
+            }
+            else
+            {
+                return _balanceRepository.GetByDate(date, account);
+            }
         }
     }
 }

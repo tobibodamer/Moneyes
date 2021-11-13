@@ -38,7 +38,7 @@ namespace Moneyes.UI.ViewModels
 
         public ICommand LoadedCommand { get; }
 
-        public ICommand ImportAccountsCommand { get; }
+        public AsyncCommand ImportAccountsCommand { get; }
 
         public bool HasBankConnection => _bankingService.HasBankingDetails;
 
@@ -69,13 +69,14 @@ namespace Moneyes.UI.ViewModels
                     IEnumerable<AccountDetails> accounts = accountResult.Data;
 
                     ImportAccountsViewModel importAccountsViewModel = new(accounts);
+
                     DialogResult dialogResult = _importAccountsDialogService
-                    .ShowDialog(importAccountsViewModel);
+                        .ShowDialog(importAccountsViewModel);
 
                     if (dialogResult == DialogResult.OK)
                     {
                         IEnumerable<AccountDetails> selectedAccounts = importAccountsViewModel.SelectedAccounts;
-                        int numAccountsImported = _bankingService.ImportAccounts(accounts);
+                        int numAccountsImported = _bankingService.ImportAccounts(selectedAccounts);
 
                         _statusMessageService.ShowMessage($"{numAccountsImported} new accounts imported.");
 
@@ -102,6 +103,8 @@ namespace Moneyes.UI.ViewModels
             }
 
             Accounts = new(_bankingService.GetAccounts());
+
+            ImportAccountsCommand.RaiseCanExecuteChanged();
         }
     }
 }

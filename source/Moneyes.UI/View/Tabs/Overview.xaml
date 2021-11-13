@@ -122,7 +122,7 @@
                     </DatePicker>
                 </StackPanel>-->
 
-                <Button Command="{Binding Selector.FetchOnlineCommand}" Style="{StaticResource FetchOnlineButton}" Grid.Column="3"/>
+                <Button Command="{Binding Selector.FetchOnlineCommand}" Style="{StaticResource FetchOnlineButton}" Grid.Column="3" Cursor="Hand"/>
             </Grid>
             <materialDesign:ColorZone.Effect>
                 <DropShadowEffect BlurRadius="14" ShadowDepth="4.5" Direction="270" Color="{StaticResource MaterialDesignShadow}"

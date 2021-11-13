@@ -21,7 +21,7 @@
                 All Accounts
             </ComboBoxItem>
             <CompositeCollection x:Key="AccountsCollection">
-                <StaticResource ResourceKey="NullItem"/>
+                <!--<StaticResource ResourceKey="NullItem"/>-->
                 <CollectionContainer Collection="{Binding DataContext.Accounts, 
                             Source={x:Reference accounts}}"/>
             </CompositeCollection>

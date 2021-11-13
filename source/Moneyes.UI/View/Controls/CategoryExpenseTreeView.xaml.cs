@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Moneyes.UI.ViewModels;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -23,6 +24,18 @@ namespace Moneyes.UI.View
         public CategoryExpenseTreeView()
         {
             InitializeComponent();
+        }
+
+        public bool GetHierarchyPredicate(object a, object b)
+        {
+            if (a is null || b is null) return false;
+
+            if (a is CategoryViewModel categoryA && b is CategoryViewModel categoryB)
+            {
+                return categoryA.Parent?.Equals(categoryB.Category) ?? false;
+            }
+
+            return false;
         }
     }
 }

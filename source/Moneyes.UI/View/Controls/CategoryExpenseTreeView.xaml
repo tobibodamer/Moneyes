@@ -47,7 +47,7 @@
                 <Style TargetType="{x:Type TreeViewItem}" BasedOn="{StaticResource NoCategoryStyle}">
                     <Setter Property="FontWeight" Value="Normal" />
                     <!--<Setter Property="IsSelected" Value="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" />-->
-                    <Setter Property="IsExpanded" Value="True"/>
+                    <!--<Setter Property="IsExpanded" Value="True"/>-->
                     <Setter Property="local:DropBehavior.PreviewDropCommand" Value="{Binding AssignToTransaction}"/>
                     <Setter Property="ContextMenu">
                         <Setter.Value>
@@ -66,7 +66,8 @@
                 </Style>
             </TreeView.ItemContainerStyle>
             <i:Interaction.Behaviors>
-                <local:TreeViewSelectionBehavior SelectedItem="{Binding SelectedCategory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>                
+                <local:TreeViewSelectionBehavior SelectedItem="{Binding SelectedCategory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 HierarchyPredicate="GetHierarchyPredicate"/>                
             </i:Interaction.Behaviors>
             <TreeView.ItemTemplate>
                 <HierarchicalDataTemplate ItemsSource="{Binding SubCatgeories}" DataType="{x:Type vm:CategoryExpenseViewModel}">

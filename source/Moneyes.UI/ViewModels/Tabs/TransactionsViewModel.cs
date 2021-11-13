@@ -31,8 +31,6 @@ namespace Moneyes.UI.ViewModels
 
         #region UI Properties
         public ICommand LoadedCommand { get; }
-        public ICommand FetchOnlineCommand { get; }
-        public ICommand SelectCategoryCommand { get; }
 
 
         public ExpenseCategoriesViewModel ExpenseCategories { get; }
@@ -96,26 +94,6 @@ namespace Moneyes.UI.ViewModels
             _transactionRepository = transactionRepository;
             _bankingService = bankingService;
             _statusMessageService = statusMessageService;
-
-            FetchOnlineCommand = new AsyncCommand(async ct =>
-            {
-                Result<int> result = await _liveDataService
-                    .FetchTransactionsAndBalances(Selector.CurrentAccount);
-
-                if (result.IsSuccessful)
-                {
-                    if (result.Data == 0)
-                    {
-                        _statusMessageService.ShowMessage($"No new transactions available");
-                        return;
-                    }
-
-                    //UpdateCategories();
-                    //UpdateTransactions();
-
-                    _statusMessageService.ShowMessage($"Fetched {result.Data} new transaction(s)");
-                }
-            });
 
 
             ExpenseCategories.PropertyChanged += (sender, args) =>

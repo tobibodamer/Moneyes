@@ -1,5 +1,7 @@
-﻿using System;
+﻿using Moneyes.UI.ViewModels;
+using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -23,6 +25,17 @@ namespace Moneyes.UI.View
         public Overview()
         {
             InitializeComponent();
+
+            CategoryItems.SourceUpdated += CategoryItems_SourceUpdated;
+            
+        }
+
+        private void CategoryItems_SourceUpdated(object sender, DataTransferEventArgs e)
+        {
+            CollectionView view = (CollectionView)CollectionViewSource.GetDefaultView(CategoryItems.ItemsSource);
+
+            if (view == null) return;
+            view.SortDescriptions.Add(new SortDescription("TotalExpense", ListSortDirection.Ascending));            
         }
     }
 }

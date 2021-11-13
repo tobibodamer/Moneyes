@@ -18,20 +18,21 @@ namespace Moneyes.UI.ViewModels
         private readonly TransactionRepository _transactionRepository;
         private readonly IBankingService _bankingService;
 
-        private ObservableCollection<CategoryExpenseViewModel> _categories = new();
+        //private ObservableCollection<CategoryExpenseViewModel> _categories = new();
         decimal _totalExpense;
         decimal _totalIncome;
+        private Balance _currentBalance;
         public ICommand LoadedCommand { get; }
 
-        public ObservableCollection<CategoryExpenseViewModel> Categories
-        {
-            get => _categories;
-            set
-            {
-                _categories = value;
-                OnPropertyChanged();
-            }
-        }
+        //public ObservableCollection<CategoryExpenseViewModel> Categories
+        //{
+        //    get => _categories;
+        //    set
+        //    {
+        //        _categories = value;
+        //        OnPropertyChanged();
+        //    }
+        //}
 
         public decimal TotalExpense
         {
@@ -60,6 +61,16 @@ namespace Moneyes.UI.ViewModels
             set
             {
                 _selector = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public Balance CurrentBalance
+        {
+            get => _currentBalance;
+            set
+            {
+                _currentBalance = value;
                 OnPropertyChanged();
             }
         }
@@ -105,35 +116,39 @@ namespace Moneyes.UI.ViewModels
             _expenseIncomeService.GetTotalIncome(GetFilter())
                 .OnSuccess(total => TotalIncome = total);
 
-            // Get expenses per category
-            _expenseIncomeService.GetExpensePerCategory(GetFilter(), true)
-                .OnError(() => { })
-                .OnSuccess(expenses =>
-                {
-                    Categories.Clear();
+            ExpenseCategories.UpdateCategories(GetFilter(), CategoryFlags.Real | CategoryFlags.NoCategory);
 
-                    foreach ((Category category, decimal amt) in expenses
-                        .OrderBy(p => p.Category.Target == 0)
-                        .ThenByDescending(p => p.Category == Category.NoCategory))
-                    {
+            CurrentBalance = _bankingService.GetBalance(Selector.EndDate, Selector.CurrentAccount);
 
-                        Categories.Add(
-                            new CategoryExpenseViewModel(category, amt)
-                            {
-                            });
-                    }
+            //// Get expenses per category
+            //_expenseIncomeService.GetExpensePerCategory(GetFilter(), true)
+            //    .OnError(() => { })
+            //    .OnSuccess(expenses =>
+            //    {
+            //        Categories.Clear();
 
-                    // Set sub categories
-                    foreach (CategoryExpenseViewModel category in Categories)
-                    {
-                        Category parent = category.Category?.Parent;
-                        if (parent == null) { continue; }
+            //        foreach ((Category category, decimal amt) in expenses
+            //            .OrderBy(p => p.Category.Target == 0)
+            //            .ThenByDescending(p => p.Category == Category.NoCategory))
+            //        {
 
-                        // Add category as sub category in parent
-                        Categories.FirstOrDefault(c => c.Category.Equals(parent))
-                            .SubCatgeories.Add(category);
-                    }
-                });
+            //            Categories.Add(
+            //                new CategoryExpenseViewModel(category, amt)
+            //                {
+            //                });
+            //        }
+
+            //        // Set sub categories
+            //        foreach (CategoryExpenseViewModel category in Categories)
+            //        {
+            //            Category parent = category.Category?.Parent;
+            //            if (parent == null) { continue; }
+
+            //            // Add category as sub category in parent
+            //            Categories.FirstOrDefault(c => c.Category.Equals(parent))
+            //                .SubCatgeories.Add(category);
+            //        }
+            //    });
         }
 
         public void OnSelect()

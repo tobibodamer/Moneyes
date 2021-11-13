@@ -1,8 +1,10 @@
 ﻿using Moneyes.Core;
+using Moneyes.LiveData;
 using Moneyes.UI.Services;
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Windows.Input;
 
 namespace Moneyes.UI.ViewModels
 {
@@ -37,7 +39,7 @@ namespace Moneyes.UI.ViewModels
             get => _selectorStore.CurrentAccount;
             set
             {
-                    _selectorStore.CurrentAccount = value;
+                _selectorStore.CurrentAccount = value;
                 OnPropertyChanged();
             }
         }
@@ -65,8 +67,11 @@ namespace Moneyes.UI.ViewModels
         public AsyncCommand MonthMinusCommand { get; }
         public AsyncCommand MonthPlusCommand { get; }
 
+        public ICommand FetchOnlineCommand { get; }
+
         public SelectorViewModel(
-            IBankingService bankingService, LiveDataService liveDataService, SelectorStore selectorStore)
+            IBankingService bankingService, LiveDataService liveDataService, SelectorStore selectorStore,
+            IStatusMessageService statusMessageService)
         {
             _bankingService = bankingService;
             _liveDataService = liveDataService;
@@ -101,6 +106,28 @@ namespace Moneyes.UI.ViewModels
 
                 return nextMonth.Year < DateTime.Now.Year
                     || (nextMonth.Year == DateTime.Now.Year && nextMonth.Month <= DateTime.Now.Month);
+            });
+
+            FetchOnlineCommand = new AsyncCommand(async ct =>
+            {
+                Result<int> result = await _liveDataService
+                    .FetchTransactionsAndBalances(CurrentAccount);
+
+                if (result.IsSuccessful)
+                {
+                    if (result.Data == 0)
+                    {
+                        statusMessageService.ShowMessage($"No new transactions available");
+                        return;
+                    }
+
+                    statusMessageService.ShowMessage($"Fetched {result.Data} new transaction(s)");
+                }
+                else
+                {
+                    statusMessageService.ShowMessage($"Fetching transactions failed", "Retry",
+                        () => FetchOnlineCommand.Execute(null));
+                }
             });
 
 

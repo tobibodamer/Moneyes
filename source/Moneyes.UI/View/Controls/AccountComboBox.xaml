@@ -1,0 +1,57 @@
+﻿<UserControl x:Class="Moneyes.UI.View.AccountComboBox"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:Moneyes.UI.View"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             mc:Ignorable="d" d:Background="White">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="../Resources.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
+
+        </ResourceDictionary>
+    </UserControl.Resources>
+    <Border CornerRadius="6" Background="{StaticResource MaterialDesignTextFieldBoxBackground}" Padding="0,0,10,0">
+        <Border.Resources>
+            <ComboBoxItem x:Key="NullItem" IsEnabled="True" Foreground="{StaticResource PrimaryHueMidBrush}">
+                All Accounts
+            </ComboBoxItem>
+            <CompositeCollection x:Key="AccountsCollection">
+                <StaticResource ResourceKey="NullItem"/>
+                <CollectionContainer Collection="{Binding DataContext.Accounts, 
+                            Source={x:Reference accounts}}"/>
+            </CompositeCollection>
+        </Border.Resources>
+        <ComboBox Name="accounts" ItemsSource="{DynamicResource AccountsCollection}" 
+                              SelectedItem="{Binding CurrentAccount, 
+                                            Converter={StaticResource EmptyItemConverter},
+                                            ConverterParameter={StaticResource NullItem}}"
+                               Margin="0,0" Style="{StaticResource MaterialDesignDataGridComboBox}"
+                          materialDesign:ComboBoxAssist.ShowSelectedItem="True" BorderThickness="0"
+                  VerticalAlignment="Stretch" HorizontalAlignment="Right" 
+                  Width="175" Grid.Column="0" VerticalContentAlignment="Center" Padding="10,0,0,0">
+            <ComboBox.ItemTemplate>
+                <DataTemplate>
+                    <TextBlock>
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Text">
+                                    <Setter.Value>
+                                        <MultiBinding StringFormat="{}{0} ({1})">
+                                            <Binding Path="Type" />
+                                            <Binding Path="Number" />
+                                        </MultiBinding>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </DataTemplate>
+            </ComboBox.ItemTemplate>
+        </ComboBox>
+    </Border>
+</UserControl>

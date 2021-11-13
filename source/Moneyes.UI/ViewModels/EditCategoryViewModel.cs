@@ -84,6 +84,8 @@ namespace Moneyes.UI.ViewModels
                 {
                     Filter = new(value.Filter);
                     TransactionType = value.Filter.TransactionType;
+                    MinAmount = value.Filter.MinAmount;
+                    MaxAmount = value.Filter.MaxAmount;
                 }
                 else
                 {

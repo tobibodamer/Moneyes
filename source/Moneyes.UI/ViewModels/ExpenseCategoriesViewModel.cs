@@ -72,14 +72,15 @@ namespace Moneyes.UI.ViewModels
         /// Dynamically updates the list of category viewmodels by inserting new and updating existing entries.
         /// </summary>
         /// <param name="categorieExpenses"></param>
-        private void UpdateCategories(IList<CategoryExpenseViewModel> categorieExpenses)
+        private void UpdateCategories(IList<CategoryExpenseViewModel> categorieExpenses, 
+            IComparer<CategoryExpenseViewModel> comparer)
         {
             var previouslySelectedCategory = SelectedCategory?.Category;
 
             Categories.DynamicUpdate(
                 categorieExpenses,
                 (c1, c2) => c1.Category.Idquals(c2.Category),
-                new CategoryComparer());
+                comparer);
 
             if (previouslySelectedCategory != null)
             {
@@ -108,14 +109,14 @@ namespace Moneyes.UI.ViewModels
         /// Updates the category expenses by reloading them using the given <paramref name="filter"/>.
         /// </summary>
         /// <param name="filter"></param>
-        public void UpdateCategories(TransactionFilter filter)
+        public void UpdateCategories(TransactionFilter filter, CategoryFlags categoryFlags = CategoryFlags.All)
         {
             // Get expenses per category
-            _expenseIncomeService.GetExpensePerCategory(filter)
+            _expenseIncomeService.GetExpensePerCategory(filter, categoryFlags.HasFlag(CategoryFlags.NoCategory))
                 .OnError(() =>
                 {
                     _statusMessageService.ShowMessage("Could not get expenses of categories", "Retry",
-                        () => UpdateCategories(filter));
+                        () => UpdateCategories(filter, categoryFlags));
                 })
                 .OnSuccess(expenses =>
                 {
@@ -128,21 +129,22 @@ namespace Moneyes.UI.ViewModels
                     // Set sub categories
                     SetSubCategories(categories);
 
+                    if (categoryFlags.HasFlag(CategoryFlags.AllCategory))
+                    {
+                        // Get total expenses
+                        _expenseIncomeService.GetTotalExpense(filter)
+                                        .OnSuccess(totalAmt =>
+                                        {
+                                            var allCategory = CreateEntry(Category.AllCategory, totalAmt);
 
-                    // Get total expenses
-                    _expenseIncomeService.GetTotalExpense(filter)
-                                    .OnSuccess(totalAmt =>
-                                    {
-                                        var allCategory = CreateEntry(Category.AllCategory, totalAmt);
-
-                                        categories.Add(allCategory);
-                                    })
-                                    .OnError(() =>
-                                    {
-                                        _statusMessageService.ShowMessage("Could not get total expense");
-                                    });
-
-                    UpdateCategories(categories);
+                                            categories.Add(allCategory);
+                                        })
+                                        .OnError(() =>
+                                        {
+                                            _statusMessageService.ShowMessage("Could not get total expense");
+                                        });
+                    }
+                    UpdateCategories(categories, new CategoryComparer());
                 });
         }
 

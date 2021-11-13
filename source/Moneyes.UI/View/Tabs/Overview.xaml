@@ -71,6 +71,14 @@
                     </Trigger>
                 </Style.Triggers>
             </Style>
+
+            <Style TargetType="TextBlock" x:Key="BalanceTextBlock">                
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding CurrentBalance.IsNegative}" Value="True">
+                        <Setter Property="Foreground" Value="Red"/>
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
         </ResourceDictionary>
     </UserControl.Resources>
     <Grid>
@@ -114,7 +122,7 @@
                     </DatePicker>
                 </StackPanel>-->
 
-                <Button Command="{Binding FetchOnlineCommand}" Style="{StaticResource FetchOnlineButton}" Grid.Column="3"/>
+                <Button Command="{Binding Selector.FetchOnlineCommand}" Style="{StaticResource FetchOnlineButton}" Grid.Column="3"/>
             </Grid>
             <materialDesign:ColorZone.Effect>
                 <DropShadowEffect BlurRadius="14" ShadowDepth="4.5" Direction="270" Color="{StaticResource MaterialDesignShadow}"
@@ -125,7 +133,17 @@
         <DockPanel HorizontalAlignment="Center" Margin="20,20,20,20" VerticalAlignment="Top" Grid.Row="1">
             <!--<TextBlock Text="Spending" FontSize="22" FontWeight="Normal" DockPanel.Dock="Top" Margin="0"/>-->
 
-            <materialDesign:Card Width="220" Height="110" UniformCornerRadius="10" HorizontalAlignment="Left" Margin="0,15"
+            <materialDesign:Card Width="220" Height="110" UniformCornerRadius="10" HorizontalAlignment="Left" Margin="10,15"
+                                 Background="{DynamicResource MaterialDesignShadowBrush}" Foreground="{DynamicResource PrimaryHueDarkForegroundBrush}">
+                <Grid Margin="18">
+                    <materialDesign:PackIcon Kind="AccountBalance" Height="20" Width="20" HorizontalAlignment="Right"/>
+                    <TextBlock Text="Balance" FontSize="20" FontWeight="SemiBold"/>
+                    <TextBlock Text="{Binding CurrentBalance.Amount, StringFormat={}{0} €}" Style="{StaticResource BalanceTextBlock}"
+                               VerticalAlignment="Bottom" FontSize="18" Margin="0,7"/>
+                </Grid>
+            </materialDesign:Card>
+            
+            <materialDesign:Card Width="220" Height="110" UniformCornerRadius="10" HorizontalAlignment="Left" Margin="10,15"
                                  Background="{DynamicResource SecondaryHueMidBrush}">
                 <Grid Margin="18">
                     <materialDesign:PackIcon Kind="ArrowDown" Height="20" Width="20" HorizontalAlignment="Right"/>
@@ -134,7 +152,7 @@
                 </Grid>
             </materialDesign:Card>
 
-            <materialDesign:Card Width="220" Height="110" UniformCornerRadius="10" HorizontalAlignment="Left" Margin="20,15"
+            <materialDesign:Card Width="220" Height="110" UniformCornerRadius="10" HorizontalAlignment="Left" Margin="10,15"
                                  Background="{DynamicResource PrimaryHueDarkBrush}" Foreground="{DynamicResource PrimaryHueDarkForegroundBrush}">
                 <Grid Margin="18">
                     <materialDesign:PackIcon Kind="ArrowUp" Height="20" Width="20" HorizontalAlignment="Right"/>
@@ -150,7 +168,7 @@
                 <TextBlock Text="Show more" HorizontalAlignment="Right" Margin="0,5,10,0" Foreground="Gray" FontSize="13"/>
             </Grid>
 
-            <ItemsControl ItemsSource="{Binding Categories}" VerticalAlignment="Center" HorizontalAlignment="Left">
+            <ItemsControl x:Name="CategoryItems" ItemsSource="{Binding ExpenseCategories.Categories}" VerticalAlignment="Center" HorizontalAlignment="Left">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
                         <WrapPanel Orientation="Horizontal"/>

@@ -11,7 +11,7 @@
              TextElement.Foreground="{DynamicResource MaterialDesignBody}"
              xmlns:local="clr-namespace:Moneyes.UI.View"
              mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="800"
+             d:Background="White"
              d:DataContext="{d:DesignInstance Type=vm:ExpenseCategoriesViewModel}">
     <UserControl.Resources>
         <Style x:Key="NoCategoryStyle" TargetType="{x:Type TreeViewItem}" BasedOn="{StaticResource MaterialDesignTreeViewItem}">
@@ -66,7 +66,7 @@
                 </Style>
             </TreeView.ItemContainerStyle>
             <i:Interaction.Behaviors>
-                <local:BindableSelectedItemBehavior SelectedItem="{Binding SelectedCategory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                <local:TreeViewSelectionBehavior SelectedItem="{Binding SelectedCategory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>                
             </i:Interaction.Behaviors>
             <TreeView.ItemTemplate>
                 <HierarchicalDataTemplate ItemsSource="{Binding SubCatgeories}" DataType="{x:Type vm:CategoryExpenseViewModel}">

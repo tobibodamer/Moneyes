@@ -11,7 +11,7 @@ namespace Moneyes.Data
     public class BalanceRepository : BaseRepository<Balance>
     {
         public BalanceRepository(ILiteDatabase db) : base(db)
-        {            
+        {
         }
 
         /// <summary>
@@ -23,9 +23,23 @@ namespace Moneyes.Data
         {
             return Collection.Query()
                 .Where(b => b.Account.IBAN.Equals(account.IBAN))
-                .Where(b => b.Date <= date)                
+                .Where(b => b.Date <= date)
                 .OrderByDescending(b => b.Date)
                 .FirstOrDefault();
         }
+
+        //public Balance GetByDate(DateTime date, string bankCode)
+        //{
+        //    var grouped = Collection.Query()
+        //        .Where(b => b.Account.BankCode == bankCode)
+        //        .Where(b => b.Date <= date)
+        //        .OrderByDescending(b => b.Date)
+        //        .ToEnumerable()
+        //        .GroupBy(b => b.Account);
+
+        //    var minDate = grouped.Min(g => g.Select(b => b.Date).FirstOrDefault());
+
+        //    return grouped.Min()
+        //}
     }
 }

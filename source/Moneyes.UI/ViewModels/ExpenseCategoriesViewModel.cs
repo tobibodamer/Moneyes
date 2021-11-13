@@ -74,34 +74,17 @@ namespace Moneyes.UI.ViewModels
         /// <param name="categorieExpenses"></param>
         private void UpdateCategories(IList<CategoryExpenseViewModel> categorieExpenses)
         {
-            //int? selectedCategoryId = SelectedCategory?.Category?.Id;
+            var previouslySelectedCategory = SelectedCategory?.Category;
 
             Categories.DynamicUpdate(
-                categorieExpenses, 
+                categorieExpenses,
                 (c1, c2) => c1.Category.Idquals(c2.Category),
                 new CategoryComparer());
 
-            //if (selectedCategoryId.HasValue)
-            //{
-            //    CategoryExpenseViewModel previouslySelectedCategory = Categories
-            //        .FirstOrDefault(c => c.Category.Id == selectedCategoryId);
-
-            //    if (previouslySelectedCategory != null)
-            //    {
-            //        previouslySelectedCategory.IsSelected = true;
-            //    }
-            //}
-            //else
-            //{
-            //    CategoryExpenseViewModel allCategory = Categories
-            //        .FirstOrDefault(c => c.Category == Category.AllCategory);
-
-            //    if (allCategory != null)
-            //    {
-            //        //allCategory.IsSelected = true;
-            //        SelectedCategory = allCategory;
-            //    }
-            //}
+            if (previouslySelectedCategory != null)
+            {
+                SelectCategory(previouslySelectedCategory);
+            }
 
             if (SelectedCategory is null)
             {

@@ -108,6 +108,15 @@ namespace Moneyes.UI.ViewModels
             _selectorStore.DateChanged += SelectorStore_DateChanged;
 
             RefreshAccounts();
+
+            if (Accounts.Any())
+            {
+                if (!Accounts.Contains(CurrentAccount))
+                {
+                    CurrentAccount = Accounts.First();
+                }
+                return;
+            }
         }
 
         ~SelectorViewModel()
@@ -138,11 +147,6 @@ namespace Moneyes.UI.ViewModels
             }
 
             Accounts = new(_bankingService.GetAccounts());
-
-            if (Accounts.Any())
-            {
-                return;
-            }
         }
 
         public event EventHandler SelectorChanged;

@@ -53,8 +53,8 @@ namespace Moneyes.Core.Filters
                && (!StartDate.HasValue || (input.BookingDate >= StartDate))
                && (!EndDate.HasValue || (input.BookingDate <= EndDate))
                && (AccountNumber is null || (input.IBAN?.EndsWith(AccountNumber) ?? true))
-               && (MinAmount is null || input.Amount >= MinAmount)
-               && (MaxAmount is null || input.Amount <= MaxAmount)
+               && (MinAmount is null || Math.Abs(input.Amount) >= MinAmount)
+               && (MaxAmount is null || Math.Abs(input.Amount) <= MaxAmount)
                && (Criteria is null || Criteria.Evaluate(input));
         }
 

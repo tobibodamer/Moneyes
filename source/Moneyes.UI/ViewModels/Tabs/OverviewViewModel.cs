@@ -96,6 +96,21 @@ namespace Moneyes.UI.ViewModels
             {
                 UpdateCategories();
             };
+
+            _transactionRepository.EntityAdded += (transaction) =>
+            {
+                UpdateCategories();
+            };
+
+            _transactionRepository.EntityUpdated += (transaction) =>
+            {
+                UpdateCategories();
+            };
+
+            _transactionRepository.EntityDeleted += (transaction) =>
+            {
+                UpdateCategories();
+            };
         }
 
         private TransactionFilter GetFilter()

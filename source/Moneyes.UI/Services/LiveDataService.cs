@@ -103,7 +103,7 @@ namespace Moneyes.UI
                     bankingDetails.Pin = password;
 
                     _configStore.SetBankingDetails(bankingDetails);
-                    _statusMessageService.ShowMessage("Online banking credentials saved");
+                    _statusMessageService.ShowMessage("Password saved");
                 }
 
                 return;

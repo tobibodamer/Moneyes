@@ -13,7 +13,7 @@ namespace Moneyes.UI
         private readonly AccountRepository _accountRepository;
         private readonly BalanceRepository _balanceRepository;
 
-        public BankingService(BankConnectionStore bankConnectionStore, 
+        public BankingService(BankConnectionStore bankConnectionStore,
             AccountRepository accountRepository, BalanceRepository balanceRepository)
         {
             _bankConnectionStore = bankConnectionStore;
@@ -54,8 +54,17 @@ namespace Moneyes.UI
             return counter;
         }
 
-        public Balance GetBalance(DateTime date, AccountDetails account)
+        public Balance GetBalance(DateTime date, AccountDetails? account)
         {
+            //TODO: implement total balance
+            if (account == null)
+            {
+                foreach (var acc in GetAccounts())
+                {
+                    return _balanceRepository.GetByDate(date, acc);
+                }
+            }
+
             return _balanceRepository.GetByDate(date, account);
         }
     }

@@ -2,7 +2,6 @@
 using Moneyes.Core.Filters;
 using Moneyes.Data;
 using Moneyes.LiveData;
-using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -12,7 +11,7 @@ using System.Windows.Input;
 
 namespace Moneyes.UI.ViewModels
 {
-    class OverviewViewModel : ViewModelBase, ITabViewModel
+    partial class OverviewViewModel : ViewModelBase, ITabViewModel
     {
         private LiveDataService _liveDataService;
         private IExpenseIncomeService _expenseIncomeService;
@@ -54,67 +53,47 @@ namespace Moneyes.UI.ViewModels
             }
         }
 
-        private DateTime _fromDate;
-        public DateTime FromDate
+        private SelectorViewModel _selector;
+        public SelectorViewModel Selector
         {
-            get => _fromDate;
+            get => _selector;
             set
             {
-                _fromDate = value;
+                _selector = value;
                 OnPropertyChanged();
             }
         }
-
-        private DateTime _endDate;
-        public DateTime EndDate
-        {
-            get => _endDate;
-            set
-            {
-                _endDate = value;
-                OnPropertyChanged();
-            }
-        }
-
-        public ICommand DateChangedCommand { get; }
-
         public ExpenseCategoriesViewModel ExpenseCategories { get; }
         public OverviewViewModel(
             LiveDataService liveDataService,
             IExpenseIncomeService expenseIncomeService,
             TransactionRepository transactionRepository,
             IBankingService bankingService,
-            ExpenseCategoriesViewModel expenseCategoriesViewModel)
+            ExpenseCategoriesViewModel expenseCategoriesViewModel,
+            SelectorViewModel selectorViewModel)
         {
             DisplayName = "Overview";
 
             ExpenseCategories = expenseCategoriesViewModel;
+            Selector = selectorViewModel;
             _liveDataService = liveDataService;
             _expenseIncomeService = expenseIncomeService;
             _transactionRepository = transactionRepository;
             _bankingService = bankingService;
 
-            LoadedCommand = new AsyncCommand(async ct =>
-            {
-                
-            });
-
-            FromDate = new(DateTime.Now.Year, DateTime.Now.Month, 1); ;
-            EndDate = DateTime.Now;
-
-            DateChangedCommand = new AsyncCommand(async ct =>
+            Selector.SelectorChanged += (sender, args) =>
             {
                 UpdateCategories();
-            });
+            };
         }
 
         private TransactionFilter GetFilter()
         {
             return new TransactionFilter()
             {
-                AccountNumber = _bankingService.GetAccounts().First().Number,
-                StartDate = FromDate,
-                EndDate = EndDate
+                AccountNumber = Selector.CurrentAccount?.Number,
+                StartDate = Selector.FromDate,
+                EndDate = Selector.EndDate
             };
         }
 
@@ -159,18 +138,7 @@ namespace Moneyes.UI.ViewModels
 
         public void OnSelect()
         {
-            Load();
-        }
-
-        void Load()
-        {
-            if (!_bankingService.HasBankingDetails)
-            {
-                // No bank connection configured -> show message?
-                return;
-            }
-
-            //TODO: Remove
+            Selector.RefreshAccounts();
             UpdateCategories();
         }
     }

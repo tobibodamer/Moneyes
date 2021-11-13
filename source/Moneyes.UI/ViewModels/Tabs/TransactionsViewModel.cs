@@ -25,12 +25,9 @@ namespace Moneyes.UI.ViewModels
         private readonly TransactionRepository _transactionRepository;
         private readonly IBankingService _bankingService;
         private readonly IStatusMessageService _statusMessageService;
-        private AccountDetails _selectedAccount;
         private Balance _currentBalance;
 
-        private ObservableCollection<AccountDetails> _accounts = new();
         private ObservableCollection<Transaction> _transactions = new();
-        //private ObservableCollection<CategoryExpenseViewModel> _categories = new();
 
         #region UI Properties
         public ICommand LoadedCommand { get; }
@@ -40,29 +37,13 @@ namespace Moneyes.UI.ViewModels
 
         public ExpenseCategoriesViewModel ExpenseCategories { get; }
 
-        public AccountDetails SelectedAccount
+        private SelectorViewModel _selector;
+        public SelectorViewModel Selector
         {
-            get => _selectedAccount;
+            get => _selector;
             set
             {
-                _selectedAccount = value;                
-                OnPropertyChanged();
-                UpdateCategories();                
-            }
-        }
-
-        public ObservableCollection<AccountDetails> Accounts
-        {
-            get => _accounts;
-            set
-            {
-                _accounts = value;
-
-                if (value != null && value.Any())
-                {
-                    SelectedAccount = value.First();
-                }
-
+                _selector = value;
                 OnPropertyChanged();
             }
         }
@@ -86,27 +67,6 @@ namespace Moneyes.UI.ViewModels
                 OnPropertyChanged();
             }
         }
-        private DateTime _fromDate;
-        public DateTime FromDate
-        {
-            get => _fromDate;
-            set
-            {
-                _fromDate = value;
-                OnPropertyChanged();
-            }
-        }
-
-        private DateTime _endDate;
-        public DateTime EndDate
-        {
-            get => _endDate;
-            set
-            {
-                _endDate = value;
-                OnPropertyChanged();
-            }
-        }
 
         private bool _loadingTransactions;
         public bool Loading
@@ -119,8 +79,6 @@ namespace Moneyes.UI.ViewModels
             }
         }
 
-        public ICommand DateChangedCommand { get; }
-
         #endregion
         public TransactionsViewModel(
             LiveDataService liveDataService,
@@ -128,50 +86,37 @@ namespace Moneyes.UI.ViewModels
             IBankingService bankingService,
             IStatusMessageService statusMessageService,
             ExpenseCategoriesViewModel expenseCategoriesViewModel,
+            SelectorViewModel selectorViewModel,
             CategoryRepository categoryRepository)
         {
             DisplayName = "Transactions";
             ExpenseCategories = expenseCategoriesViewModel;
+            Selector = selectorViewModel;
             _liveDataService = liveDataService;
             _transactionRepository = transactionRepository;
             _bankingService = bankingService;
             _statusMessageService = statusMessageService;
 
-            LoadedCommand = new AsyncCommand(async ct =>
-            {
-
-            });
-
             FetchOnlineCommand = new AsyncCommand(async ct =>
             {
                 Result<int> result = await _liveDataService
-                    .FetchTransactionsAndBalances(SelectedAccount);
+                    .FetchTransactionsAndBalances(Selector.CurrentAccount);
 
                 if (result.IsSuccessful)
                 {
                     if (result.Data == 0)
                     {
-                        _statusMessageService.ShowMessage($"No new transactions available.");
+                        _statusMessageService.ShowMessage($"No new transactions available");
                         return;
                     }
 
                     //UpdateCategories();
                     //UpdateTransactions();
 
-                    _statusMessageService.ShowMessage($"Fetched {result.Data} new transactions.");
+                    _statusMessageService.ShowMessage($"Fetched {result.Data} new transaction(s)");
                 }
             });
 
-            // Date selection
-
-            FromDate = new(DateTime.Now.Year, DateTime.Now.Month, 1); ;
-            EndDate = DateTime.Now;
-
-            DateChangedCommand = new AsyncCommand(async ct =>
-            {
-                UpdateCategories();
-                UpdateTransactions();
-            });
 
             ExpenseCategories.PropertyChanged += (sender, args) =>
             {
@@ -226,6 +171,12 @@ namespace Moneyes.UI.ViewModels
 
                 UpdateCategories();
             };
+
+            Selector.SelectorChanged += (sender, args) =>
+            {
+                UpdateCategories();
+                UpdateTransactions();
+            };
         }
 
         private void UpdateTransactions()
@@ -242,7 +193,10 @@ namespace Moneyes.UI.ViewModels
                         filter: GetTransactionFilter(),
                         categories: selectedCategory);
 
-                    CurrentBalance = _bankingService.GetBalance(EndDate, SelectedAccount);
+                    if (Selector.CurrentAccount != null)
+                    {
+                        CurrentBalance = _bankingService.GetBalance(Selector.EndDate, Selector.CurrentAccount);
+                    }
 
                     Transactions.DynamicUpdate(
                         transactions,
@@ -261,9 +215,9 @@ namespace Moneyes.UI.ViewModels
         {
             return new TransactionFilter()
             {
-                StartDate = FromDate,
-                EndDate = EndDate,
-                AccountNumber = _selectedAccount.Number
+                StartDate = Selector.FromDate,
+                EndDate = Selector.EndDate,
+                AccountNumber = Selector.CurrentAccount?.Number
             };
         }
 
@@ -285,18 +239,9 @@ namespace Moneyes.UI.ViewModels
 
         public void OnSelect()
         {
-            if (!_bankingService.HasBankingDetails)
-            {
-                // No bank connection configured -> show message?
-                return;
-            }
-
-            Accounts = new(_bankingService.GetAccounts());
-
-            if (Accounts.Any())
-            {
-                return;
-            }
+            Selector.RefreshAccounts();
+            UpdateCategories();
+            UpdateTransactions();
         }
 
         class TransactionSortComparer : IComparer<Transaction>

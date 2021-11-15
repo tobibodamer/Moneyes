@@ -19,12 +19,14 @@ namespace Moneyes.LiveData
             string currency,
             int index = 0)
         {
+            swiftTransaction.SepaPurposes.TryGetValue(SepaPurpose.SVWZ, out var purpose);
+
             return new()
             {
                 Index = index,
-                Purpose = swiftTransaction.SVWZ,
+                Purpose = purpose,
                 Amount = swiftTransaction.Amount,
-                PartnerIBAN = swiftTransaction.IBAN,
+                PartnerIBAN = swiftTransaction.AccountCode,
                 BIC = swiftTransaction.BankCode,
                 Name = swiftTransaction.PartnerName,
                 AltName = swiftTransaction.ABWA,

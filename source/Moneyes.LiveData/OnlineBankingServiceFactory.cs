@@ -8,7 +8,7 @@ namespace Moneyes.LiveData
     /// <summary>
     /// Factory to create a <see cref="OnlineBankingService"/>.
     /// </summary>
-    public class OnlineBankingServiceFactory
+    public class OnlineBankingServiceFactory : IOnlineBankingServiceFactory
     {
         private readonly ILoggerFactory _loggerFactory;
 
@@ -30,7 +30,7 @@ namespace Moneyes.LiveData
 
             ValidateInstitute(institute);
 
-            ConnectionDetails details = new ()
+            ConnectionDetails details = new()
             {
                 Url = institute.FinTs_Url,
                 Blz = bankingDetails.BankCode,

@@ -4,7 +4,7 @@ using System;
 
 namespace Moneyes.Data
 {
-    public class BankConnectionStore
+    public class BankConnectionStore : IBankConnectionStore
     {
         private readonly ILiteDatabase _db;
         public BankConnectionStore(ILiteDatabase db)

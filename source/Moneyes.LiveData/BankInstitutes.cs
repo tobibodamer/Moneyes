@@ -5,6 +5,7 @@ using CsvHelper;
 using CsvHelper.Configuration;
 using System.Globalization;
 using System.IO;
+using System;
 
 namespace Moneyes.LiveData
 {
@@ -59,5 +60,32 @@ namespace Moneyes.LiveData
             return GetInstituteInternal(bankCode);
         }
 #nullable disable
+
+        /// <summary>
+        /// Gets whether the bank given by the bank code is supported.
+        /// </summary>
+        /// <param name="bankCode"></param>
+        /// <returns></returns>
+        public static bool IsSupported(int bankCode)
+        {
+            var institute = GetInstituteInternal(bankCode);
+
+            if (institute is null)
+            {
+                return false;
+            }
+
+            if (string.IsNullOrEmpty(institute.FinTs_Url))
+            {
+                return false;
+            }
+
+            if (!Uri.TryCreate(institute.FinTs_Url, UriKind.Absolute, out _))
+            {
+                return false;
+            }
+
+            return true;
+        }
     }
 }

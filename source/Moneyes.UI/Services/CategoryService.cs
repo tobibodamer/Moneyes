@@ -203,7 +203,7 @@ namespace Moneyes.UI
             AssignCategories(transactions, assignMethod, true);
         }
 
-        public void AssignCategory(Category category)
+        public void AssignCategory(Category category, AssignMethod assignMethod = AssignMethod.KeepPrevious)
         {
             // Get transactions
             var transactions = _transactionRepository.All().ToList();
@@ -213,6 +213,11 @@ namespace Moneyes.UI
 
             foreach (Transaction transaction in transactions)
             {
+                if (assignMethod is AssignMethod.Reset)
+                {
+                    transaction.Categories.Clear();
+                }
+
                 if (category.IsExlusive && transaction.Categories.Any())
                 {
                     // Exclusive category and already assigned

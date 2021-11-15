@@ -199,10 +199,17 @@ namespace Moneyes.Core
         private string GenerateUID()
         {
             //return HashCode.Combine(BookingDate, Purpose, BookingType, Amount, IBAN, BIC, Name, Index);
-            string s = $"{BookingDate:yyyyMMdd}{Purpose}{BookingType}{Amount}{IBAN}{BIC}{Name}{Index}";
+            string s = $"{BookingDate:yyyyMMdd}{Purpose}{BookingType}{Amount}{IBAN}{BIC}{Name}{Index}"
+                .Replace(" ", "")
+                .Replace(":", ".");
 
             using SHA256 mySHA256 = SHA256.Create();
             return BitConverter.ToString(mySHA256.ComputeHash(System.Text.Encoding.ASCII.GetBytes(s))).Replace("-", "");
+        }
+
+        public void RegenerateUID()
+        {
+            _idLazy = new Lazy<string>(() => GenerateUID());
         }
 
         /// <summary>

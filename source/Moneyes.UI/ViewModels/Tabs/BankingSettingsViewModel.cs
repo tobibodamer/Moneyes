@@ -185,9 +185,11 @@ namespace Moneyes.UI.ViewModels
 
             if (!PIN.IsNullOrEmpty())
             {
-                Result result = await _liveDataService.CreateBankConnection(bankingDetails, testConnection: true);
-
-                if (!result.IsSuccessful)
+                try
+                {
+                    await _liveDataService.CreateBankConnection(bankingDetails, testConnection: true);
+                }
+                catch
                 {
                     MessageBox.Show("Could not connect to bank. Check your bank code and credentials.",
                         "Error", MessageBoxButton.OK, MessageBoxImage.Error);
@@ -201,18 +203,22 @@ namespace Moneyes.UI.ViewModels
 
         public void LookupBank()
         {
-            _ = _liveDataService.FindBank(_bankCode.Value)
-                     .OnSuccess(bank =>
-                     {
-                         BankLookupResult = bank.Institute;
-                         BankFound = true;
-                     })
-                     .OnError(() =>
-                     {
-                         BankLookupResult = "Bank not supported.";
-                         BankFound = false;
-                     });
-
+            try
+            {
+                BankLookupResult = _liveDataService.FindBank(_bankCode.Value).Institute;
+                BankFound = true;
+            }
+            catch (NotSupportedException)
+            {
+                BankLookupResult = "Bank not supported.";
+                BankFound = false;
+            }
+            catch
+            {
+                BankLookupResult = "Bank lookup failed";
+                BankFound = false;
+            }
+            
             BankLookupCompleted = true;
         }
 

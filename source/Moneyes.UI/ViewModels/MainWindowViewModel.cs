@@ -29,7 +29,7 @@ namespace Moneyes.UI.ViewModels
             }
         }
 
-        public MainWindowViewModel(IEnumerable<ITabViewModel> tabs, BankConnectionStore bankingConfigStore,
+        public MainWindowViewModel(IEnumerable<ITabViewModel> tabs, IBankConnectionStore bankingConfigStore,
             IStatusMessageService statusMessageService)
         {
             Tabs = new(tabs);

@@ -19,7 +19,7 @@ namespace Moneyes.UI
         /// Assigns a given category to all transactions matching, and updates the database.
         /// </summary>
         /// <param name="category"></param>
-        void AssignCategory(Category category);
+        void AssignCategory(Category category, AssignMethod assignMethod = AssignMethod.KeepPrevious);
 
         bool AddToCategory(Transaction transaction, Category category);
 

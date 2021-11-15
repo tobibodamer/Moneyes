@@ -114,7 +114,7 @@ namespace Moneyes.UI
             services.AddScoped<IBaseRepository<AccountDetails>, AccountRepository>(p => p.GetRequiredService<AccountRepository>());
             services.AddScoped<BalanceRepository>();
             services.AddScoped<IBaseRepository<Balance>, BalanceRepository>(p => p.GetRequiredService<BalanceRepository>());
-            services.AddScoped<BankConnectionStore>();
+            services.AddScoped<IBankConnectionStore, BankConnectionStore>();
 
 
             //var categoryRepo = new CategoryRepository(database);
@@ -128,7 +128,7 @@ namespace Moneyes.UI
             //var accountStore = new JsonDatabase<AccountDetails>("E:\\accountTest.json", account => account.IBAN);
 
             services.AddTransient<IPasswordPrompt, OnlineBankingPasswordPrompt>();
-            services.AddSingleton<OnlineBankingServiceFactory>();
+            services.AddSingleton<IOnlineBankingServiceFactory, OnlineBankingServiceFactory>();
 
             services.AddScoped<LiveDataService>();
             services.AddScoped<IExpenseIncomeService, ExpenseIncomServieUsingDb>();

@@ -9,11 +9,11 @@ namespace Moneyes.UI
 {
     public class BankingService : IBankingService
     {
-        private readonly BankConnectionStore _bankConnectionStore;
+        private readonly IBankConnectionStore _bankConnectionStore;
         private readonly AccountRepository _accountRepository;
         private readonly BalanceRepository _balanceRepository;
 
-        public BankingService(BankConnectionStore bankConnectionStore,
+        public BankingService(IBankConnectionStore bankConnectionStore,
             AccountRepository accountRepository, BalanceRepository balanceRepository)
         {
             _bankConnectionStore = bankConnectionStore;

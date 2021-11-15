@@ -19,9 +19,9 @@ namespace Moneyes.UI
 
         private readonly ICategoryService _categoryService;
 
-        private readonly OnlineBankingServiceFactory _bankingServiceFactory;
+        private readonly IOnlineBankingServiceFactory _bankingServiceFactory;
         private readonly IPasswordPrompt _passwordProvider;
-        private readonly BankConnectionStore _configStore;
+        private readonly IBankConnectionStore _configStore;
         private readonly ILogger<LiveDataService> _logger;
 
         private readonly IStatusMessageService _statusMessageService;
@@ -35,8 +35,8 @@ namespace Moneyes.UI
             ICategoryService categoryService,
             IBaseRepository<AccountDetails> accountRepo,
             BalanceRepository balanceRepo,
-            BankConnectionStore bankConnectionStore,
-            OnlineBankingServiceFactory bankingServiceFactory,
+            IBankConnectionStore bankConnectionStore,
+            IOnlineBankingServiceFactory bankingServiceFactory,
             IPasswordPrompt passwordPrompt,
             IStatusMessageService statusMessageService)
         {
@@ -61,16 +61,33 @@ namespace Moneyes.UI
         /// <returns></returns>
         private async Task EnsurePassword(int maxRetries = 3)
         {
+            await EnsurePassword(_bankingService.Sync, maxRetries);
+        }
+
+        private async Task EnsurePassword(Func<Task> operation, int maxRetries = 3)
+        {
+            _ = await EnsurePassword<int>(async () =>
+              {
+                  await operation();
+
+                  return 0;
+              }, maxRetries);
+        }
+
+        private async Task<TResult> EnsurePassword<TResult>(Func<Task<TResult>> operation, int maxRetries = 3)
+        {
             int numRetries = 0;
 
             if (!_bankingService.BankingDetails.Pin.IsNullOrEmpty())
             {
-                // Password is set -> try to sync
+                // Password is set -> try to perform operation
 
-                if (await VerifyCredentials())
+                (TResult result, bool successful) = await TryOperation(operation);
+
+                if (successful)
                 {
-                    // Password verified -> ensured
-                    return;
+                    // Operation successful
+                    return result;
                 }
 
                 numRetries++;
@@ -87,26 +104,30 @@ namespace Moneyes.UI
                     throw new OperationCanceledException();
                 }
 
-                // Set password and try to sync
+                // Set password and try to perform operation
                 _bankingService.BankingDetails.Pin = password;
 
-                if (!await VerifyCredentials())
+                (TResult result, bool successful) = await TryOperation(operation);
+
+                if (!successful)
                 {
+                    // Operation failed -> next try
                     continue;
                 }
 
-                // Sync successful -> password ensured
+                // Operation successful -> password ensured
 
                 if (savePassword)
                 {
                     OnlineBankingDetails bankingDetails = _configStore.GetBankingDetails();
+
                     bankingDetails.Pin = password;
 
                     _configStore.SetBankingDetails(bankingDetails);
                     _statusMessageService.ShowMessage("Password saved");
                 }
 
-                return;
+                return result;
             }
 
             // Clear wrong password after all retries failed
@@ -115,11 +136,60 @@ namespace Moneyes.UI
             throw new OperationCanceledException();
         }
 
+        /// <summary>
+        /// Tries to perform an operation while handling wrong credentials.
+        /// </summary>
+        /// <param name="operation"></param>
+        /// <returns>Whether the operation was executed successfully.</returns>
+        private async Task<(TResult Result, bool Successful)> TryOperation<TResult>(Func<Task<TResult>> operation)
+        {
+            try
+            {
+                return (await operation(), true);
+            }
+            catch (OnlineBankingException ex)
+            when (ex.ErrorCode is OnlineBankingErrorCode.InvalidPin
+                or OnlineBankingErrorCode.InvalidUsernameOrPin)
+            {
+                _logger?.LogError(ex, "Invalid username or password");
+
+                _statusMessageService.ShowMessage("Invalid username or PIN");
+
+                _bankingService.BankingDetails.Pin = null;
+            }
+            catch (OnlineBankingException ex)
+            {
+                _logger?.LogError(ex, "Error during operation:");
+
+                if (ex.Message != null)
+                {
+                    _statusMessageService.ShowMessage(ex.Message);
+                }
+
+                _bankingService.BankingDetails.Pin = null;
+
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error during operation:");
+
+                // Clear wrong password when something else went wrong
+                _bankingService.BankingDetails.Pin = null;
+
+                throw;
+            }
+
+            return (default, false);
+        }
+
         private async Task<bool> VerifyCredentials()
         {
             try
             {
                 await _bankingService.Sync();
+
+                _logger?.LogInformation("Sync successful");
 
                 return true;
             }
@@ -127,18 +197,24 @@ namespace Moneyes.UI
             when (ex.ErrorCode is OnlineBankingErrorCode.InvalidPin
                 or OnlineBankingErrorCode.InvalidUsernameOrPin)
             {
+                _logger?.LogError(ex, "Invalid username or password");
+
                 // Invalid password -> ?
                 _statusMessageService.ShowMessage("Invalid username or PIN");
             }
             catch (OnlineBankingException ex)
             {
+                _logger?.LogError(ex, "Error during sync:");
+
                 if (ex.Message != null)
                 {
                     _statusMessageService.ShowMessage(ex.Message);
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                _logger?.LogError(ex, "Error during sync:");
+
                 // Clear wrong password when something else went wrong
                 _bankingService.BankingDetails.Pin = null;
 
@@ -148,26 +224,29 @@ namespace Moneyes.UI
             return false;
         }
 
-        public Result<IBankInstitute> FindBank(int bankCode)
+        /// <summary>
+        /// Finds the bank institute with the given bank code.
+        /// </summary>
+        /// <param name="bankCode"></param>
+        /// <returns></returns>
+        public IBankInstitute FindBank(int bankCode)
         {
-            try
+            if (!BankInstitutes.IsSupported(bankCode))
             {
-                IBankInstitute bank = BankInstitutes.GetInstitute(bankCode);
-
-                if (bank != null)
-                {
-                    return Result.Successful(bank);
-                }
-            }
-            catch
-            {
-                //TODO: Log
+                _logger?.LogWarning("Bank institute (bank code '{bankCode}') is not supported.", bankCode);
+                throw new NotSupportedException($"Bank institute (bank code '{bankCode}') is not supported.");
             }
 
-            return Result.Failed<IBankInstitute>();
+            return BankInstitutes.GetInstitute(bankCode);
         }
 
-        public async Task<Result> CreateBankConnection(OnlineBankingDetails bankingDetails, bool testConnection = false)
+        /// <summary>
+        /// Creates a bank connection with the given online banking details and tests the connection.
+        /// </summary>
+        /// <param name="bankingDetails">The banking details used for the connection</param>
+        /// <param name="testConnection">If true performs a sync to test the connection</param>
+        /// <returns></returns>
+        public async Task CreateBankConnection(OnlineBankingDetails bankingDetails, bool testConnection = false)
         {
             try
             {
@@ -178,27 +257,31 @@ namespace Moneyes.UI
 
                 if (testConnection)
                 {
-                    if (!await VerifyCredentials())
-                    {
-                        return Result.Failed();
-                    }
+                    _logger?.LogInformation("Testing bank connection");
+
+                    // Try to sync -> will throw exception when credentials wrong
+                    await _bankingService.Sync();
                 }
 
-                BankingInitialized?.Invoke(bankingDetails);
+                _logger?.LogInformation("Bank connection created, bank code '{bankCode}'", bankingDetails.BankCode);
 
-                return Result.Successful();
+                BankingInitialized?.Invoke(bankingDetails);
             }
             catch (Exception ex)
             {
                 _logger?.LogError("Error while creating bank connection", ex);
 
                 _bankingService = null;
+                throw;
             }
-
-            return Result.Failed();
         }
 
-        private async Task<Result> InitOnlineBankingService()
+        /// <summary>
+        /// Initializes a online banking service with the <see cref="OnlineBankingDetails"/> from the store,
+        /// or updates the credentials of an existing connection.
+        /// </summary>
+        /// <returns></returns>
+        private async Task InitOnlineBankingService()
         {
             _logger?.LogInformation("Initializing online banking service");
 
@@ -209,19 +292,17 @@ namespace Moneyes.UI
             {
                 _logger?.LogWarning("Cannot initialize online banking service. No bank configuration available.");
 
-                return Result.Failed();
+                throw new InvalidOperationException("No online banking details stored.");
             }
 
             if (_bankingService == null ||
                 !_bankingService.BankingDetails.BankCode.Equals(bankingDetails.BankCode))
             {
-                // Bank changed or not initialized, create new banking connection
-                Result createConnectionResult = await CreateBankConnection(bankingDetails, testConnection: false);
+                _logger?.LogInformation("Bank with code {bankCode} not initialized, creating now",
+                    bankingDetails.BankCode);
 
-                if (!createConnectionResult.IsSuccessful)
-                {
-                    return createConnectionResult;
-                }
+                // Bank changed or not initialized, create new banking connection
+                await CreateBankConnection(bankingDetails, testConnection: false);
 
                 _logger?.LogInformation("Applying current banking settings");
 
@@ -233,20 +314,20 @@ namespace Moneyes.UI
             {
                 // Apply credentials from store if not set
 
+                _logger?.LogInformation("Applying current banking settings");
+
                 if (string.IsNullOrEmpty(_bankingService.BankingDetails.UserId))
                 {
-                    _bankingService.BankingDetails.UserId = _configStore.GetBankingDetails().UserId;
+                    _bankingService.BankingDetails.UserId = bankingDetails.UserId;
                 }
 
                 if (_bankingService.BankingDetails.Pin.IsNullOrEmpty())
                 {
-                    _bankingService.BankingDetails.Pin = _configStore.GetBankingDetails().Pin;
+                    _bankingService.BankingDetails.Pin = bankingDetails.Pin;
                 }
             }
 
             _logger?.LogInformation("Online banking service initialized");
-
-            return Result.Successful();
         }
 
         public async Task<Result<int>> FetchTransactionsAndBalances(
@@ -255,18 +336,10 @@ namespace Moneyes.UI
         {
             try
             {
-                Result initResult = await InitOnlineBankingService();
+                await InitOnlineBankingService();
 
-                if (!initResult.IsSuccessful)
-                {
-                    //return initResult;
-                    return Result.Failed<int>();
-                }
-
-                await EnsurePassword();
-
-                Result<TransactionData> result =
-                    await _bankingService.Transactions(account, startDate: FirstOfMonth, endDate: DateTime.Now);
+                Result<TransactionData> result = await EnsurePassword(async () =>
+                            await _bankingService.Transactions(account, startDate: FirstOfMonth, endDate: DateTime.Now));
 
                 if (!result.IsSuccessful)
                 {
@@ -285,6 +358,7 @@ namespace Moneyes.UI
                 _balanceRepo.Set(balances);
 
                 return numTransactionsAdded;
+
             }
             catch
             {
@@ -298,21 +372,14 @@ namespace Moneyes.UI
         {
             try
             {
-                Result initResult = await InitOnlineBankingService();
+                await InitOnlineBankingService();
 
-                if (!initResult.IsSuccessful)
-                {
-                    //return initResult;
-                    return Result.Failed<int>();
-                }
-
-                await EnsurePassword();
-
-                IEnumerable<AccountDetails> accounts = (await _bankingService.Accounts()).GetOrNull();
+                IEnumerable<AccountDetails> accounts = await EnsurePassword(async () =>
+                    (await _bankingService.Accounts()).GetOrNull());
 
                 if (accounts != null)
                 {
-                    _accountRepo.Set(accounts);
+                    _ = _accountRepo.Set(accounts);
 
                     return Result.Successful(accounts);
                 }
@@ -329,16 +396,10 @@ namespace Moneyes.UI
         {
             try
             {
-                Result initResult = await InitOnlineBankingService();
+                await InitOnlineBankingService();
 
-                if (!initResult.IsSuccessful)
-                {
-                    return Result.Failed<IEnumerable<AccountDetails>>();
-                }
-
-                await EnsurePassword();
-
-                IEnumerable<AccountDetails> accounts = (await _bankingService.Accounts()).GetOrNull();
+                IEnumerable<AccountDetails> accounts = await EnsurePassword(async () => 
+                    (await _bankingService.Accounts()).GetOrNull());
 
                 return Result.Successful(accounts);
             }

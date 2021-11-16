@@ -18,7 +18,7 @@
         /// <summary>
         /// The name of the bank institute.
         /// </summary>
-        string Institute { get; set; }
+        string Name { get; set; }
 
         /// <summary>
         /// The organisation responsible for this bank.

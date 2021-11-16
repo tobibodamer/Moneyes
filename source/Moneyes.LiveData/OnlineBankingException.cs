@@ -6,8 +6,9 @@ namespace Moneyes.LiveData
     {
         public OnlineBankingErrorCode ErrorCode { get; }
 
-        public OnlineBankingException(OnlineBankingErrorCode errorCode, string message = null) 
-            : base(message)
+        public OnlineBankingException(OnlineBankingErrorCode errorCode, 
+            string message = null, Exception innerException = null)
+            : base(message, innerException)
         {
             ErrorCode = errorCode;
         }

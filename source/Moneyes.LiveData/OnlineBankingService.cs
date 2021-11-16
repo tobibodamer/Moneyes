@@ -64,7 +64,7 @@ namespace Moneyes.LiveData
         /// Can be used to check whether a successful connection can be established to the bank.
         /// </summary>
         /// <returns></returns>
-        public async Task Sync()
+        public async Task<BankingResult> Sync()
         {
             ValidateBankingDetails();
 
@@ -72,51 +72,49 @@ namespace Moneyes.LiveData
 
             UpdateConnectionDetails();
 
-            try
+            HBCIDialogResult<string> result = await _fintsClient.Synchronization();
+
+            HBCIOutput(result.Messages);
+
+            if (!result.IsSuccess)
             {
-                HBCIDialogResult<string> result = await _fintsClient.Synchronization();
+                _logger?.LogWarning("Synchronizing was not successful");
 
-                HBCIOutput(result.Messages);
-
-                if (!result.IsSuccess)
-                {
-                    _logger?.LogWarning("Synchronizing was not successful");
-
-                    var (errorCode, message) = ParseHBCIError(result.Messages);
-                    throw new OnlineBankingException(errorCode, message);
-                }
+                return ParseHBCIError(result.Messages).Item1;
             }
-            catch (Exception ex) when (ex is not OnlineBankingException)
-            {
-                //TODO: Log
 
-                throw new OnlineBankingException(OnlineBankingErrorCode.Unknown);
-            }
+            return BankingResult.Successful();
         }
 
+        static void ThrowFromHBCIError(IEnumerable<HBCIBankMessage> messages)
+        {
+            var (errorCode, message) = ParseHBCIError(messages);
+            throw new OnlineBankingException(errorCode, message);
+        }
         static (OnlineBankingErrorCode, string) ParseHBCIError(IEnumerable<HBCIBankMessage> messages)
         {
             foreach (var msg in messages.Where(msg => msg.IsError))
             {
-                if (int.TryParse(msg.Code, out var code))
-                {
-                    return ((OnlineBankingErrorCode)code, msg.Message);
-                }
+                //if (int.TryParse(msg.Code, out var code))
+                //{
+                //    return ((OnlineBankingErrorCode)code, msg.Message);
+                //}
                 // See codes: https://wiki.windata.de/index.php?title=HBCI-Fehlermeldungen
 
-                //switch (msg.Code)
-                //{
-                //    case "9931":
-                //        return (OnlineBankingErrorCode.InvalidUsernameOrPin, msg.Message);
-                //    case "9942":
-                //        return (OnlineBankingErrorCode.InvalidPin, msg.Message);
-                //}
+                switch (msg.Code)
+                {
+                    case "9931":
+                        return (OnlineBankingErrorCode.InvalidUsernameOrPin, msg.Message);
+                    case "9942":
+                        return (OnlineBankingErrorCode.InvalidPin, msg.Message);
+                }
             }
 
             return (OnlineBankingErrorCode.Unknown, null);
 
         }
-        public async Task<Result<IEnumerable<AccountDetails>>> Accounts()
+
+        public async Task<BankingResult<IEnumerable<AccountDetails>>> Accounts()
         {
             ValidateBankingDetails();
 
@@ -132,10 +130,10 @@ namespace Moneyes.LiveData
             {
                 _logger?.LogWarning("Fetching account information was not successful");
 
-                return new(successful: false);
+                return ParseHBCIError(result.Messages).Item1;
             }
 
-            return Result.Successful(result.Data.Select(accInfo =>
+            return BankingResult.Successful(result.Data.Select(accInfo =>
             {
                 return new AccountDetails
                 {
@@ -149,7 +147,7 @@ namespace Moneyes.LiveData
             }));
         }
 
-        public async Task<Result<TransactionData>> Transactions(
+        public async Task<BankingResult<TransactionData>> Transactions(
             AccountDetails account,
             DateTime? startDate = null,
             DateTime? endDate = null)
@@ -178,33 +176,42 @@ namespace Moneyes.LiveData
             {
                 _logger?.LogWarning("Fetching transactions was not successful.");
 
-                return new(successful: false);
+                return ParseHBCIError(result.Messages).Item1;
             }
 
             _logger?.LogInformation("Fetching transactions was successful.");
 
-            // Parse all non pending transactions
-            IEnumerable<MTransaction> transactions = result.Data
-                .Where(stmt => !stmt.Pending)
-                .SelectMany(stmt => ParseFromSwift(stmt, account));
-
-            IEnumerable<Balance> balances = result.Data
-                .Where(stmt => !stmt.Pending)
-                .Select(stmt => new Balance
-                {
-                    Account = account,
-                    Amount = stmt.EndBalance,
-                    Date = stmt.EndDate,
-                    Currency = stmt.Currency
-                });
-
-            TransactionData transactionData = new()
+            try
             {
-                Transactions = transactions,
-                Balances = balances
-            };
 
-            return Result.Successful(transactionData);
+                // Parse all non pending transactions
+                IEnumerable<MTransaction> transactions = result.Data
+                    .Where(stmt => !stmt.Pending)
+                    .SelectMany(stmt => ParseFromSwift(stmt, account));
+
+                IEnumerable<Balance> balances = result.Data
+                    .Where(stmt => !stmt.Pending)
+                    .Select(stmt => new Balance
+                    {
+                        Account = account,
+                        Amount = stmt.EndBalance,
+                        Date = stmt.EndDate,
+                        Currency = stmt.Currency
+                    });
+
+                TransactionData transactionData = new()
+                {
+                    Transactions = transactions,
+                    Balances = balances
+                };
+
+                return transactionData;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error while parsing transactions or balances");
+                return BankingResult.Failed<TransactionData>();
+            }
         }
 
         private static IEnumerable<MTransaction> ParseFromSwift(SwiftStatement swiftStatement, AccountDetails account)
@@ -229,7 +236,7 @@ namespace Moneyes.LiveData
             }
         }
 
-        public async Task<Result<Balance>> Balance(AccountDetails account)
+        public async Task<BankingResult<Balance>> Balance(AccountDetails account)
         {
             if (account == null)
             {
@@ -244,6 +251,7 @@ namespace Moneyes.LiveData
 
             UpdateConnectionDetails(account);
 
+
             var result = await _fintsClient.Balance(
                 new TANDialog(WaitForTanAsync));
 
@@ -253,17 +261,17 @@ namespace Moneyes.LiveData
             {
                 _logger?.LogWarning("Fetching balance was not successful.");
 
-                return new(successful: false);
+                return ParseHBCIError(result.Messages).Item1;
             }
 
             _logger?.LogInformation("Fetching balance was successful.");
 
-            return Result.Successful(new Balance()
+            return new Balance()
             {
                 Account = account,
                 Date = DateTime.Now,
                 Amount = result.Data.Balance
-            });
+            };
         }
 
         private static async Task<string> WaitForTanAsync(TANDialog tanDialog)

@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Moneyes.Core;
+using Moneyes.Core.Parsing;
 using Moneyes.Data;
 using Moneyes.LiveData;
 using Moneyes.UI.Services;
@@ -16,7 +17,7 @@ using System.Threading.Tasks;
 using System.Windows;
 
 namespace Moneyes.UI
-{    
+{
     /// <summary>
     /// Interaction logic for App.xaml
     /// </summary>
@@ -138,7 +139,7 @@ namespace Moneyes.UI
 
             // UI services
             services.AddScoped<IStatusMessageService, StatusMessageService>();
-            services.AddScoped<IDialogService<ImportAccountsViewModel>, 
+            services.AddScoped<IDialogService<ImportAccountsViewModel>,
                 DialogService<ImportAccountsView, ImportAccountsViewModel>>();
 
             services.AddScoped<IDialogService<EditCategoryViewModel>,
@@ -185,6 +186,9 @@ namespace Moneyes.UI
             categoryRepo.UpdateCache();
             transactionRepo.UpdateCache();
 
+            var online = transactionRepo.GetAll().ToList();
+            var csv = CsvParser.FromMT940CSV("1.csv").ToList();
+
             //var categoryStore = new CategoryDatabase("categories.json");
 
             //foreach (var c in await categoryStore.GetAll())
@@ -194,6 +198,27 @@ namespace Moneyes.UI
             //        categoryRepo.Set(c);
             //    }
             //}
+
+            foreach (var transaction in online)
+            {
+                //var matchingNew = csv.Find(t => t.BookingDate.Equals(transaction.BookingDate)
+                //    && t.Amount == transaction.Amount && t.Name == transaction.Name);
+
+                //if (matchingNew == null)
+                //{
+                //    continue;
+                //}
+
+                //if (matchingNew.UID != transaction.UID)
+                //{
+                //    continue;
+                //}
+
+                transactionRepo.Delete(transaction);
+                transaction.RegenerateUID();
+                transactionRepo.Set(transaction);
+
+            }
 
             MainWindowViewModel mainWindowViewModel = serviceProvider.GetRequiredService<MainWindowViewModel>();
 

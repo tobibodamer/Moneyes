@@ -11,7 +11,7 @@ namespace Moneyes.LiveData
         public string BankCode { get; set; }
 
         [Name("Institut")]
-        public string Institute { get; set; }
+        public string Name { get; set; }
 
         [Name("Ort")]
         public string City { get; set; }

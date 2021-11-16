@@ -138,7 +138,7 @@ namespace Moneyes.UI.ViewModels
 
             LoadedCommand = new AsyncCommand(async ct =>
             {
-                
+
             });
 
             FindBankCommand = new AsyncCommand(async ct =>
@@ -185,40 +185,43 @@ namespace Moneyes.UI.ViewModels
 
             if (!PIN.IsNullOrEmpty())
             {
-                try
-                {
-                    await _liveDataService.CreateBankConnection(bankingDetails, testConnection: true);
-                }
-                catch
+                var result = await _liveDataService.CreateBankConnection(bankingDetails, testConnection: true);
+
+                if (!result.IsSuccessful)
                 {
                     MessageBox.Show("Could not connect to bank. Check your bank code and credentials.",
-                        "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     return;
                 }
             }
 
             // If sync was established -> save configuration
             _bankingService.BankingDetails = bankingDetails;
-        } 
+        }
 
         public void LookupBank()
         {
             try
             {
-                BankLookupResult = _liveDataService.FindBank(_bankCode.Value).Institute;
-                BankFound = true;
-            }
-            catch (NotSupportedException)
-            {
-                BankLookupResult = "Bank not supported.";
-                BankFound = false;
+                IBankInstitute bankInsitute = _liveDataService.FindBank(_bankCode.Value);
+
+                if (bankInsitute != null)
+                {
+                    BankLookupResult = bankInsitute.Name;
+                    BankFound = true;
+                }
+                else
+                {
+                    BankLookupResult = "Bank not supported.";
+                    BankFound = false;
+                }
             }
             catch
             {
                 BankLookupResult = "Bank lookup failed";
                 BankFound = false;
             }
-            
+
             BankLookupCompleted = true;
         }
 
@@ -277,7 +280,7 @@ namespace Moneyes.UI.ViewModels
             return errorsForName;
         }
 
-        
+
 
         #endregion
     }

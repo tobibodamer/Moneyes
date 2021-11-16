@@ -24,7 +24,7 @@ namespace Moneyes.LiveData
             return new()
             {
                 Index = index,
-                Purpose = purpose,
+                Purpose = swiftTransaction.SVWZ,
                 Amount = swiftTransaction.Amount,
                 PartnerIBAN = swiftTransaction.AccountCode,
                 BIC = swiftTransaction.BankCode,

@@ -9,9 +9,9 @@ namespace Moneyes.LiveData
     {
         OnlineBankingDetails BankingDetails { get; }
 
-        Task<Result<IEnumerable<AccountDetails>>> Accounts();
-        Task<Result<Balance>> Balance(AccountDetails account);
-        Task Sync();
-        Task<Result<TransactionData>> Transactions(AccountDetails account, DateTime? startDate = null, DateTime? endDate = null);
+        Task<BankingResult<IEnumerable<AccountDetails>>> Accounts();
+        Task<BankingResult<Balance>> Balance(AccountDetails account);
+        Task<BankingResult> Sync();
+        Task<BankingResult<TransactionData>> Transactions(AccountDetails account, DateTime? startDate = null, DateTime? endDate = null);
     }
 }

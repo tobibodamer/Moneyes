@@ -53,5 +53,23 @@ namespace Moneyes.UI.View
             if (Mouse.LeftButton == MouseButtonState.Pressed)
                 DragMove();
         }
+
+        bool _shown;
+
+        protected override void OnContentRendered(EventArgs e)
+        {
+            base.OnContentRendered(e);
+
+            if (_shown)
+            {
+                return;
+            }
+
+            _shown = true;
+
+            (DataContext as MainWindowViewModel)?.LoadedCommand?.Execute(null);
+
+            // Your code here.
+        }
     }
 }

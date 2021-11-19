@@ -1,11 +1,13 @@
 ﻿using System;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 
 namespace Moneyes.UI.ViewModels
 {
-    public class AsyncCommand : ICommand, IDisposable
+    public class AsyncCommand : ICommand, IDisposable, INotifyPropertyChanged
     {
         private readonly Func<CancellationToken, Task> _execute;
         private readonly Func<bool> _canExecute;
@@ -14,9 +16,19 @@ namespace Moneyes.UI.ViewModels
         private CancellationTokenSource _cancellation = new();
         private Task _executingTask;
 
-        public bool IsExecuting { get; private set; }
+        private bool _isExecuting;
+        public bool IsExecuting
+        {
+            get => _isExecuting;
+            private set
+            {
+                _isExecuting = value;
+                OnPropertyChanged();
+            }
+        }
 
         public event EventHandler CanExecuteChanged;
+        public event PropertyChangedEventHandler PropertyChanged;
 
         public AsyncCommand(Func<CancellationToken, Task> execute, Func<bool> canExecute = null, Action<Exception> errorHandler = null)
         {
@@ -87,6 +99,11 @@ namespace Moneyes.UI.ViewModels
         {
             _cancellation.Dispose();
             _executingTask.Dispose();
+        }
+
+        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new(propertyName));
         }
     }
 

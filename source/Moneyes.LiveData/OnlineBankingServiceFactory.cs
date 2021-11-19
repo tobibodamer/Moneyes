@@ -34,13 +34,15 @@ namespace Moneyes.LiveData
         /// <returns></returns>
         public IOnlineBankingService CreateService(OnlineBankingDetails bankingDetails)
         {
-            ValidateBankingDetails(bankingDetails);
+            OnlineBankingDetails bankingDetailsCopy = bankingDetails.Copy();
+
+            ValidateBankingDetails(bankingDetailsCopy);
 
             string serverUrl;
 
-            if (bankingDetails.Server is null)
+            if (bankingDetailsCopy.Server is null)
             {
-                FinTsInstitute institute = BankInstitutes.GetInstituteInternal(bankingDetails.BankCode);
+                FinTsInstitute institute = BankInstitutes.GetInstituteInternal(bankingDetailsCopy.BankCode);
 
                 ValidateInstitute(institute);
 
@@ -48,22 +50,22 @@ namespace Moneyes.LiveData
             }
             else
             {
-                serverUrl = bankingDetails.Server.AbsoluteUri;
+                serverUrl = bankingDetailsCopy.Server.AbsoluteUri;
             }
             
 
             ConnectionDetails details = new()
             {
                 Url = serverUrl,
-                Blz = bankingDetails.BankCode,
-                UserId = bankingDetails.UserId,
-                Pin = bankingDetails.Pin,
+                Blz = bankingDetailsCopy.BankCode,
+                UserId = bankingDetailsCopy.UserId,
+                Pin = bankingDetailsCopy.Pin,
             };
 
             FinTsClient client = new(details);
 
             return new OnlineBankingService(
-                client, bankingDetails, _loggerFactory?.CreateLogger<OnlineBankingService>());
+                client, bankingDetailsCopy, _loggerFactory?.CreateLogger<OnlineBankingService>());
         }
 
         private static void ValidateBankingDetails(OnlineBankingDetails bankingDetails)

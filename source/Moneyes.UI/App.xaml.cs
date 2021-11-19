@@ -15,6 +15,7 @@ using System.Linq;
 using System.Security;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Threading;
 
 namespace Moneyes.UI
 {
@@ -31,6 +32,8 @@ namespace Moneyes.UI
 
             // Input password
             DialogPasswordPrompt passwordPrompt = new("Password required", "Please enter your master password.");
+            DialogService<InitMasterPasswordDialog> newMasterPasswordDialogService = new();
+
             SecureString password;
             ILiteDatabase database;
 
@@ -46,24 +49,37 @@ namespace Moneyes.UI
                 {
                     // Failed to open without master password
                 }
+
+                // No password failed, or database doesn't exist -> Try with master password
+                for (int i = 0; i < 3; i++)
+                {
+                    try
+                    {
+                        password = (await passwordPrompt.WaitForPasswordAsync()).Password;
+
+                        database = databaseFactory
+                            .CreateContext(password.ToUnsecuredString());
+
+                        return Result.Successful(database);
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(ex.Message, "Could not open database", MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
+                }
             }
-
-            // No password failed, or database doesn't exist -> Try with master password
-            for (int i = 0; i < 3; i++)
+            else
             {
-                try
+                InitMasterPasswordDialogViewModel passwordDialogVM = new();
+                if (newMasterPasswordDialogService.ShowDialog(passwordDialogVM) != DialogResult.OK)
                 {
-                    password = (await passwordPrompt.WaitForPasswordAsync()).Password;
-
-                    database = databaseFactory
-                        .CreateContext(password.ToUnsecuredString());
-
-                    return Result.Successful(database);
+                    return Result.Failed<ILiteDatabase>();
                 }
-                catch (Exception ex)
-                {
-                    MessageBox.Show(ex.Message, "Could not open database", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
+
+                database = databaseFactory
+                    .CreateContext(passwordDialogVM.Password.ToUnsecuredString());
+
+                return Result.Successful(database);
             }
 
 
@@ -74,6 +90,11 @@ namespace Moneyes.UI
         protected override async void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
+
+            RegisterGlobalExceptionHandling(ex =>
+            {
+                MessageBox.Show(ex.ToString(), "ERROR", MessageBoxButton.OK, MessageBoxImage.Error);
+            });
 
             IDSelectors.Register<Category>(c => c.Id);
             IDSelectors.Register<AccountDetails>(acc => acc.IBAN);
@@ -148,7 +169,9 @@ namespace Moneyes.UI
             services.AddTransient<ITabViewModel, OverviewViewModel>();
             services.AddTransient<ITabViewModel, TransactionsViewModel>();
             services.AddTransient<ITabViewModel, AccountsViewModel>();
-            services.AddTransient<ITabViewModel, BankingSettingsViewModel>();
+            services.AddTransient<ITabViewModel, BankSetupViewModel>();
+
+            services.AddTransient<SetupWizardViewModel>();
 
             services.AddScoped<SelectorStore>();
 
@@ -183,11 +206,11 @@ namespace Moneyes.UI
             var transactionRepo = serviceProvider.GetService<TransactionRepository>();
 
             // Preload caches
-            categoryRepo.UpdateCache();
-            transactionRepo.UpdateCache();
+            //categoryRepo.UpdateCache();
+            //transactionRepo.UpdateCache();
 
-            var online = transactionRepo.GetAll().ToList();
-            var csv = CsvParser.FromMT940CSV("1.csv").ToList();
+            //var online = transactionRepo.GetAll().ToList();
+            //var csv = CsvParser.FromMT940CSV("1.csv").ToList();
 
             //var categoryStore = new CategoryDatabase("categories.json");
 
@@ -198,27 +221,6 @@ namespace Moneyes.UI
             //        categoryRepo.Set(c);
             //    }
             //}
-
-            foreach (var transaction in online)
-            {
-                //var matchingNew = csv.Find(t => t.BookingDate.Equals(transaction.BookingDate)
-                //    && t.Amount == transaction.Amount && t.Name == transaction.Name);
-
-                //if (matchingNew == null)
-                //{
-                //    continue;
-                //}
-
-                //if (matchingNew.UID != transaction.UID)
-                //{
-                //    continue;
-                //}
-
-                transactionRepo.Delete(transaction);
-                transaction.RegenerateUID();
-                transactionRepo.Set(transaction);
-
-            }
 
             MainWindowViewModel mainWindowViewModel = serviceProvider.GetRequiredService<MainWindowViewModel>();
 
@@ -231,7 +233,54 @@ namespace Moneyes.UI
             };
         }
 
-        protected override void OnExit(ExitEventArgs e)
+        private void RegisterGlobalExceptionHandling(Action<Exception> log)
+        {
+            // this is the line you really want 
+            AppDomain.CurrentDomain.UnhandledException +=
+                (sender, args) => CurrentDomainOnUnhandledException(args, log);
+
+            // optional: hooking up some more handlers
+            // remember that you need to hook up additional handlers when 
+            // logging from other dispatchers, shedulers, or applications
+
+            Application.Current.Dispatcher.UnhandledException +=
+                (sender, args) => DispatcherOnUnhandledException(args, log);
+
+            Application.Current.DispatcherUnhandledException +=
+                (sender, args) => CurrentOnDispatcherUnhandledException(args, log);
+
+            TaskScheduler.UnobservedTaskException +=
+                (sender, args) => TaskSchedulerOnUnobservedTaskException(args, log);
+        }
+
+        private static void TaskSchedulerOnUnobservedTaskException(UnobservedTaskExceptionEventArgs args, Action<Exception> log)
+        {
+            log(args.Exception);
+            args.SetObserved();
+        }
+
+        private static void CurrentOnDispatcherUnhandledException(DispatcherUnhandledExceptionEventArgs args, Action<Exception> log)
+        {
+            log(args.Exception);
+            // args.Handled = true;
+        }
+
+        private static void DispatcherOnUnhandledException(DispatcherUnhandledExceptionEventArgs args, Action<Exception> log)
+        {
+            log(args.Exception);
+            // args.Handled = true;
+        }
+
+        private static void CurrentDomainOnUnhandledException(UnhandledExceptionEventArgs args, Action<Exception> log)
+        {
+            var exception = args.ExceptionObject as Exception;
+            var terminatingMessage = args.IsTerminating ? " The application is terminating." : string.Empty;
+            var exceptionMessage = exception?.Message ?? "An unmanaged exception occured.";
+            var message = string.Concat(exceptionMessage, terminatingMessage);
+            log(exception);
+        }    
+
+    protected override void OnExit(ExitEventArgs e)
         {
             base.OnExit(e);
             _db.Dispose();

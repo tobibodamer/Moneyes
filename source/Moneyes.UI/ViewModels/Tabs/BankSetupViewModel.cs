@@ -10,16 +10,25 @@ using System.Security;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Input;
 
 namespace Moneyes.UI.ViewModels
 {
-    class BankingSettingsViewModel : ViewModelBase, ITabViewModel, INotifyDataErrorInfo
+    public enum BankSetupState
+    {
+        None = 0,
+        BankFound,
+        BankNotFound,
+        BankLookupFailed,
+        ManualConfiguring,
+        ConnectionFailed,
+        ConnectionSuccessful
+    }
+    class BankSetupViewModel : ViewModelBase, ITabViewModel, INotifyDataErrorInfo
     {
         private readonly LiveDataService _liveDataService;
         private readonly IBankingService _bankingService;
 
-        #region UI 
+        #region UI
 
         private int? _bankCode;
         public int? BankCode
@@ -30,47 +39,14 @@ namespace Moneyes.UI.ViewModels
                 if (value == _bankCode) { return; }
 
                 _bankCode = value;
+
+                Bank = null;
                 BankLookupCompleted = false;
-                IsDirty = true;
+                State = BankSetupState.None;
 
-                OnPropertyChanged(nameof(BankCode));
+                OnPropertyChanged();
+
                 FindBankCommand?.RaiseCanExecuteChanged();
-            }
-        }
-
-        private string _bankLookupResult;
-        public string BankLookupResult
-        {
-            get => _bankLookupResult;
-            set
-            {
-                _bankLookupResult = value;
-
-                OnPropertyChanged(nameof(BankLookupResult));
-            }
-        }
-
-        private bool _bankLookupCompleted;
-        public bool BankLookupCompleted
-        {
-            get => _bankLookupCompleted;
-            set
-            {
-                _bankLookupCompleted = value;
-
-                OnPropertyChanged(nameof(BankLookupCompleted));
-            }
-        }
-
-        private bool _bankFound;
-        public bool BankFound
-        {
-            get => _bankFound;
-            set
-            {
-                _bankFound = value;
-
-                OnPropertyChanged(nameof(BankFound));
             }
         }
 
@@ -89,9 +65,16 @@ namespace Moneyes.UI.ViewModels
                     OnErrorsChanged(nameof(UserId));
                 }
 
+                if (State is BankSetupState.ConnectionSuccessful)
+                {
+                    if (BankLookupCompleted)
+                    {
+                        State = IsBankFound.Value ? BankSetupState.BankFound : BankSetupState.BankNotFound;
+                    }
+                }
+
                 _userId = value;
-                IsDirty = true;
-                OnPropertyChanged(nameof(UserId));
+                OnPropertyChanged();
             }
         }
 
@@ -107,39 +90,58 @@ namespace Moneyes.UI.ViewModels
                 }
 
                 _pin = value;
-                IsDirty = true;
-                OnPropertyChanged(nameof(PIN));
+                OnPropertyChanged();
             }
         }
 
-        private bool _isDirty;
-        public bool IsDirty
+        private BankSetupState _state;
+        public BankSetupState State
         {
-            get => _isDirty;
+            get => _state;
             set
             {
-                _isDirty = value;
-                OnPropertyChanged(nameof(IsDirty));
-                ApplyCommand?.RaiseCanExecuteChanged();
+                _state = value;
+                OnPropertyChanged();
             }
         }
+
+        private SimpleBankViewModel _bank;
+        public SimpleBankViewModel Bank
+        {
+            get => _bank;
+            set
+            {
+                _bank = value;
+
+                OnPropertyChanged();
+            }
+        }
+
+        private bool _bankLookupCompleted;
+        public bool BankLookupCompleted
+        {
+            get => _bankLookupCompleted;
+            set
+            {
+                _bankLookupCompleted = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(IsBankFound));
+            }
+        }
+
+        public bool? IsBankFound => BankLookupCompleted ? Bank != null : null;
         public AsyncCommand FindBankCommand { get; }
         public AsyncCommand ApplyCommand { get; }
         public AsyncCommand LoadedCommand { get; }
 
         #endregion
 
-        public BankingSettingsViewModel(LiveDataService liveDataService, IBankingService bankingService)
+        public BankSetupViewModel(LiveDataService liveDataService, IBankingService bankingService)
         {
             DisplayName = "Settings";
 
             _liveDataService = liveDataService;
             _bankingService = bankingService;
-
-            LoadedCommand = new AsyncCommand(async ct =>
-            {
-
-            });
 
             FindBankCommand = new AsyncCommand(async ct =>
             {
@@ -149,7 +151,7 @@ namespace Moneyes.UI.ViewModels
             ApplyCommand = new AsyncCommand(async ct =>
             {
                 await ApplySettings();
-            }, () => IsDirty);
+            }, () => (IsBankFound ?? false) && !string.IsNullOrEmpty(UserId));
         }
 
         private OnlineBankingDetails CreateBankingDetails()
@@ -171,13 +173,9 @@ namespace Moneyes.UI.ViewModels
                 return;
             }
 
-            if (!BankLookupCompleted)
+            if (Bank is null)
             {
-                await FindBankCommand.ExecuteAsync();
-            }
-
-            if (!BankFound)
-            {
+                //await FindBankCommand.ExecuteAsync();
                 return;
             }
 
@@ -185,18 +183,19 @@ namespace Moneyes.UI.ViewModels
 
             if (!PIN.IsNullOrEmpty())
             {
-                var result = await _liveDataService.CreateBankConnection(bankingDetails, testConnection: true);
+                Result result = await _liveDataService.CreateBankConnection(bankingDetails, testConnection: true);
 
                 if (!result.IsSuccessful)
                 {
-                    MessageBox.Show("Could not connect to bank. Check your bank code and credentials.",
-                    "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    State = BankSetupState.ConnectionFailed;
                     return;
                 }
             }
 
             // If sync was established -> save configuration
             _bankingService.BankingDetails = bankingDetails;
+
+            State = BankSetupState.ConnectionSuccessful;
         }
 
         public void LookupBank()
@@ -207,19 +206,25 @@ namespace Moneyes.UI.ViewModels
 
                 if (bankInsitute != null)
                 {
-                    BankLookupResult = bankInsitute.Name;
-                    BankFound = true;
+                    Bank = new()
+                    {
+                        BankName = bankInsitute.Name,
+                        BankServer = new Uri(bankInsitute.FinTs_Url).Host,
+                        BankVersion = bankInsitute.Version
+                    };
+
+                    State = BankSetupState.BankFound;
+
+                    ApplyCommand.RaiseCanExecuteChanged();
                 }
                 else
                 {
-                    BankLookupResult = "Bank not supported.";
-                    BankFound = false;
+                    State = BankSetupState.BankNotFound;
                 }
             }
             catch
             {
-                BankLookupResult = "Bank lookup failed";
-                BankFound = false;
+                State = BankSetupState.BankLookupFailed;
             }
 
             BankLookupCompleted = true;
@@ -236,9 +241,46 @@ namespace Moneyes.UI.ViewModels
                 UserId = bankingDetails.UserId;
                 PIN = bankingDetails.Pin;
 
-                IsDirty = false;
+                FindBankCommand.Execute(null);
+            }
+        }
 
-                Task.Run(() => LookupBank());
+        public class SimpleBankViewModel : ViewModelBase
+        {
+            private string _bankName;
+            public string BankName
+            {
+                get => _bankName;
+                set
+                {
+                    _bankName = value;
+
+                    OnPropertyChanged();
+                }
+            }
+
+            private string _bankServer;
+            public string BankServer
+            {
+                get => _bankServer;
+                set
+                {
+                    _bankServer = value;
+
+                    OnPropertyChanged();
+                }
+            }
+
+            private string _bankVersion;
+            public string BankVersion
+            {
+                get => _bankVersion;
+                set
+                {
+                    _bankVersion = value;
+
+                    OnPropertyChanged();
+                }
             }
         }
 
@@ -256,7 +298,7 @@ namespace Moneyes.UI.ViewModels
                 OnErrorsChanged(nameof(UserId));
             }
 
-            OnPropertyChanged(nameof(HasErrors));
+            OnPropertyChanged();
         }
         public bool HasErrors
         {

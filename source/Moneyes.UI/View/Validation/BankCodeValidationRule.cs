@@ -11,7 +11,8 @@ namespace Moneyes.UI.View
 
             if (string.IsNullOrEmpty(valueString))
             {
-                return new(false, "Bank code is empty");
+                //return new(false, "Bank code is empty");
+                return new(true, null);
             }
 
             if (!int.TryParse(valueString, out var bankCode))

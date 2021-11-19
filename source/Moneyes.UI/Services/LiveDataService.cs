@@ -208,7 +208,7 @@ namespace Moneyes.UI
 
                     if (!result.IsSuccessful)
                     {
-                        _logger?.LogWarning("Bank connection wont be crated, sync failed");
+                        _logger?.LogWarning("Bank connection wont be created, sync failed");
                         _bankingService = null;
 
                         return Result.Failed();
@@ -250,7 +250,9 @@ namespace Moneyes.UI
             }
 
             if (_bankingService == null ||
-                !_bankingService.BankingDetails.BankCode.Equals(bankingDetails.BankCode))
+                !_bankingService.BankingDetails.BankCode.Equals(bankingDetails.BankCode) ||
+                _bankingService.BankingDetails.Server != null && 
+                !_bankingService.BankingDetails.Server.Equals(bankingDetails.Server))
             {
                 _logger?.LogInformation("Bank with code {bankCode} not initialized, creating now",
                     bankingDetails.BankCode);

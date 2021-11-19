@@ -31,9 +31,8 @@ namespace Moneyes.UI.ViewModels
 
         #region UI Properties
         public ICommand LoadedCommand { get; }
-
-
-        public ExpenseCategoriesViewModel ExpenseCategories { get; }
+        
+        public ExpenseCategoriesViewModel Categories { get; }
 
         private SelectorViewModel _selector;
         public SelectorViewModel Selector
@@ -88,7 +87,7 @@ namespace Moneyes.UI.ViewModels
             CategoryRepository categoryRepository)
         {
             DisplayName = "Transactions";
-            ExpenseCategories = expenseCategoriesViewModel;
+            Categories = expenseCategoriesViewModel;
             Selector = selectorViewModel;
             _liveDataService = liveDataService;
             _transactionRepository = transactionRepository;
@@ -96,9 +95,9 @@ namespace Moneyes.UI.ViewModels
             _statusMessageService = statusMessageService;
 
 
-            ExpenseCategories.PropertyChanged += (sender, args) =>
+            Categories.PropertyChanged += (sender, args) =>
             {
-                if (args.PropertyName == nameof(ExpenseCategories.SelectedCategory))
+                if (args.PropertyName == nameof(Categories.SelectedCategory))
                 {
                     UpdateTransactions();
                 }
@@ -108,7 +107,7 @@ namespace Moneyes.UI.ViewModels
             {
                 UpdateCategories();
 
-                if (ExpenseCategories.IsSelected(category))
+                if (Categories.IsSelected(category))
                 {
                     UpdateTransactions();
                 }
@@ -164,7 +163,7 @@ namespace Moneyes.UI.ViewModels
                 Loading = true;
                 try
                 {
-                    Category selectedCategory = ExpenseCategories.SelectedCategory?.Category;
+                    Category selectedCategory = Categories.SelectedCategory?.Category;
 
                     // Get all transactions for selected category and filter
                     IEnumerable<Transaction> transactions = _transactionRepository.All(
@@ -204,7 +203,7 @@ namespace Moneyes.UI.ViewModels
             Dispatcher.CurrentDispatcher.BeginInvoke(() =>
             {
                 Loading = true;
-                ExpenseCategories.UpdateCategories(GetTransactionFilter());
+                Categories.UpdateCategories(GetTransactionFilter());
                 Loading = false;
             });
         }

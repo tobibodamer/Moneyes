@@ -9,6 +9,9 @@ namespace Moneyes.UI
     {
         bool HasBankingDetails { get; }
         OnlineBankingDetails BankingDetails { get; set; }
+
+        event Action<AccountDetails> NewAccount;
+
         IEnumerable<AccountDetails> GetAccounts();
         int ImportAccounts(IEnumerable<AccountDetails> accounts);
         Balance GetBalance(DateTime date, AccountDetails account);

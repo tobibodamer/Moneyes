@@ -40,6 +40,10 @@ namespace Moneyes.LiveData
                 _fintsClient.ConnectionDetails.Iban = account.IBAN;
             }
 
+            if (BankingDetails.Server != null)
+            {
+                _fintsClient.ConnectionDetails.Url = BankingDetails.Server.AbsoluteUri;
+            }
             _fintsClient.ConnectionDetails.Blz = BankingDetails.BankCode;
             _fintsClient.ConnectionDetails.UserId = BankingDetails.UserId;
             _fintsClient.ConnectionDetails.Pin = BankingDetails.Pin;

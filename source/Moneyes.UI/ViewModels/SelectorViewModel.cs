@@ -67,7 +67,7 @@ namespace Moneyes.UI.ViewModels
         public AsyncCommand MonthMinusCommand { get; }
         public AsyncCommand MonthPlusCommand { get; }
 
-        public ICommand FetchOnlineCommand { get; }
+        public AsyncCommand FetchOnlineCommand { get; }
 
         public SelectorViewModel(
             IBankingService bankingService, LiveDataService liveDataService, SelectorStore selectorStore,
@@ -77,7 +77,7 @@ namespace Moneyes.UI.ViewModels
             _liveDataService = liveDataService;
             _selectorStore = selectorStore;
 
-            FromDate = new(DateTime.Now.Year, DateTime.Now.Month, 1); ;
+            FromDate = new(DateTime.Now.Year, DateTime.Now.Month, 1);
             EndDate = DateTime.Now;
 
             MonthMinusCommand = new AsyncCommand(async ct =>
@@ -128,7 +128,7 @@ namespace Moneyes.UI.ViewModels
                     statusMessageService.ShowMessage($"Fetching transactions failed", "Retry",
                         () => FetchOnlineCommand.Execute(null));
                 }
-            });
+            }, () => _bankingService.HasBankingDetails && CurrentAccount != null);
 
 
             _selectorStore.AccountChanged += SelectorStore_AccountChanged;
@@ -144,12 +144,25 @@ namespace Moneyes.UI.ViewModels
                 }
                 return;
             }
+
+            bankingService.NewAccount += BankingService_NewAccount;
+        }
+
+        private void BankingService_NewAccount(AccountDetails account)
+        {
+            RefreshAccounts();
+
+            if (CurrentAccount == null)
+            {
+                CurrentAccount = Accounts.First();
+            }
         }
 
         ~SelectorViewModel()
         {
             _selectorStore.AccountChanged -= SelectorStore_AccountChanged;
             _selectorStore.DateChanged -= SelectorStore_DateChanged;
+            _bankingService.NewAccount -= BankingService_NewAccount;
         }
 
         private void SelectorStore_DateChanged(object sender, EventArgs e)
@@ -174,6 +187,8 @@ namespace Moneyes.UI.ViewModels
             }
 
             Accounts = new(_bankingService.GetAccounts());
+
+            FetchOnlineCommand.RaiseCanExecuteChanged();
         }
 
         public event EventHandler SelectorChanged;

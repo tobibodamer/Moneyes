@@ -1,4 +1,5 @@
-﻿using System.Security;
+﻿using System;
+using System.Security;
 
 namespace Moneyes.LiveData
 {
@@ -21,5 +22,10 @@ namespace Moneyes.LiveData
         /// Online banking logon pin.
         /// </summary>
         public SecureString Pin { get; set; }
+
+        /// <summary>
+        /// Online banking server uri.
+        /// </summary>
+        public Uri Server { get; set; }
     }
 }

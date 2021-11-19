@@ -8,7 +8,8 @@
         xmlns:dragablz="clr-namespace:Dragablz;assembly=Dragablz"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         xmlns:materialDesignExt="clr-namespace:MaterialDesignExtensions.Controls;assembly=MaterialDesignExtensions"
-        xmlns:vm="clr-namespace:Moneyes.UI.ViewModels"
+        xmlns:vm="clr-namespace:Moneyes.UI.ViewModels"         
+        d:DataContext="{d:DesignInstance Type=vm:MainWindowViewModel}"
         TextElement.Foreground="{DynamicResource MaterialDesignBody}"
         TextElement.FontWeight="Regular"
         TextElement.FontSize="13"
@@ -19,6 +20,11 @@
         mc:Ignorable="d"
         Title="Moneyes" Height="650" Width="1100" WindowStyle="None"
         Icon="../Resources/Icon.png">
+    <i:Interaction.Triggers>
+        <i:EventTrigger EventName="Loaded">
+            <i:InvokeCommandAction Command="{Binding LoadedCommand}"/>
+        </i:EventTrigger>
+    </i:Interaction.Triggers>
     <Window.Style>
         <Style TargetType="Window">
             <Setter Property="WindowChrome.WindowChrome">
@@ -39,6 +45,7 @@
             <RowDefinition/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
+
         <Grid Height="40" VerticalAlignment="Top" Grid.Row="0" PreviewMouseDown="Move" Background="{DynamicResource PrimaryHueMidBrush}">
             <TextBlock Text="Moneyes" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="18" FontFamily="Segoe UI"/>
 
@@ -70,12 +77,15 @@
                 <DataTemplate DataType="{x:Type vm:AccountsViewModel}">
                     <local:Accounts/>
                 </DataTemplate>
-                <DataTemplate DataType="{x:Type vm:BankingSettingsViewModel}">
+                <DataTemplate DataType="{x:Type vm:BankSetupViewModel}">
                     <local:SettingsPage/>
                 </DataTemplate>
             </dragablz:TabablzControl.Resources>
         </dragablz:TabablzControl>
 
+        <local:DialogBehavior ViewModel="{Binding SetupWizard}"
+                              Dialog="{x:Type local:SetupWizardDialog}"/>
+        
         <!--<StatusBar VerticalAlignment="Bottom" Grid.Row="2" Height="25" Background="{DynamicResource MaterialDesignLightBackground}">
             
         </StatusBar>-->

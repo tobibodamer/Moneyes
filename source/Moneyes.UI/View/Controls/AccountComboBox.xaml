@@ -21,19 +21,30 @@
                 All Accounts
             </ComboBoxItem>
             <CompositeCollection x:Key="AccountsCollection">
-                <!--<StaticResource ResourceKey="NullItem"/>-->
+                <StaticResource ResourceKey="NullItem"/>
                 <CollectionContainer Collection="{Binding DataContext.Accounts, 
                             Source={x:Reference accounts}}"/>
             </CompositeCollection>
         </Border.Resources>
-        <ComboBox Name="accounts" ItemsSource="{DynamicResource AccountsCollection}" 
+        <!--ItemsSource="{DynamicResource AccountsCollection}" 
                               SelectedItem="{Binding CurrentAccount, 
                                             Converter={StaticResource EmptyItemConverter},
-                                            ConverterParameter={StaticResource NullItem}}"
-                               Margin="0,0" Style="{StaticResource MaterialDesignDataGridComboBox}"
+                                            ConverterParameter={StaticResource NullItem}}"-->
+
+        <ComboBox Name="accounts" ItemsSource="{Binding Accounts}" SelectedItem="{Binding CurrentAccount}"
+                               Margin="0,0"
                           materialDesign:ComboBoxAssist.ShowSelectedItem="True" BorderThickness="0"
                   VerticalAlignment="Stretch" HorizontalAlignment="Right" 
                   Width="175" Grid.Column="0" VerticalContentAlignment="Center" Padding="10,0,0,0">
+            <ComboBox.Style>
+                <Style TargetType="ComboBox" BasedOn="{StaticResource MaterialDesignDataGridComboBox}">
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding Accounts.Count}" Value="0">
+                            <Setter Property="IsEnabled" Value="False"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </ComboBox.Style>
             <ComboBox.ItemTemplate>
                 <DataTemplate>
                     <TextBlock>

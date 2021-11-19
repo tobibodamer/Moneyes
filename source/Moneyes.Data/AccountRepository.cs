@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace Moneyes.Data
 {
-    public class AccountRepository : BaseRepository<AccountDetails>
+    public class AccountRepository : CachedRepository<AccountDetails>
     {
         public AccountRepository(ILiteDatabase db) : base(db)
         {

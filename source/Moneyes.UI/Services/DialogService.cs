@@ -35,9 +35,14 @@ namespace Moneyes.UI.Services
         {
             TDialog dialog = new()
             {
-                DataContext = viewModel,
-                Owner = Application.Current.MainWindow
+                DataContext = viewModel
             };
+
+            if (Application.Current.MainWindow != null
+               && Application.Current.MainWindow != dialog)
+            {
+                dialog.Owner = Application.Current.MainWindow;
+            }
 
             if (dialog.ShowDialog() ?? false)
             {

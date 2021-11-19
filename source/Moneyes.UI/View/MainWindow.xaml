@@ -20,11 +20,11 @@
         mc:Ignorable="d"
         Title="Moneyes" Height="650" Width="1100" WindowStyle="None"
         Icon="../Resources/Icon.png">
-    <i:Interaction.Triggers>
+    <!--<i:Interaction.Triggers>
         <i:EventTrigger EventName="Loaded">
             <i:InvokeCommandAction Command="{Binding LoadedCommand}"/>
         </i:EventTrigger>
-    </i:Interaction.Triggers>
+    </i:Interaction.Triggers>-->
     <Window.Style>
         <Style TargetType="Window">
             <Setter Property="WindowChrome.WindowChrome">

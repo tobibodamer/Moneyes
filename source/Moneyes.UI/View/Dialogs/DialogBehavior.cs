@@ -51,30 +51,38 @@ namespace Moneyes.UI.View
                 return;
             }
 
-            if (dialogBehavior.Dialog.BaseType.IsEquivalentTo(typeof(Window)))
+            if (!dialogBehavior.Dialog.BaseType.IsEquivalentTo(typeof(Window)))
             {
-                var dlg = Activator.CreateInstance(dialogBehavior.Dialog) as Window;
-                bool isClosed = false;
-
-                dlg.Closed += (sender, args) =>
-                {
-                    isClosed = true;
-                };
-                
-                dlg.DataContext = dialogBehavior.ViewModel;
-                
-                dialogBehavior.ViewModel.RequestClose += (sender, args) =>
-                {
-                    if (isClosed)
-                    {
-                        return;
-                    }
-
-                    dlg.DialogResult = args.Result;
-                };
-
-                dlg.ShowDialog();
+                return;
             }
+
+            var dlg = Activator.CreateInstance(dialogBehavior.Dialog) as Window;
+            bool isClosed = false;
+
+            dlg.Closed += (sender, args) =>
+            {
+                isClosed = true;
+            };
+
+            dlg.DataContext = dialogBehavior.ViewModel;
+
+            if (Application.Current.MainWindow != null
+                && Application.Current.MainWindow != dlg)
+            {
+                dlg.Owner = Application.Current.MainWindow;
+            }
+
+            dialogBehavior.ViewModel.RequestClose += (sender, args) =>
+            {
+                if (isClosed)
+                {
+                    return;
+                }
+
+                dlg.DialogResult = args.Result;
+            };
+
+            dlg.ShowDialog();
         }
     }
 }

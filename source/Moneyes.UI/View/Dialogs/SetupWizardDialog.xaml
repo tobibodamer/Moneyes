@@ -5,7 +5,9 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:Moneyes.UI.View"
              xmlns:vm="clr-namespace:Moneyes.UI.ViewModels" d:DataContext="{d:DesignInstance Type=vm:SetupWizardViewModel}"
-        mc:Ignorable="d" Width="500" Height="650" Title="Setup">
+             ResizeMode="NoResize"
+             WindowStartupLocation="CenterOwner"
+             mc:Ignorable="d" Width="500" Height="650" Title="Setup">
     <Window.Resources>
         <DataTemplate DataType="{x:Type vm:BankSetupStepViewModel}">
             <local:SetupBankStep/>

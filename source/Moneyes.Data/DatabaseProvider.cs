@@ -38,7 +38,7 @@ namespace Moneyes.Data
 
             try
             {
-                LiteDbContextFactory databaseFactory = new(_dbConfig);
+                LiteDbFactory databaseFactory = new(_dbConfig);
 
                 SecureString newPassword = _createMasterPasswordFunc?.Invoke();
 
@@ -48,7 +48,7 @@ namespace Moneyes.Data
                 }
 
                 ILiteDatabase database = databaseFactory
-                    .CreateContext(newPassword.ToUnsecuredString());
+                    .Create(newPassword.ToUnsecuredString());
 
                 _database = database;
 
@@ -67,11 +67,11 @@ namespace Moneyes.Data
                 return false;
             }
 
-            LiteDbContextFactory databaseFactory = new(_dbConfig);
+            LiteDbFactory databaseFactory = new(_dbConfig);
 
             try
             {
-                _database = databaseFactory.CreateContext();
+                _database = databaseFactory.Create();
 
                 return true;
             }
@@ -96,7 +96,7 @@ namespace Moneyes.Data
                     }
 
                     _database = databaseFactory
-                        .CreateContext(password.ToUnsecuredString());
+                        .Create(password.ToUnsecuredString());
 
                     return true;
                 }

@@ -7,7 +7,7 @@ namespace Moneyes.Data
     {
         public static void AddLiteDb(this IServiceCollection services, string databasePath)
         {
-            services.AddScoped<LiteDbContextFactory>();
+            services.AddScoped<LiteDbFactory>();
             services.Configure<LiteDbConfig>(options => options.DatabasePath = databasePath);
         }
     }

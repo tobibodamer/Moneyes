@@ -23,7 +23,7 @@ namespace Moneyes.UI
     /// </summary>
     public partial class App : Application
     {
-        private readonly IDatabaseProvider _dbProvider;
+        private IDatabaseProvider _dbProvider;
 
         protected override async void OnStartup(StartupEventArgs e)
         {

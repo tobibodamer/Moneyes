@@ -231,7 +231,10 @@ namespace Moneyes.UI.ViewModels
 
                     State = BankSetupState.BankFound;
 
-                    ApplyCommand.RaiseCanExecuteChanged();
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        ApplyCommand.RaiseCanExecuteChanged();
+                    });
                 }
                 else
                 {
@@ -257,10 +260,7 @@ namespace Moneyes.UI.ViewModels
                 UserId = bankingDetails.UserId;
                 PIN = bankingDetails.Pin;
 
-                Application.Current.Dispatcher.Invoke(() =>
-                {
-                    FindBankCommand.Execute(null);
-                });
+                FindBankCommand.Execute(null);
             }
         }
 

@@ -8,13 +8,11 @@ namespace Moneyes.Data
 {
     public class TransactionRepository : CachedRepository<Transaction>
     {
+        protected override ILiteCollection<Transaction> Collection => base.Collection
+            .Include(t => t.Categories);
         public TransactionRepository(IDatabaseProvider dbProvider) : base(dbProvider)
         {
-        }
-
-        protected override ILiteCollection<Transaction> CreateCollection()
-        {
-            return base.CreateCollection().Include(t => t.Categories);
+            //Collection.EnsureIndex(t => t.UID, true);
         }
 
         public IEnumerable<Transaction> GetByCategory(Category category)
@@ -50,8 +48,8 @@ namespace Moneyes.Data
 
         private IEnumerable<Transaction> GetByTransactionType(TransactionType transactionType)
         {
-            //return Collection.Find(t => t.Type == transactionType);
-            return Cache.Values.Where(t => t.Type == transactionType);
+            return null;
+            //return Cache.Values.Where(t => t.Type == transactionType);
         }
 
 

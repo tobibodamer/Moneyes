@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using LiteDB;
 
@@ -8,7 +9,7 @@ namespace Moneyes.Data
     public abstract class BaseRepository<T> : IBaseRepository<T>
     {
         protected ILiteDatabase DB { get; }
-        protected ILiteCollection<T> Collection { get; set; }
+        protected virtual ILiteCollection<T> Collection { get; set; }
 
         protected BaseRepository(ILiteDatabase db)
         {
@@ -24,7 +25,7 @@ namespace Moneyes.Data
         {
             BsonValue newId = Collection.Insert(entity);
 
-            T createdEntity = Collection.FindById(newId.AsInt32);
+            T createdEntity = Collection.FindById(newId);
 
             if (createdEntity is null)
             {
@@ -62,15 +63,15 @@ namespace Moneyes.Data
         {
             int count = 0;
 
-            foreach (T entity in entities)
-            {
-                if (Set(entity))
-                {
-                    count++;
-                }
-            }
+            return Collection.Upsert(entities);
 
-            return count;
+            //foreach (T entity in entities)
+            //{
+            //    if (Set(entity))
+            //    {
+            //        count++;
+            //    }
+            //}
         }
 
         public virtual bool Delete(object id)

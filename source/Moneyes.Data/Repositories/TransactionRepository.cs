@@ -8,9 +8,13 @@ namespace Moneyes.Data
 {
     public class TransactionRepository : CachedRepository<Transaction>
     {
-        public TransactionRepository(ILiteDatabase db) : base(db)
+        public TransactionRepository(IDatabaseProvider dbProvider) : base(dbProvider)
         {
-            Collection = Collection.Include(t => t.Categories);
+        }
+
+        protected override ILiteCollection<Transaction> CreateCollection()
+        {
+            return base.CreateCollection().Include(t => t.Categories);
         }
 
         public IEnumerable<Transaction> GetByCategory(Category category)

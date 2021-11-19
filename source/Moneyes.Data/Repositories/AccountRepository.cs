@@ -6,7 +6,7 @@ namespace Moneyes.Data
 {
     public class AccountRepository : CachedRepository<AccountDetails>
     {
-        public AccountRepository(ILiteDatabase db) : base(db)
+        public AccountRepository(IDatabaseProvider dbProvider) : base(dbProvider)
         {
         }
 

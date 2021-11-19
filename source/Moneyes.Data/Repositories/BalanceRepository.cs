@@ -8,9 +8,9 @@ using Moneyes.Core;
 
 namespace Moneyes.Data
 {
-    public class BalanceRepository : BaseRepository<Balance>
+    public class BalanceRepository : CachedRepository<Balance>
     {
-        public BalanceRepository(ILiteDatabase db) : base(db)
+        public BalanceRepository(IDatabaseProvider dbProvider) : base(dbProvider)
         {
         }
 

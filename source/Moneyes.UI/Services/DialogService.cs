@@ -11,12 +11,14 @@ namespace Moneyes.UI.Services
     interface IDialogService
     {
         DialogResult ShowDialog(ViewModelBase viewModel);
+        Task<DialogResult> ShowDialogAsync(ViewModelBase viewModel);
     }
 
     interface IDialogService<TViewModel> : IDialogService
         where TViewModel : ViewModelBase
     {
         DialogResult ShowDialog(TViewModel viewModel);
+        Task<DialogResult> ShowDialogAsync(TViewModel viewModel);
     }
 
     class DialogService<TDialog, TViewModel> : DialogService<TDialog>, IDialogService<TViewModel>
@@ -26,6 +28,11 @@ namespace Moneyes.UI.Services
         public DialogResult ShowDialog(TViewModel viewModel)
         {
             return base.ShowDialog(viewModel);
+        }
+
+        public Task<DialogResult> ShowDialogAsync(TViewModel viewModel)
+        {
+            return base.ShowDialogAsync(viewModel);
         }
     }
     class DialogService<TDialog> : IDialogService
@@ -45,6 +52,27 @@ namespace Moneyes.UI.Services
             }
 
             if (dialog.ShowDialog() ?? false)
+            {
+                return DialogResult.OK;
+            }
+
+            return DialogResult.Cancel;
+        }
+
+        public async Task<DialogResult> ShowDialogAsync(ViewModelBase viewModel)
+        {
+            TDialog dialog = new()
+            {
+                DataContext = viewModel
+            };
+
+            if (Application.Current.MainWindow != null
+               && Application.Current.MainWindow != dialog)
+            {
+                dialog.Owner = Application.Current.MainWindow;
+            }
+
+            if ((await dialog.ShowDialogAsync()) ?? false)
             {
                 return DialogResult.OK;
             }

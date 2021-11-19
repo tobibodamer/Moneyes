@@ -6,16 +6,22 @@ namespace Moneyes.Data
 {
     public class CategoryRepository : CachedRepository<Category>
     {
-        public CategoryRepository(ILiteDatabase db) 
-            : base(db)
+        public CategoryRepository(IDatabaseProvider dbProvider)
+            : base(dbProvider)
         {
-            Collection.EnsureIndex(c => c.Name, true);
-            Collection = Collection.Include(c => c.Parent);
+        }
+
+        protected override ILiteCollection<Category> CreateCollection()
+        {
+            var collection = base.CreateCollection();
+
+            collection.EnsureIndex(c => c.Name, true);
+
+            return collection.Include(c => c.Parent);
         }
 
         public Category FindByName(string name)
         {
-            //return Collection.FindOne(c => c.Name.Equals(name));
             return Cache.Values.FirstOrDefault(c => c.Name.Equals(name));
         }
 

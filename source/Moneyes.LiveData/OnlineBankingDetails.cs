@@ -26,6 +26,21 @@ namespace Moneyes.LiveData
         /// <summary>
         /// Online banking server uri.
         /// </summary>
-        public Uri Server { get; set; }
+        public Uri Server { get; init; }
+
+        /// <summary>
+        /// Creates a deep copy of this object.
+        /// </summary>
+        /// <returns></returns>
+        public OnlineBankingDetails Copy()
+        {
+            return new()
+            {
+                BankCode = BankCode,
+                UserId = UserId,
+                Pin = Pin?.Copy(),
+                Server = Server is null ? null : new Uri(Server.AbsoluteUri)
+            };
+        }
     }
 }

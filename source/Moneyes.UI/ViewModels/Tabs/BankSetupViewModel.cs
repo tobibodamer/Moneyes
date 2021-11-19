@@ -130,6 +130,17 @@ namespace Moneyes.UI.ViewModels
         }
 
         public bool? IsBankFound => BankLookupCompleted ? Bank != null : null;
+
+        private bool _savePassword;
+        public bool SavePassword
+        {
+            get => _savePassword;
+            set
+            {
+                _savePassword = value;
+                OnPropertyChanged();
+            }
+        }
         public AsyncCommand FindBankCommand { get; }
         public AsyncCommand ApplyCommand { get; }
         public AsyncCommand LoadedCommand { get; }
@@ -192,6 +203,11 @@ namespace Moneyes.UI.ViewModels
                 }
             }
 
+            if (!SavePassword)
+            {
+                bankingDetails.Pin = null;
+            }
+
             // If sync was established -> save configuration
             _bankingService.BankingDetails = bankingDetails;
 
@@ -241,7 +257,10 @@ namespace Moneyes.UI.ViewModels
                 UserId = bankingDetails.UserId;
                 PIN = bankingDetails.Pin;
 
-                FindBankCommand.Execute(null);
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    FindBankCommand.Execute(null);
+                });
             }
         }
 

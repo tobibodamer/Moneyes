@@ -80,6 +80,8 @@ namespace Moneyes.UI
                 {
                     return result;
                 }
+
+                numRetries++;
             }
 
             // Password not set -> try to request it
@@ -194,10 +196,12 @@ namespace Moneyes.UI
         {
             try
             {
+                OnlineBankingDetails bankingDetailsCopy = bankingDetails.Copy();
+
                 _logger?.LogInformation("Creating bank connection, bank code '{bankCode}'",
                     bankingDetails.BankCode);
 
-                _bankingService = _bankingServiceFactory.CreateService(bankingDetails);
+                _bankingService = _bankingServiceFactory.CreateService(bankingDetailsCopy);
 
                 if (testConnection)
                 {
@@ -215,9 +219,9 @@ namespace Moneyes.UI
                     }
                 }
 
-                _logger?.LogInformation("Bank connection created, bank code '{bankCode}'", bankingDetails.BankCode);
+                _logger?.LogInformation("Bank connection created, bank code '{bankCode}'", bankingDetailsCopy.BankCode);
 
-                BankingInitialized?.Invoke(bankingDetails);
+                BankingInitialized?.Invoke(bankingDetailsCopy);
 
                 return Result.Successful();
             }
@@ -258,19 +262,14 @@ namespace Moneyes.UI
                     bankingDetails.BankCode);
 
                 // Bank changed or not initialized, create new banking connection
-                await CreateBankConnection(bankingDetails, testConnection: false);
-
-                _logger?.LogInformation("Applying current banking settings");
-
-                // Apply credentials from store
-                _bankingService.BankingDetails.UserId = bankingDetails.UserId;
-                _bankingService.BankingDetails.Pin = bankingDetails.Pin;
+                // (will throw on fail -> ok to discard result as its only for sync)
+                _ = await CreateBankConnection(bankingDetails, testConnection: false);
             }
             else
             {
                 // Apply credentials from store if not set
 
-                _logger?.LogInformation("Applying current banking settings");
+                _logger?.LogInformation("Applying current banking credentials");
 
                 if (string.IsNullOrEmpty(_bankingService.BankingDetails.UserId))
                 {

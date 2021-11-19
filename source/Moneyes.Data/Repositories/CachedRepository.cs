@@ -9,7 +9,9 @@ namespace Moneyes.Data
     public class CachedRepository<T> : IBaseRepository<T>
     {
         protected ILiteDatabase DB { get; }
-        protected ILiteCollection<T> Collection { get; set; }
+
+        private Lazy<ILiteCollection<T>> _collectionLazy;
+        protected ILiteCollection<T> Collection => _collectionLazy.Value;
 
         private readonly Lazy<ConcurrentDictionary<object, T>> _cache;
         protected ConcurrentDictionary<object, T> Cache => _cache.Value;
@@ -18,12 +20,18 @@ namespace Moneyes.Data
         public event Action<T> EntityUpdated;
         public event Action<T> EntityDeleted;
 
-        protected CachedRepository(ILiteDatabase db)
+        protected CachedRepository(IDatabaseProvider databaseProvider)
         {
-            DB = db;
-            Collection = db.GetCollection<T>();
+            DB = databaseProvider.Database;
+
+            _collectionLazy = new Lazy<ILiteCollection<T>>(CreateCollection);
 
             _cache = new(() => CreateCache());
+        }
+
+        protected virtual ILiteCollection<T> CreateCollection()
+        {
+            return DB.GetCollection<T>();
         }
 
         private ConcurrentDictionary<object, T> CreateCache()

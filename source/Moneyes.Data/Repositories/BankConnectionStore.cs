@@ -6,16 +6,17 @@ namespace Moneyes.Data
 {
     public class BankConnectionStore : IBankConnectionStore
     {
-        private readonly ILiteDatabase _db;
-        public BankConnectionStore(ILiteDatabase db)
+        private Lazy<ILiteDatabase> _dbLazy;
+        private ILiteDatabase DB => _dbLazy.Value;
+        public BankConnectionStore(IDatabaseProvider databaseProvider)
         {
-            _db = db;
+            _dbLazy = new(() => databaseProvider.Database);
         }
 
-        public bool HasBankingDetails => _db.GetCollection<OnlineBankingDetails>().Count() > 0;
+        public bool HasBankingDetails => DB.GetCollection<OnlineBankingDetails>().Count() > 0;
         public bool SetBankingDetails(OnlineBankingDetails bankingDetails)
         {
-            ILiteCollection<OnlineBankingDetails> collection = _db.GetCollection<OnlineBankingDetails>();
+            ILiteCollection<OnlineBankingDetails> collection = DB.GetCollection<OnlineBankingDetails>();
 
             if (bankingDetails is null)
             {
@@ -41,7 +42,7 @@ namespace Moneyes.Data
 
         public OnlineBankingDetails GetBankingDetails()
         {
-            ILiteCollection<OnlineBankingDetails> collection = _db.GetCollection<OnlineBankingDetails>();
+            ILiteCollection<OnlineBankingDetails> collection = DB.GetCollection<OnlineBankingDetails>();
 
             return collection.FindById(0);
         }

@@ -12,7 +12,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Security;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Threading;
@@ -24,68 +23,7 @@ namespace Moneyes.UI
     /// </summary>
     public partial class App : Application
     {
-        ILiteDatabase _db;
-
-        private static async Task<Result<ILiteDatabase>> TryOpenDatabase(LiteDbConfig databaseConfig)
-        {
-            LiteDbContextFactory databaseFactory = new(databaseConfig);
-
-            // Input password
-            DialogPasswordPrompt passwordPrompt = new("Password required", "Please enter your master password.");
-            DialogService<InitMasterPasswordDialog> newMasterPasswordDialogService = new();
-
-            SecureString password;
-            ILiteDatabase database;
-
-            // Database exists -> Try open database without master password
-            if (File.Exists(databaseConfig.DatabasePath))
-            {
-                try
-                {
-                    database = databaseFactory.CreateContext();
-                    return Result.Successful(database);
-                }
-                catch (LiteException)
-                {
-                    // Failed to open without master password
-                }
-
-                // No password failed, or database doesn't exist -> Try with master password
-                for (int i = 0; i < 3; i++)
-                {
-                    try
-                    {
-                        password = (await passwordPrompt.WaitForPasswordAsync()).Password;
-
-                        database = databaseFactory
-                            .CreateContext(password.ToUnsecuredString());
-
-                        return Result.Successful(database);
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show(ex.Message, "Could not open database", MessageBoxButton.OK, MessageBoxImage.Error);
-                    }
-                }
-            }
-            else
-            {
-                InitMasterPasswordDialogViewModel passwordDialogVM = new();
-                if (newMasterPasswordDialogService.ShowDialog(passwordDialogVM) != DialogResult.OK)
-                {
-                    return Result.Failed<ILiteDatabase>();
-                }
-
-                database = databaseFactory
-                    .CreateContext(passwordDialogVM.Password.ToUnsecuredString());
-
-                return Result.Successful(database);
-            }
-
-
-            // Opening database failed
-            return Result.Failed<ILiteDatabase>();
-        }
+        private readonly IDatabaseProvider _dbProvider;
 
         protected override async void OnStartup(StartupEventArgs e)
         {
@@ -100,11 +38,10 @@ namespace Moneyes.UI
             IDSelectors.Register<AccountDetails>(acc => acc.IBAN);
             IDSelectors.Register<Transaction>(t => t.UID);
 
-            //var categories = Categories.LoadFromJson();
 
             IServiceCollection services = new ServiceCollection();
 
-            // Load database
+            // Create DB config
 
             string userHome = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
             string dataDir = Path.Combine(userHome, ".moneyes");
@@ -115,18 +52,10 @@ namespace Moneyes.UI
                 DatabasePath = Path.Combine(dataDir, "database.db")
             };
 
-            Result<ILiteDatabase> databaseResult = await TryOpenDatabase(databaseConfig);
+            services.AddSingleton<LiteDbConfig>(databaseConfig);
+            services.AddSingleton<IDatabaseProvider, DatabaseProvider>(CreateDatabaseProvider);
 
-            if (!databaseResult.IsSuccessful)
-            {
-                // Database opening / creation failed
-                Environment.Exit(-1);
-            }
-
-            _db = databaseResult.Data;
-
-            // Register database
-            services.AddSingleton<ILiteDatabase>(_db);
+            // Repositories
 
             services.AddScoped<CategoryRepository>();
             services.AddScoped<IBaseRepository<Category>, CategoryRepository>(p => p.GetRequiredService<CategoryRepository>());
@@ -138,16 +67,7 @@ namespace Moneyes.UI
             services.AddScoped<IBaseRepository<Balance>, BalanceRepository>(p => p.GetRequiredService<BalanceRepository>());
             services.AddScoped<IBankConnectionStore, BankConnectionStore>();
 
-
-            //var categoryRepo = new CategoryRepository(database);
-            //var transactionRepo = new TransactionRepository(database);
-            //var accountRepo = new AccountRepository(database);
-            //var configStore = new BankConnectionStore(database);
-
-
-
-            //var transactionStore = new JsonDatabase<Transaction>("E:\\transcationsTest.json", transaction => transaction.GetUID());
-            //var accountStore = new JsonDatabase<AccountDetails>("E:\\accountTest.json", account => account.IBAN);
+            // Services
 
             services.AddTransient<IPasswordPrompt, OnlineBankingPasswordPrompt>();
             services.AddSingleton<IOnlineBankingServiceFactory, OnlineBankingServiceFactory>();
@@ -166,6 +86,16 @@ namespace Moneyes.UI
             services.AddScoped<IDialogService<EditCategoryViewModel>,
                 DialogService<AddCategoryDialog, EditCategoryViewModel>>();
 
+            services.AddScoped<IDialogService<GetMasterPasswordDialogViewModel>,
+                DialogService<MasterPasswordDialog, GetMasterPasswordDialogViewModel>>();
+
+            services.AddScoped<IDialogService<InitMasterPasswordDialogViewModel>,
+                DialogService<InitMasterPasswordDialog, InitMasterPasswordDialogViewModel>>();
+
+            services.AddScoped<SelectorStore>();
+            services.AddSingleton<MasterPasswordProvider>(CreateMasterPasswordProvider);
+
+            // View models
             services.AddTransient<ITabViewModel, OverviewViewModel>();
             services.AddTransient<ITabViewModel, TransactionsViewModel>();
             services.AddTransient<ITabViewModel, AccountsViewModel>();
@@ -173,41 +103,41 @@ namespace Moneyes.UI
 
             services.AddTransient<SetupWizardViewModel>();
 
-            services.AddScoped<SelectorStore>();
-
             services.AddScoped<CategoryViewModelFactory>();
             services.AddTransient<ExpenseCategoriesViewModel>();
             services.AddTransient<SelectorViewModel>();
 
+            services.AddTransient<GetMasterPasswordDialogViewModel>();
+            services.AddTransient<InitMasterPasswordDialogViewModel>();
+
             services.AddTransient<MainWindowViewModel>();
-            //passwordPrompt = new DialogPasswordPrompt();
-
-            //LiveDataService liveDataService = new(
-            //    transactionRepo, categoryRepo, accountRepo,
-            //    configStore, new OnlineBankingServiceFactory(), passwordPrompt);
-
-            //ExpenseIncomServieUsingDb expenseIncomeService = new(categoryRepo, transactionRepo);
-            //TransactionService transactionRepository = new(transactionRepo);
-
-            //var mainViewModel = new MainViewModel(liveDataService, expenseIncomeService, transactionRepo,
-            //    accountRepo, configStore);
-
-            //var settingsViewModel = new BankingSettingsViewModel(liveDataService, configStore);
-
-            //var mainWindowViewModel = new MainWindowViewModel()
-            //{
-            //    Tabs = new() { mainViewModel, settingsViewModel },
-            //    CurrentViewModel = mainViewModel
-            //};
 
             IServiceProvider serviceProvider = services.BuildServiceProvider();
+
+            // Open / create database
+            _dbProvider = serviceProvider.GetRequiredService<IDatabaseProvider>();
+
+            if (!_dbProvider.IsDatabaseCreated)
+            {
+                if (!_dbProvider.TryCreateDatabase())
+                {
+                    Environment.Exit(-1);
+                }
+            }
+            else
+            {
+                if (!_dbProvider.TryOpenDatabase())
+                {
+                    Environment.Exit(-1);
+                }
+            }
 
             var categoryRepo = serviceProvider.GetService<CategoryRepository>();
             var transactionRepo = serviceProvider.GetService<TransactionRepository>();
 
             // Preload caches
-            //categoryRepo.UpdateCache();
-            //transactionRepo.UpdateCache();
+            categoryRepo.UpdateCache();
+            transactionRepo.UpdateCache();
 
             //var online = transactionRepo.GetAll().ToList();
             //var csv = CsvParser.FromMT940CSV("1.csv").ToList();
@@ -231,6 +161,25 @@ namespace Moneyes.UI
             {
                 Environment.Exit(0);
             };
+        }
+
+        private MasterPasswordProvider CreateMasterPasswordProvider(IServiceProvider p)
+        {
+            return new(p.GetRequiredService<IDialogService<InitMasterPasswordDialogViewModel>>(),
+                       p.GetRequiredService<IDialogService<GetMasterPasswordDialogViewModel>>(),
+                       p.GetRequiredService<InitMasterPasswordDialogViewModel>,
+                       p.GetRequiredService<GetMasterPasswordDialogViewModel>);
+        }
+
+        private DatabaseProvider CreateDatabaseProvider(IServiceProvider p)
+        {
+            var masterPasswordProvider = p.GetRequiredService<MasterPasswordProvider>();
+            var dbConfig = p.GetRequiredService<LiteDbConfig>();
+
+            return new(
+                masterPasswordProvider.CreateMasterPassword,
+                masterPasswordProvider.RequestMasterPassword,
+                dbConfig);
         }
 
         private void RegisterGlobalExceptionHandling(Action<Exception> log)
@@ -278,12 +227,12 @@ namespace Moneyes.UI
             var exceptionMessage = exception?.Message ?? "An unmanaged exception occured.";
             var message = string.Concat(exceptionMessage, terminatingMessage);
             log(exception);
-        }    
+        }
 
-    protected override void OnExit(ExitEventArgs e)
+        protected override void OnExit(ExitEventArgs e)
         {
             base.OnExit(e);
-            _db.Dispose();
+            _dbProvider.Database.Dispose();
         }
     }
 }

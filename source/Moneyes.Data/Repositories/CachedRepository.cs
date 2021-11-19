@@ -11,7 +11,7 @@ namespace Moneyes.Data
         protected ILiteDatabase DB { get; }
 
         private Lazy<ILiteCollection<T>> _collectionLazy;
-        protected ILiteCollection<T> Collection => _collectionLazy.Value;
+        protected virtual ILiteCollection<T> Collection => _collectionLazy.Value;
 
         private readonly Lazy<ConcurrentDictionary<object, T>> _cache;
         protected ConcurrentDictionary<object, T> Cache => _cache.Value;
@@ -111,11 +111,15 @@ namespace Moneyes.Data
 
             id = GetIdOrHash(entity);
 
+            T oldValue = Cache[id];
+
             // Key exists -> update
             Cache[id] = entity;
 
-            // Raise event directly (no id create)
-            OnEntityUpdated(entity);
+            if (!oldValue.Equals(entity))
+            {
+                OnEntityUpdated(entity);
+            }
 
             return false;
         }
@@ -136,11 +140,15 @@ namespace Moneyes.Data
                     continue;
                 }
 
+                T oldValue = Cache[id];
+
                 // Key exists -> update
                 Cache[id] = entity;
 
-                // Raise event directly (no id create)
-                OnEntityUpdated(entity);
+                if (!oldValue.Equals(entity))
+                {
+                    OnEntityUpdated(entity);
+                }
             }
 
             return counter;

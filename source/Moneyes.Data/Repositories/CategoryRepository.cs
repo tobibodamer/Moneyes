@@ -6,6 +6,8 @@ namespace Moneyes.Data
 {
     public class CategoryRepository : CachedRepository<Category>
     {
+        protected override ILiteCollection<Category> Collection => base.Collection
+            .Include(c => c.Parent);
         public CategoryRepository(IDatabaseProvider dbProvider)
             : base(dbProvider)
         {
@@ -17,7 +19,7 @@ namespace Moneyes.Data
 
             collection.EnsureIndex(c => c.Name, true);
 
-            return collection.Include(c => c.Parent);
+            return collection;
         }
 
         public Category FindByName(string name)

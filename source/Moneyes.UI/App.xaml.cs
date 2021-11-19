@@ -10,6 +10,7 @@ using Moneyes.UI.View;
 using Moneyes.UI.ViewModels;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -132,14 +133,26 @@ namespace Moneyes.UI
                 }
             }
 
+            
             var categoryRepo = serviceProvider.GetService<CategoryRepository>();
             var transactionRepo = serviceProvider.GetService<TransactionRepository>();
+            var balanceRepo = serviceProvider.GetService<BalanceRepository>();
 
             // Preload caches
             categoryRepo.UpdateCache();
-            transactionRepo.UpdateCache();
+            //transactionRepo.UpdateCache();
 
-            //var online = transactionRepo.GetAll().ToList();
+            
+            
+            
+
+            //var newTransactions = transactionRepo.GetAll();
+
+            //categoryRepo.Set(oldCategories);
+
+            //var newCategories = categoryRepo.GetAll();
+
+
             //var csv = CsvParser.FromMT940CSV("1.csv").ToList();
 
             //var categoryStore = new CategoryDatabase("categories.json");
@@ -161,6 +174,48 @@ namespace Moneyes.UI
             {
                 Environment.Exit(0);
             };
+        }
+
+        private IEnumerable<Transaction> RemoveDuplicates(IEnumerable<Transaction> transactions,
+            Func<Transaction, bool> selectDupeOverExisting)
+        {
+            Dictionary<string, Transaction> done = new();
+
+            // Remove duplicates, use duplicate with predicate
+            foreach (var oldTransaction in transactions)
+            {
+                if (done.ContainsKey(oldTransaction.UID) && 
+                    (selectDupeOverExisting?.Invoke(done[oldTransaction.UID]) ?? true))
+                {
+                    continue;
+                }
+                else
+                {
+                    done[oldTransaction.UID] = oldTransaction;
+                }
+            }
+
+            return done.Values;
+        }
+
+        private void RestoreFromDatabase(string userHome)
+        {
+            var restorePath = Path.Combine(userHome, @".moneyes_kaputt\database.db");
+
+            var restoreConfig = new LiteDbConfig() { DatabasePath = restorePath };
+
+            var oldDbProvider = new DatabaseProvider(() => string.Empty.ToSecuredString(), () => string.Empty.ToSecuredString(),
+                                    restoreConfig);
+
+            oldDbProvider.TryOpenDatabase();
+
+            var oldCategoryRepo = new CategoryRepository(oldDbProvider);
+            var oldTransactionRepo = new TransactionRepository(oldDbProvider);
+            var oldBalanceRepo = new BalanceRepository(oldDbProvider);
+
+            var oldCategories = oldCategoryRepo.GetAll().ToList();
+            var oldTransactions = oldTransactionRepo.GetAll().ToList();
+            var oldBalances = oldBalanceRepo.GetAll().ToList();
         }
 
         private MasterPasswordProvider CreateMasterPasswordProvider(IServiceProvider p)

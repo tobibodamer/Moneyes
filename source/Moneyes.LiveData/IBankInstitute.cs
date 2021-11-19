@@ -24,5 +24,9 @@
         /// The organisation responsible for this bank.
         /// </summary>
         string Organisation { get; set; }
+
+        string FinTs_Url { get; set; }
+
+        string Version { get; set; }
     }
 }

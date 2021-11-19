@@ -5,7 +5,7 @@ using System.Windows.Input;
 
 namespace Moneyes.UI.ViewModels
 {
-    internal class AsyncCommand : ICommand, IDisposable
+    public class AsyncCommand : ICommand, IDisposable
     {
         private readonly Func<CancellationToken, Task> _execute;
         private readonly Func<bool> _canExecute;

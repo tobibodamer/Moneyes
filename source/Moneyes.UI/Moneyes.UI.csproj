@@ -21,6 +21,7 @@
     <PackageReference Include="MaterialDesignThemes" Version="4.2.1" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="5.0.2" />
     <PackageReference Include="MultiSelectTreeView" Version="1.0.9" />
+    <PackageReference Include="MvvmWizard" Version="1.1.1" />
     <PackageReference Include="System.Windows.Interactivity.WPF" Version="2.0.20525" />
   </ItemGroup>
 
@@ -40,6 +41,12 @@
     <Compile Update="View\Dialogs\OnlineBankingPasswordDialog.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Update="View\Dialogs\InitMasterPasswordDialog.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="View\Setup Wizard\ImportAccountsStep.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Update="View\Tabs\SettingsPage.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -51,6 +58,14 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Update="View\Dialogs\OnlineBankingPasswordDialog.xaml">
+      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="View\Dialogs\InitMasterPasswordDialog.xaml">
+      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="View\Setup Wizard\ImportAccountsStep.xaml">
       <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
       <SubType>Designer</SubType>
     </Page>

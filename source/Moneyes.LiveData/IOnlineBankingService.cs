@@ -8,7 +8,6 @@ namespace Moneyes.LiveData
     public interface IOnlineBankingService
     {
         OnlineBankingDetails BankingDetails { get; }
-
         Task<BankingResult<IEnumerable<AccountDetails>>> Accounts();
         Task<BankingResult<Balance>> Balance(AccountDetails account);
         Task<BankingResult> Sync();

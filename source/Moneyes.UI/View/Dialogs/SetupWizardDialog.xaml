@@ -1,0 +1,26 @@
+﻿<Window x:Class="Moneyes.UI.View.SetupWizardDialog"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:Moneyes.UI.View"
+             xmlns:vm="clr-namespace:Moneyes.UI.ViewModels" d:DataContext="{d:DesignInstance Type=vm:SetupWizardViewModel}"
+        mc:Ignorable="d" Width="500" Height="650" Title="Setup">
+    <Window.Resources>
+        <DataTemplate DataType="{x:Type vm:BankSetupStepViewModel}">
+            <local:SetupBankStep/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:ImportAccountsStepViewModel}">
+            <local:ImportAccountsStep/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:FinishedStepViewModel}">
+            <local:FinishedStep/>
+        </DataTemplate>
+    </Window.Resources>
+    <Grid>
+        <ContentControl Content="{Binding CurrentStep}" 
+                        IsEnabled="{Binding IsTransiting, Converter={StaticResource InvertBooleanConverter}}"
+                        Focusable="False"/>
+        <ProgressBar VerticalAlignment="Bottom" HorizontalAlignment="Stretch" IsIndeterminate="{Binding IsTransiting}"/>
+    </Grid>
+</Window>

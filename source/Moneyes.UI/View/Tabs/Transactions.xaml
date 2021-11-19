@@ -23,6 +23,15 @@
             <i:InvokeCommandAction Command="{Binding LoadedCommand}" />
         </i:EventTrigger>
     </i:Interaction.Triggers>
+    <UserControl.Style>
+        <Style TargetType="UserControl">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Loading}" Value="True">
+                    <Setter Property="Cursor" Value="Wait"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Style>
     <UserControl.Resources>        
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -88,7 +97,7 @@
                     </StackPanel>
                 </Button>
 
-                <Button Command="{Binding Selector.FetchOnlineCommand}" Style="{StaticResource FetchOnlineButton}" Grid.Column="5"/>
+                <Button Command="{Binding Selector.FetchOnlineCommand}" Style="{StaticResource FetchOnlineButton}" Grid.Column="5" Cursor="Hand"/>
             </Grid>
             <materialDesign:ColorZone.Effect>
                 <DropShadowEffect BlurRadius="14" ShadowDepth="4.5" Direction="270" Color="{StaticResource MaterialDesignShadow}"
@@ -105,7 +114,25 @@
             <DockPanel Grid.Row="0" Margin="10,0" LastChildFill="true" HorizontalAlignment="Stretch" >
                 <StackPanel Orientation="Vertical" Grid.Column="0" VerticalAlignment="Center">
                     <!--<TextBlock FontSize="15" Text="{Binding Date, StringFormat={}'Balance / 'dd.MM.yyyy}" Foreground="#333" />-->
-                    <TextBlock FontSize="15" Text="{Binding ExpenseCategories.SelectedCategory, UpdateSourceTrigger=PropertyChanged}" Foreground="#333" />
+                    <TextBlock FontSize="15" Foreground="#333">
+                        <TextBlock.Text>
+                            <MultiBinding StringFormat="{}{1} transaction(s)">
+                                <MultiBinding.Bindings>
+                                    <Binding Path="Categories.SelectedCategory"/>
+                                    <Binding Path="Transactions.Count"/>
+                                </MultiBinding.Bindings>
+                            </MultiBinding>
+                        </TextBlock.Text>
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Transactions.Count}" Value="0">
+                                        <Setter Property="Visibility" Value="Hidden"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
                     <!--<TextBlock Text="{Binding Date, StringFormat=dd.MM.yyyy}" Foreground="Gray" />-->
                 </StackPanel>
                 <StackPanel Orientation="Vertical" HorizontalAlignment="Right" Grid.Column="1" DataContext="{Binding CurrentBalance}">
@@ -142,13 +169,16 @@
                             <DataTrigger Binding="{Binding Loading}" Value="True">
                                 <Setter Property="Visibility" Value="Hidden"/>
                             </DataTrigger>
+                            <DataTrigger Binding="{Binding Transactions.Count}" Value="0">
+                                <Setter Property="Visibility" Value="Hidden"/>
+                            </DataTrigger>
                         </Style.Triggers>
                     </Style>
                 </Separator.Style>
             </Separator>
 
             <TextBlock Foreground="Gray" VerticalAlignment="Center" HorizontalAlignment="Center"
-                   Grid.Row="2">
+                   Grid.Row="0" Grid.RowSpan="3">
                 <TextBlock.Style>
                     <Style TargetType="TextBlock">
                         <Setter Property="Text" Value="No transactions"/>
@@ -166,7 +196,7 @@
             </TextBlock>
 
             <ListView Name="transactionsListView" ItemsSource="{Binding Transactions}" 
-                      HorizontalContentAlignment="Stretch" Margin="5,5,0,5" Grid.Row="2" 
+                      HorizontalContentAlignment="Stretch" Margin="5,5,5,5" Grid.Row="2" 
                       SelectionMode="Multiple">
                 <ListView.ItemTemplate>
                     <DataTemplate>
@@ -226,7 +256,7 @@
             </TextBlock.Style>
         </TextBlock>-->
 
-        <local:CategoryExpenseTreeView DataContext="{Binding ExpenseCategories}" Grid.Row="1"/>
+        <local:CategoryExpenseTreeView DataContext="{Binding Categories}" Grid.Row="1"/>
         <!--<local:BindableMultiSelectDataGrid x:Name="categoryListBox" Margin="5" BorderThickness="1" BorderBrush="AliceBlue"
                  ItemsSource="{Binding Categories}" AutoGenerateColumns="False" SelectedItems="{Binding SelectedCategories, Mode=OneWayToSource}"
                  Grid.Row="1" Style="{StaticResource MaterialDesignDataGrid}">            

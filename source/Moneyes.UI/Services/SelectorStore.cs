@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Moneyes.UI.Services
 {
-    class SelectorStore
+    public class SelectorStore
     {
         private AccountDetails _currentAccount;
         public AccountDetails CurrentAccount

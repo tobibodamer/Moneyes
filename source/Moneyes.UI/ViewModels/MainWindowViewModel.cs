@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Input;
 
 namespace Moneyes.UI.ViewModels
 {
@@ -23,31 +24,43 @@ namespace Moneyes.UI.ViewModels
                     return;
                 }
 
+                _currentViewModel = value;
                 value.OnSelect();
                 OnPropertyChanged();
-                _currentViewModel = value;
             }
         }
 
+        private SetupWizardViewModel _setupWizard;
+        public SetupWizardViewModel SetupWizard
+        {
+            get => _setupWizard;
+            set
+            {
+                _setupWizard = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public ICommand LoadedCommand { get; }
+
         public MainWindowViewModel(IEnumerable<ITabViewModel> tabs, IBankConnectionStore bankingConfigStore,
-            IStatusMessageService statusMessageService)
+            IStatusMessageService statusMessageService, SetupWizardViewModel setupWizardViewModel)
         {
             Tabs = new(tabs);
 
-            if (!bankingConfigStore.HasBankingDetails)
+            LoadedCommand = new AsyncCommand(async ct =>
             {
-                CurrentViewModel = tabs.OfType<BankingSettingsViewModel>().FirstOrDefault();
-            }
-            else
-            {
-                CurrentViewModel = tabs.OfType<TransactionsViewModel>().FirstOrDefault();
-            }
+                if (!bankingConfigStore.HasBankingDetails)
+                {
+                    SetupWizard = setupWizardViewModel;
+                }
+            });
+
+            CurrentViewModel = tabs.OfType<TransactionsViewModel>().FirstOrDefault();
 
             statusMessageService.NewMessage += (msg, actText, act) => NewStatusMessage?.Invoke(msg, actText, act);
-
-            //new View.CategoryView() { DataContext = new AddCategoryViewModel() }
         }
 
-        public event Action<string, string?, Action?> NewStatusMessage;
+        public event Action<string, string, Action> NewStatusMessage;
     }
 }

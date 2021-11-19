@@ -17,6 +17,16 @@ namespace Moneyes.LiveData
             _loggerFactory = loggerFactory;
         }
 
+        public IOnlineBankingService CreateService()
+        {
+            ConnectionDetails details = new();
+
+            FinTsClient client = new(details);
+
+            return new OnlineBankingService(
+                client, new OnlineBankingDetails(), _loggerFactory?.CreateLogger<OnlineBankingService>());
+        }
+
         /// <summary>
         /// Create a <see cref="OnlineBankingService"/> using the given <see cref="OnlineBankingDetails"/>.
         /// </summary>
@@ -26,16 +36,28 @@ namespace Moneyes.LiveData
         {
             ValidateBankingDetails(bankingDetails);
 
-            FinTsInstitute institute = BankInstitutes.GetInstituteInternal(bankingDetails.BankCode);
+            string serverUrl;
 
-            ValidateInstitute(institute);
+            if (bankingDetails.Server is null)
+            {
+                FinTsInstitute institute = BankInstitutes.GetInstituteInternal(bankingDetails.BankCode);
+
+                ValidateInstitute(institute);
+
+                serverUrl = institute.FinTs_Url;
+            }
+            else
+            {
+                serverUrl = bankingDetails.Server.AbsoluteUri;
+            }
+            
 
             ConnectionDetails details = new()
             {
-                Url = institute.FinTs_Url,
+                Url = serverUrl,
                 Blz = bankingDetails.BankCode,
                 UserId = bankingDetails.UserId,
-                Pin = bankingDetails.Pin
+                Pin = bankingDetails.Pin,
             };
 
             FinTsClient client = new(details);

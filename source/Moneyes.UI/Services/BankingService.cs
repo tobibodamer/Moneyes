@@ -19,6 +19,13 @@ namespace Moneyes.UI
             _bankConnectionStore = bankConnectionStore;
             _accountRepository = accountRepository;
             _balanceRepository = balanceRepository;
+
+            accountRepository.EntityAdded += AccountRepository_EntityAdded;
+        }
+
+        private void AccountRepository_EntityAdded(AccountDetails account)
+        {
+            NewAccount?.Invoke(account);
         }
 
         public bool HasBankingDetails => _bankConnectionStore.HasBankingDetails;
@@ -28,6 +35,8 @@ namespace Moneyes.UI
             get => _bankConnectionStore.GetBankingDetails();
             set => _bankConnectionStore.SetBankingDetails(value);
         }
+
+        public event Action<AccountDetails> NewAccount;
 
         public IEnumerable<AccountDetails> GetAccounts()
         {

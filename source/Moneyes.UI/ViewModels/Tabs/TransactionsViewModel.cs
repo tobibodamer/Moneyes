@@ -26,12 +26,13 @@ namespace Moneyes.UI.ViewModels
         private readonly IBankingService _bankingService;
         private readonly IStatusMessageService _statusMessageService;
         private Balance _currentBalance;
+        private bool _isLoaded = false;
 
         private ObservableCollection<Transaction> _transactions = new();
 
         #region UI Properties
         public ICommand LoadedCommand { get; }
-        
+
         public ExpenseCategoriesViewModel Categories { get; }
 
         private SelectorViewModel _selector;
@@ -105,6 +106,7 @@ namespace Moneyes.UI.ViewModels
 
             categoryRepository.EntityUpdated += (category) =>
             {
+                Debug.WriteLine("Category updated");
                 UpdateCategories();
 
                 if (Categories.IsSelected(category))
@@ -115,16 +117,19 @@ namespace Moneyes.UI.ViewModels
 
             categoryRepository.EntityAdded += (category) =>
             {
+                Debug.WriteLine("Category added");
                 UpdateCategories();
             };
 
             categoryRepository.EntityDeleted += (category) =>
             {
+                Debug.WriteLine("Category deleted");
                 UpdateCategories();
             };
 
             _transactionRepository.EntityAdded += (transaction) =>
             {
+                Debug.WriteLine("Entity added");
                 UpdateCategories();
                 UpdateTransactions();
                 //Transactions.Add(transaction);
@@ -132,6 +137,7 @@ namespace Moneyes.UI.ViewModels
 
             _transactionRepository.EntityUpdated += (transaction) =>
             {
+                Debug.WriteLine("Entity updated");
                 UpdateCategories();
                 UpdateTransactions();
                 //Transactions.AddOrUpdate(transaction, t => t.UID);
@@ -139,6 +145,7 @@ namespace Moneyes.UI.ViewModels
 
             _transactionRepository.EntityDeleted += (transaction) =>
             {
+                Debug.WriteLine("Entity deleted");
                 int index = Transactions.IndexOfFirst(t => t.UID.Equals(transaction.UID));
 
                 if (index > -1)
@@ -151,6 +158,7 @@ namespace Moneyes.UI.ViewModels
 
             Selector.SelectorChanged += (sender, args) =>
             {
+                //Debug.WriteLine("Selector changed");
                 UpdateCategories();
                 UpdateTransactions();
             };
@@ -158,28 +166,29 @@ namespace Moneyes.UI.ViewModels
 
         private void UpdateTransactions()
         {
-            Dispatcher.CurrentDispatcher.BeginInvoke(() =>
+            _ = Dispatcher.CurrentDispatcher.BeginInvoke(() =>
             {
                 Loading = true;
                 try
                 {
                     Category selectedCategory = Categories.SelectedCategory?.Category;
 
+
                     // Get all transactions for selected category and filter
                     IEnumerable<Transaction> transactions = _transactionRepository.All(
                         filter: GetTransactionFilter(),
                         categories: selectedCategory);
-
-                    if (Selector.CurrentAccount != null)
-                    {
-                        CurrentBalance = _bankingService.GetBalance(Selector.EndDate, Selector.CurrentAccount);
-                    }
 
                     Transactions.DynamicUpdate(
                         transactions,
                         (t1, t2) => t1.Idquals(t2),
                         new TransactionSortComparer(),
                         true);
+
+                    if (Selector.CurrentAccount != null)
+                    {
+                        CurrentBalance = _bankingService.GetBalance(Selector.EndDate, Selector.CurrentAccount);
+                    }
                 }
                 finally
                 {
@@ -200,11 +209,9 @@ namespace Moneyes.UI.ViewModels
 
         private void UpdateCategories()
         {
-            Dispatcher.CurrentDispatcher.BeginInvoke(() =>
+            _ = Dispatcher.CurrentDispatcher.BeginInvoke(() =>
             {
-                Loading = true;
                 Categories.UpdateCategories(GetTransactionFilter());
-                Loading = false;
             });
         }
 
@@ -217,8 +224,14 @@ namespace Moneyes.UI.ViewModels
         public void OnSelect()
         {
             Selector.RefreshAccounts();
-            UpdateCategories();
-            UpdateTransactions();
+
+            if (!_isLoaded)
+            {
+                UpdateCategories();
+                UpdateTransactions();
+
+                _isLoaded = true;
+            }
         }
 
         class TransactionSortComparer : IComparer<Transaction>

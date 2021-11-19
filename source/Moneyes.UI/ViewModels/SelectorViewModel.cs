@@ -145,10 +145,10 @@ namespace Moneyes.UI.ViewModels
                 return;
             }
 
-            bankingService.NewAccount += BankingService_NewAccount;
+            bankingService.NewAccountsImported += BankingService_NewAccountsImported;
         }
 
-        private void BankingService_NewAccount(AccountDetails account)
+        private void BankingService_NewAccountsImported()
         {
             RefreshAccounts();
 
@@ -162,7 +162,7 @@ namespace Moneyes.UI.ViewModels
         {
             _selectorStore.AccountChanged -= SelectorStore_AccountChanged;
             _selectorStore.DateChanged -= SelectorStore_DateChanged;
-            _bankingService.NewAccount -= BankingService_NewAccount;
+            _bankingService.NewAccountsImported -= BankingService_NewAccountsImported;
         }
 
         private void SelectorStore_DateChanged(object sender, EventArgs e)

@@ -140,7 +140,7 @@ namespace Moneyes.UI
 
             // Preload caches
             categoryRepo.UpdateCache();
-            //transactionRepo.UpdateCache();
+            transactionRepo.UpdateCache();
 
             
             

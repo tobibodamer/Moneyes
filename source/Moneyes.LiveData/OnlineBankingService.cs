@@ -163,8 +163,8 @@ namespace Moneyes.LiveData
 
             ValidateBankingDetails();
 
-            _logger?.LogInformation("Fetching transactions for account {Account ({AccNumber})}, " +
-                "Timespan: {startDate} - {endDate}",
+            _logger?.LogInformation("Fetching transactions for account {Account} ({AccNumber}), " +
+                "Timespan: {startDate:dd.MM.yy} - {endDate:dd.MM.yy}",
                 account.Type,
                 account.Number,
                 startDate, endDate ?? DateTime.Now);

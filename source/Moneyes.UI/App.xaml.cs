@@ -40,8 +40,14 @@ namespace Moneyes.UI
             IDSelectors.Register<AccountDetails>(acc => acc.IBAN);
             IDSelectors.Register<Transaction>(t => t.UID);
 
+            var appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            var logDir = Path.Combine(appData, @"Moneyes\logs");
+            
+            Directory.CreateDirectory(logDir);
+
             Log.Logger = new LoggerConfiguration()
                 .WriteTo.Debug()
+                .WriteTo.File(path: Path.Combine(logDir, "log.txt"), rollingInterval: RollingInterval.Day)
                 .MinimumLevel.Debug()
                 .CreateLogger();
 

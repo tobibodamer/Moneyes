@@ -38,7 +38,8 @@ namespace Moneyes.UI
             IBankConnectionStore bankConnectionStore,
             IOnlineBankingServiceFactory bankingServiceFactory,
             IPasswordPrompt passwordPrompt,
-            IStatusMessageService statusMessageService)
+            IStatusMessageService statusMessageService,
+            ILogger<LiveDataService> logger)
         {
             _transactionRepo = transactionStore;
             _categoryService = categoryService;
@@ -48,6 +49,7 @@ namespace Moneyes.UI
             _bankingServiceFactory = bankingServiceFactory;
             _passwordProvider = passwordPrompt;
             _statusMessageService = statusMessageService;
+            _logger = logger;
         }
 
         private static DateTime FirstOfMonth => new(DateTime.Now.Year, DateTime.Now.Month, 1);
@@ -87,7 +89,7 @@ namespace Moneyes.UI
             // Password not set -> try to request it
             for (; numRetries < maxRetries; numRetries++)
             {
-                _logger?.LogDebug("Requesting password ({try}/{total})", numRetries, maxRetries);
+                _logger?.LogDebug("Requesting password ({try}/{total})", numRetries + 1, maxRetries);
 
                 (SecureString password, bool savePassword) = await _passwordProvider.WaitForPasswordAsync();
 

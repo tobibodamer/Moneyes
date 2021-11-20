@@ -8,6 +8,7 @@ using Moneyes.LiveData;
 using Moneyes.UI.Services;
 using Moneyes.UI.View;
 using Moneyes.UI.ViewModels;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -30,14 +31,19 @@ namespace Moneyes.UI
         {
             base.OnStartup(e);
 
-            RegisterGlobalExceptionHandling(ex =>
+            RegisterGlobalExceptionHandling((ex, msg) =>
             {
-                MessageBox.Show(ex.ToString(), "ERROR", MessageBoxButton.OK, MessageBoxImage.Error);
+                Log.Logger.Error(ex, msg);
             });
 
             IDSelectors.Register<Category>(c => c.Id);
             IDSelectors.Register<AccountDetails>(acc => acc.IBAN);
             IDSelectors.Register<Transaction>(t => t.UID);
+
+            Log.Logger = new LoggerConfiguration()
+                .WriteTo.Debug()
+                .MinimumLevel.Debug()
+                .CreateLogger();
 
 
             IServiceCollection services = new ServiceCollection();
@@ -112,6 +118,9 @@ namespace Moneyes.UI
             services.AddTransient<InitMasterPasswordDialogViewModel>();
 
             services.AddTransient<MainWindowViewModel>();
+
+
+            services.AddLogging(builder => builder.AddSerilog());
 
             IServiceProvider serviceProvider = services.BuildServiceProvider();
 
@@ -237,7 +246,7 @@ namespace Moneyes.UI
                 dbConfig);
         }
 
-        private void RegisterGlobalExceptionHandling(Action<Exception> log)
+        private void RegisterGlobalExceptionHandling(Action<Exception, string> log)
         {
             // this is the line you really want 
             AppDomain.CurrentDomain.UnhandledException +=
@@ -257,31 +266,31 @@ namespace Moneyes.UI
                 (sender, args) => TaskSchedulerOnUnobservedTaskException(args, log);
         }
 
-        private static void TaskSchedulerOnUnobservedTaskException(UnobservedTaskExceptionEventArgs args, Action<Exception> log)
+        private static void TaskSchedulerOnUnobservedTaskException(UnobservedTaskExceptionEventArgs args, Action<Exception, string> log)
         {
-            log(args.Exception);
+            log(args.Exception, "Unobserved Task Exception");
             args.SetObserved();
         }
 
-        private static void CurrentOnDispatcherUnhandledException(DispatcherUnhandledExceptionEventArgs args, Action<Exception> log)
+        private static void CurrentOnDispatcherUnhandledException(DispatcherUnhandledExceptionEventArgs args, Action<Exception, string> log)
         {
-            log(args.Exception);
-            // args.Handled = true;
+            log(args.Exception, "Dispatcher unhandled exception");
+            args.Handled = true;
         }
 
-        private static void DispatcherOnUnhandledException(DispatcherUnhandledExceptionEventArgs args, Action<Exception> log)
+        private static void DispatcherOnUnhandledException(DispatcherUnhandledExceptionEventArgs args, Action<Exception, string> log)
         {
-            log(args.Exception);
-            // args.Handled = true;
+            log(args.Exception, "Dispatcher unhandled exception");
+            args.Handled = true;
         }
 
-        private static void CurrentDomainOnUnhandledException(UnhandledExceptionEventArgs args, Action<Exception> log)
+        private static void CurrentDomainOnUnhandledException(UnhandledExceptionEventArgs args, Action<Exception, string> log)
         {
             var exception = args.ExceptionObject as Exception;
             var terminatingMessage = args.IsTerminating ? " The application is terminating." : string.Empty;
             var exceptionMessage = exception?.Message ?? "An unmanaged exception occured.";
             var message = string.Concat(exceptionMessage, terminatingMessage);
-            log(exception);
+            log(exception, "Unhandled exception");
         }
 
         protected override void OnExit(ExitEventArgs e)

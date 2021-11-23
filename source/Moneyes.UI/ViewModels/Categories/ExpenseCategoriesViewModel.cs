@@ -91,6 +91,8 @@ namespace Moneyes.UI.ViewModels
             {
                 SelectCategory(Category.AllCategory);
             }
+
+            OnPropertyChanged(nameof(Categories));
         }
 
         /// <summary>

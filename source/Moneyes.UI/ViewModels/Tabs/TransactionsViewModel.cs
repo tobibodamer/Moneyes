@@ -173,11 +173,10 @@ namespace Moneyes.UI.ViewModels
                 {
                     Category selectedCategory = Categories.SelectedCategory?.Category;
 
-
                     // Get all transactions for selected category and filter
-                    IEnumerable<Transaction> transactions = _transactionRepository.All(
+                    var transactions = _transactionRepository.All(
                         filter: GetTransactionFilter(),
-                        categories: selectedCategory);
+                        categories: selectedCategory).ToList();
 
                     Transactions.DynamicUpdate(
                         transactions,

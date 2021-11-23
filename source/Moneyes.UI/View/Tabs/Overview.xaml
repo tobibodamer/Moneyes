@@ -4,12 +4,12 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:i="clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity"
-             xmlns:local="clr-namespace:Moneyes.UI.View"
-             xmlns:Syncfusion="http://schemas.syncfusion.com/wpf"             
+             xmlns:local="clr-namespace:Moneyes.UI.View"                      
              xmlns:vm="clr-namespace:Moneyes.UI.ViewModels"
              xmlns:m="clr-namespace:Moneyes.Core;assembly=Moneyes.Core"
              xmlns:controls="clr-namespace:System.Windows.Controls;assembly=MultiSelectTreeView"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:lvc="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
              d:DataContext="{d:DesignInstance Type=vm:OverviewViewModel}"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
@@ -142,7 +142,7 @@
                                VerticalAlignment="Bottom" FontSize="18" Margin="0,7"/>
                 </Grid>
             </materialDesign:Card>
-            
+
             <materialDesign:Card Width="220" Height="110" UniformCornerRadius="10" HorizontalAlignment="Left" Margin="10,15"
                                  Background="{DynamicResource SecondaryHueMidBrush}">
                 <Grid Margin="18">
@@ -161,6 +161,7 @@
                 </Grid>
             </materialDesign:Card>
         </DockPanel>
+
 
         <DockPanel HorizontalAlignment="Stretch" Margin="20,0,20,20" VerticalAlignment="Top" Grid.Row="2">
             <Grid DockPanel.Dock="Top" Margin="0,0,0,5">
@@ -227,7 +228,12 @@
             </ItemsControl>
         </DockPanel>
 
-
+        <!--<lvc:PieChart Grid.Row="2" Height="500" Width="550" Padding="50" LegendLocation="Right" Background="White" DataTooltip="{x:Null}"
+                      Series="{Binding ExpenseCategories.Categories, Converter={StaticResource CategoryPieSeriesConverter}}">
+            <lvc:PieChart.ChartLegend>
+                <local:CategoryExpenseLegend/>
+            </lvc:PieChart.ChartLegend>
+        </lvc:PieChart>-->
 
 
         <!--<WrapPanel>

@@ -294,7 +294,7 @@ namespace Moneyes.UI
             await InitOnlineBankingService();
 
             BankingResult<TransactionData> result = await EnsurePassword(async () =>
-                        await _bankingService.Transactions(account, startDate: FirstOfMonth, endDate: DateTime.Now));
+                        await _bankingService.Transactions(account, startDate: new DateTime(2021, 10, 05), endDate: DateTime.Now));
 
             if (!result.IsSuccessful)
             {

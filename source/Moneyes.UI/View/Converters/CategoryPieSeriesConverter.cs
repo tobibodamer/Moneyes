@@ -21,7 +21,9 @@ namespace Moneyes.UI.View
 
                 SeriesCollection col = new SeriesCollection();
 
-                var totalExpense = collection.Sum(c => c.TotalExpense);
+                var totalExpense = collection
+                    //.Where(c => !c.IsNoCategory)
+                    .Sum(c => c.TotalExpense);
 
                 if (totalExpense == 0)
                 {
@@ -29,7 +31,8 @@ namespace Moneyes.UI.View
                 }
 
                 var biggestExpenses = collection
-                        .Where(c => (c.TotalExpense / totalExpense) > 0.05m);
+                        .Where(c => (c.TotalExpense / totalExpense) > 0.02m);
+                        //.Where(c => !c.IsNoCategory);
 
                 var restAmount = totalExpense - biggestExpenses.Sum(c => c.TotalExpense);
 
@@ -41,17 +44,22 @@ namespace Moneyes.UI.View
                             Values = new ChartValues<double>(new double[] { (double)v.TotalExpense }),
                             Title = v.Name,
                             DataLabels = true,
-                            LabelPosition = PieLabelPosition.InsideSlice, 
-                            Foreground = new SolidColorBrush(System.Windows.Media.Colors.White),
-                            LabelPoint = p => v.Name + $""
+                            LabelPosition = (v.TotalExpense / totalExpense) > 0.11m ? PieLabelPosition.InsideSlice :
+                                                PieLabelPosition.OutsideSlice,
+                            Foreground = (v.TotalExpense / totalExpense) > 0.11m ? new SolidColorBrush(Colors.White) :
+                                new SolidColorBrush(Colors.Black),
+                            LabelPoint = p => v.Name + $"\n{Math.Round(p.Participation * 100)} %"
                         })
                         .Concat(new PieSeries[] {
                             new PieSeries() {
-                                Values = new ChartValues<double>(new double[] { (double)restAmount}),
+                                Values = new ChartValues<double>(new double[] { (double)restAmount }),
                                 Title = "Other",
                                 DataLabels = true,
-                                LabelPosition = PieLabelPosition.OutsideSlice,
-                                LabelPoint = p => Math.Round(p.Y, 0) + $" € \n({Math.Round(p.Participation * 100)} %)"
+                                Foreground = (restAmount / totalExpense) > 0.11m ? new SolidColorBrush(Colors.White) :
+                                     new SolidColorBrush(Colors.Black),
+                                LabelPosition = (restAmount / totalExpense) > 0.11m ? PieLabelPosition.InsideSlice :
+                                                PieLabelPosition.OutsideSlice,
+                                LabelPoint = p => "Other" + $"\n{Math.Round(p.Participation * 100)} %"
                             } }));
 
                 return col;

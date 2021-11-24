@@ -42,7 +42,7 @@ namespace Moneyes.UI
 
             var appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
             var logDir = Path.Combine(appData, @"Moneyes\logs");
-            
+
             Directory.CreateDirectory(logDir);
 
             Log.Logger = new LoggerConfiguration()
@@ -148,7 +148,7 @@ namespace Moneyes.UI
                 }
             }
 
-            
+
             var categoryRepo = serviceProvider.GetService<CategoryRepository>();
             var transactionRepo = serviceProvider.GetService<TransactionRepository>();
             var balanceRepo = serviceProvider.GetService<BalanceRepository>();
@@ -157,9 +157,14 @@ namespace Moneyes.UI
             categoryRepo.UpdateCache();
             transactionRepo.UpdateCache();
 
-            
-            
-            
+            UpdateUIDs(transactionRepo);
+
+            RemoveDuplicates(
+                transactionRepo,
+                t => t.BookingDate.ToString() + t.Purpose + t.Amount + t.Index,
+                t => t.PartnerIBAN != null);
+
+
 
             //var newTransactions = transactionRepo.GetAll();
 
@@ -191,22 +196,77 @@ namespace Moneyes.UI
             };
         }
 
-        private IEnumerable<Transaction> RemoveDuplicates(IEnumerable<Transaction> transactions,
+        /// <summary>
+        /// Regenerate the UIDs of all transactions an save the changes.
+        /// </summary>
+        /// <param name="transactionRepository"></param>
+        private static void UpdateUIDs(TransactionRepository transactionRepository)
+        {
+            List<Transaction> transactions = transactionRepository.GetAll().ToList();
+
+            foreach (Transaction t in transactions)
+            {
+                string oldUID = t.UID;
+                t.RegenerateUID();
+
+                if (oldUID != t.UID)
+                {
+                    if (transactionRepository.Delete(oldUID))
+                    {
+                        transactionRepository.Set(t);
+                    }
+                }
+            }
+        }
+
+        private void RemoveDuplicates<TSelector>(TransactionRepository transactionRepository,
+            Func<Transaction, TSelector> selector,
             Func<Transaction, bool> selectDupeOverExisting)
         {
-            Dictionary<string, Transaction> done = new();
+            List<Transaction> transactions = transactionRepository.GetAll().ToList();
+
+            Dictionary<TSelector, Transaction> done = new();
 
             // Remove duplicates, use duplicate with predicate
-            foreach (var oldTransaction in transactions)
+            foreach (Transaction transaction in transactions)
             {
-                if (done.ContainsKey(oldTransaction.UID) && 
-                    (selectDupeOverExisting?.Invoke(done[oldTransaction.UID]) ?? true))
+                if (done.ContainsKey(selector(transaction)))
+                {
+                    if (selectDupeOverExisting?.Invoke(done[selector(transaction)]) ?? true)
+                    {
+                        transactionRepository.Delete(transaction.UID);
+                    }
+                    else
+                    {
+                        transactionRepository.Delete(done[selector(transaction)].UID);
+                    }
+
+                    continue;
+                }
+                else
+                {
+                    done[selector(transaction)] = transaction;
+                }
+            }
+        }
+
+        private IEnumerable<Transaction> RemoveDuplicates<TSelector>(IEnumerable<Transaction> transactions,
+            Func<Transaction, TSelector> selector,
+            Func<Transaction, bool> selectDupeOverExisting)
+        {
+            Dictionary<TSelector, Transaction> done = new();
+
+            // Remove duplicates, use duplicate with predicate
+            foreach (Transaction oldTransaction in transactions)
+            {
+                if (done.ContainsKey(selector(oldTransaction)) &&
+                    (selectDupeOverExisting?.Invoke(done[selector(oldTransaction)]) ?? true))
                 {
                     continue;
                 }
                 else
                 {
-                    done[oldTransaction.UID] = oldTransaction;
+                    done[selector(oldTransaction)] = oldTransaction;
                 }
             }
 

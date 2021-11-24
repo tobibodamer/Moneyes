@@ -87,6 +87,7 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
         <materialDesign:ColorZone Mode="Standard" Padding="12" Grid.ColumnSpan="2" Height="60">
             <Grid>
@@ -148,7 +149,7 @@
                                  Background="{DynamicResource SecondaryHueMidBrush}">
                 <Grid Margin="18">
                     <materialDesign:PackIcon Kind="ArrowDown" Height="20" Width="20" HorizontalAlignment="Right"/>
-                    <TextBlock Text="Expense (total)" FontSize="20" FontWeight="SemiBold"/>
+                    <TextBlock Text="Expense" FontSize="20" FontWeight="SemiBold"/>
                     <TextBlock Text="{Binding TotalExpense, StringFormat={}{0} €}" VerticalAlignment="Bottom" FontSize="18" Margin="0,7"/>
                 </Grid>
             </materialDesign:Card>
@@ -157,7 +158,7 @@
                                  Background="{DynamicResource PrimaryHueDarkBrush}" Foreground="{DynamicResource PrimaryHueDarkForegroundBrush}">
                 <Grid Margin="18">
                     <materialDesign:PackIcon Kind="ArrowUp" Height="20" Width="20" HorizontalAlignment="Right"/>
-                    <TextBlock Text="Income (total)" FontSize="20" FontWeight="SemiBold"/>
+                    <TextBlock Text="Income" FontSize="20" FontWeight="SemiBold"/>
                     <TextBlock Text="{Binding TotalIncome, StringFormat={}{0} €}" VerticalAlignment="Bottom" FontSize="18" Margin="0,7"/>
                 </Grid>
             </materialDesign:Card>
@@ -166,38 +167,20 @@
 
         <DockPanel HorizontalAlignment="Stretch" Margin="20,0,20,20" VerticalAlignment="Top" Grid.Row="2">
             <Grid DockPanel.Dock="Top" Margin="0,0,0,5">
-                <TextBlock Text="Categories" FontSize="22" FontWeight="Normal" DockPanel.Dock="Top" Margin="10,0"/>
+                <TextBlock Text="Expense Categories" FontSize="22" FontWeight="Normal" DockPanel.Dock="Top" Margin="10,0"/>
                 <TextBlock Text="Show more" HorizontalAlignment="Right" Margin="0,5,10,0" Foreground="Gray" FontSize="13"/>
             </Grid>
 
-            <ItemsControl x:Name="CategoryItems" ItemsSource="{Binding ExpenseCategories.Categories}" VerticalAlignment="Center" HorizontalAlignment="Left">
+            <ItemsControl x:Name="CategoryItems" ItemsSource="{Binding ExpenseCategories.Categories}"
+                          VerticalAlignment="Top" HorizontalAlignment="Left" Height="110">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
                         <local:DraggAnimatedPanel SwapCommand="{Binding SwapCommand, ElementName=overviewPage}"
-                                                  ItemsWidth="200" ItemsHeight="120" />
+                                                  ItemsWidth="200" ItemsHeight="110" ItemSeparation="0" Height="110"/>
                     </ItemsPanelTemplate>
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
                     <DataTemplate DataType="{x:Type vm:CategoryExpenseViewModel}">
-                    <!--    <DataTemplate.Resources>
-                            <Storyboard x:Key="ItemAnimation" AutoReverse="False">
-                                <DoubleAnimationUsingKeyFrames Storyboard.TargetName="MyGrid" Storyboard.TargetProperty="(UIElement.Opacity)">
-                                    <EasingDoubleKeyFrame KeyTime="0" Value="0" />
-                                    <EasingDoubleKeyFrame KeyTime="0:0:0.5" Value="1" />
-                                </DoubleAnimationUsingKeyFrames>
-                                <DoubleAnimationUsingKeyFrames Storyboard.TargetName="MyGrid" Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleY)">
-                                    <EasingDoubleKeyFrame KeyTime="0" Value="0" />
-                                    <EasingDoubleKeyFrame KeyTime="0:0:0.5" Value="1" />
-                                </DoubleAnimationUsingKeyFrames>
-                            </Storyboard>
-                        </DataTemplate.Resources>
-
-                        <DataTemplate.Triggers>
-                            <EventTrigger RoutedEvent="FrameworkElement.Loaded">
-                                <BeginStoryboard Storyboard="{StaticResource ItemAnimation}" />
-                            </EventTrigger>
-                        </DataTemplate.Triggers>-->
-
                         <materialDesign:Card Width="175" Height="90" Style="{StaticResource CategoryCard}" Cursor="Hand">
                             <Grid Name="MyGrid" Margin="15">
                                 <Grid.RenderTransform>
@@ -246,7 +229,6 @@
 
                                 <ProgressBar Style="{StaticResource ExpenseProgressBar}" Grid.Row="1"
                                      Value="{Binding TotalExpense}" Maximum="{Binding Target}" />
-
                             </Grid>
                         </materialDesign:Card>
                     </DataTemplate>
@@ -254,12 +236,13 @@
             </ItemsControl>
         </DockPanel>
 
-        <!--<lvc:PieChart Grid.Row="2" Height="500" Width="550" Padding="50" LegendLocation="Right" Background="White" DataTooltip="{x:Null}"
-                      Series="{Binding ExpenseCategories.Categories, Converter={StaticResource CategoryPieSeriesConverter}}">
+        <lvc:PieChart Grid.Row="3" Height="250" Width="350" DataTooltip="{x:Null}" Margin="20"
+                      Series="{Binding ExpenseCategories.Categories, Converter={StaticResource CategoryPieSeriesConverter}}" 
+                      InnerRadius="0">
             <lvc:PieChart.ChartLegend>
                 <local:CategoryExpenseLegend/>
             </lvc:PieChart.ChartLegend>
-        </lvc:PieChart>-->
+        </lvc:PieChart>
 
 
         <!--<WrapPanel>

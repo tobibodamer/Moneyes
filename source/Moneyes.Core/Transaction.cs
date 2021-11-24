@@ -14,15 +14,16 @@ namespace Moneyes.Core
     /// </summary>
     public class Transaction
     {
-        private readonly int _index;
-        private Lazy<string> _idLazy;
+        private readonly Lazy<string> _idLazy;
         private string _id;
+
+        /// <summary>
+        /// Gets the unique identifier of this transaction.
+        /// </summary>
+        /// <returns></returns>
         public string UID
         {
-            get
-            {
-                return _idLazy.Value;
-            }
+            get => _id ?? _idLazy.Value;
             init
             {
                 _id = value;
@@ -122,19 +123,11 @@ namespace Moneyes.Core
         /// <summary>
         /// Gets the index of this transactions. For identical transactions only!
         /// </summary>
-        public int Index
-        {
-            get => _index;
-            init
-            {
-                _index = value;
-                _idLazy = new(GenerateUID);
-            }
-        }
+        public int Index { get; init; }
 
         public Transaction()
         {
-            _idLazy = new(() => _id ?? GenerateUID());
+            _idLazy = new(() => GenerateUID());
         }
 
         private DateTime? ParseDate()
@@ -199,7 +192,7 @@ namespace Moneyes.Core
         private string GenerateUID()
         {
             //return HashCode.Combine(BookingDate, Purpose, BookingType, Amount, IBAN, BIC, Name, Index);
-            string s = $"{BookingDate:yyyyMMdd}{Purpose}{BookingType}{Amount}{IBAN}{BIC}{Name}{Index}"
+            string s = $"{BookingDate:yyyyMMdd}{Purpose}{BookingType}{Amount}{IBAN}{BIC}{PartnerIBAN ?? ""}{Index}"
                 .Replace(" ", "")
                 .Replace(":", ".");
 
@@ -209,16 +202,7 @@ namespace Moneyes.Core
 
         public void RegenerateUID()
         {
-            _idLazy = new Lazy<string>(() => GenerateUID());
-        }
-
-        /// <summary>
-        /// Gets the unique identifier of this transaction.
-        /// </summary>
-        /// <returns></returns>
-        public string GetUID()
-        {
-            return _idLazy.Value;
+            _id = GenerateUID();
         }
 
         public override bool Equals(object obj)
@@ -234,7 +218,7 @@ namespace Moneyes.Core
                    BIC == transaction.BIC &&
                    Name == transaction.Name &&
                    Categories.SequenceEqual(transaction.Categories) &&
-                   _index.Equals(transaction._index) &&
+                   Index.Equals(transaction.Index) &&
                    Currency == transaction.Currency;
         }
 
@@ -252,7 +236,7 @@ namespace Moneyes.Core
             hash.Add(BIC);
             hash.Add(Name);
             hash.Add(Categories);
-            hash.Add(_index);
+            hash.Add(Index);
             hash.Add(Currency);
 
             return hash.ToHashCode();

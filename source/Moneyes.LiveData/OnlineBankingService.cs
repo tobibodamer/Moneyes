@@ -227,13 +227,13 @@ namespace Moneyes.LiveData
                 string currency = swiftStatement.Currency;
                 MTransaction transaction = Conversion.FromLiveTransaction(t, account, currency);
 
-                if (uids.ContainsKey(transaction.GetUID()))
+                if (uids.ContainsKey(transaction.UID))
                 {
-                    transaction = Conversion.FromLiveTransaction(t, account, currency, ++uids[transaction.GetUID()]);
+                    transaction = Conversion.FromLiveTransaction(t, account, currency, ++uids[transaction.UID]);
                 }
                 else
                 {
-                    uids.Add(transaction.GetUID(), 0);
+                    uids.Add(transaction.UID, 0);
                 }
 
                 yield return transaction;

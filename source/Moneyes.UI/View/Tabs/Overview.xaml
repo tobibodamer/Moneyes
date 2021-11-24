@@ -10,6 +10,7 @@
              xmlns:controls="clr-namespace:System.Windows.Controls;assembly=MultiSelectTreeView"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:lvc="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
+             Name="overviewPage"
              d:DataContext="{d:DesignInstance Type=vm:OverviewViewModel}"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
@@ -172,13 +173,38 @@
             <ItemsControl x:Name="CategoryItems" ItemsSource="{Binding ExpenseCategories.Categories}" VerticalAlignment="Center" HorizontalAlignment="Left">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
-                        <WrapPanel Orientation="Horizontal"/>
+                        <local:DraggAnimatedPanel SwapCommand="{Binding SwapCommand, ElementName=overviewPage}"
+                                                  ItemsWidth="200" ItemsHeight="120" />
                     </ItemsPanelTemplate>
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
                     <DataTemplate DataType="{x:Type vm:CategoryExpenseViewModel}">
+                    <!--    <DataTemplate.Resources>
+                            <Storyboard x:Key="ItemAnimation" AutoReverse="False">
+                                <DoubleAnimationUsingKeyFrames Storyboard.TargetName="MyGrid" Storyboard.TargetProperty="(UIElement.Opacity)">
+                                    <EasingDoubleKeyFrame KeyTime="0" Value="0" />
+                                    <EasingDoubleKeyFrame KeyTime="0:0:0.5" Value="1" />
+                                </DoubleAnimationUsingKeyFrames>
+                                <DoubleAnimationUsingKeyFrames Storyboard.TargetName="MyGrid" Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleY)">
+                                    <EasingDoubleKeyFrame KeyTime="0" Value="0" />
+                                    <EasingDoubleKeyFrame KeyTime="0:0:0.5" Value="1" />
+                                </DoubleAnimationUsingKeyFrames>
+                            </Storyboard>
+                        </DataTemplate.Resources>
+
+                        <DataTemplate.Triggers>
+                            <EventTrigger RoutedEvent="FrameworkElement.Loaded">
+                                <BeginStoryboard Storyboard="{StaticResource ItemAnimation}" />
+                            </EventTrigger>
+                        </DataTemplate.Triggers>-->
+
                         <materialDesign:Card Width="175" Height="90" Style="{StaticResource CategoryCard}" Cursor="Hand">
-                            <Grid Margin="15">
+                            <Grid Name="MyGrid" Margin="15">
+                                <Grid.RenderTransform>
+                                    <TransformGroup>
+                                        <ScaleTransform/>
+                                    </TransformGroup>
+                                </Grid.RenderTransform>
                                 <Grid.RowDefinitions>
                                     <RowDefinition/>
                                     <RowDefinition Height="Auto"/>

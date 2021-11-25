@@ -1,6 +1,7 @@
 ﻿using Moneyes.Core;
 using libfintx.FinTS.Swift;
 using libfintx.FinTS;
+using System.Diagnostics;
 
 namespace Moneyes.LiveData
 {
@@ -19,12 +20,17 @@ namespace Moneyes.LiveData
             string currency,
             int index = 0)
         {
-            swiftTransaction.SepaPurposes.TryGetValue(SepaPurpose.SVWZ, out var purpose);
+            string purpose = swiftTransaction.SVWZ;
+
+            if (string.IsNullOrEmpty(purpose))
+            {
+                purpose = swiftTransaction.Description;
+            }
 
             return new()
             {
                 Index = index,
-                Purpose = swiftTransaction.SVWZ,
+                Purpose = purpose,
                 Amount = swiftTransaction.Amount,
                 PartnerIBAN = swiftTransaction.AccountCode,
                 BIC = swiftTransaction.BankCode,

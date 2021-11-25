@@ -116,10 +116,10 @@ namespace Moneyes.Data
             // Key exists -> update
             Cache[id] = entity;
 
-            if (!oldValue.Equals(entity))
-            {
+            //if (!oldValue.Equals(entity))
+            //{
                 OnEntityUpdated(entity);
-            }
+            //}
 
             return false;
         }

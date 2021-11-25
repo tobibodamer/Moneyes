@@ -8,6 +8,7 @@ namespace Moneyes.Core.Parsing
         [Name("Auftragskonto")]
         public string Auftragskonto { get; set; }
 
+        [Optional]
         [Name("Buchungstag")]
         public DateTime Buchungstag { get; set; }
 

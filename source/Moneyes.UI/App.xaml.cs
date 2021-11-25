@@ -161,19 +161,20 @@ namespace Moneyes.UI
 
             RemoveDuplicates(
                 transactionRepo,
-                t => t.BookingDate.ToString() + t.Purpose + t.Amount + t.Index,
-                t => t.PartnerIBAN != null);
+                t => t.BookingDate.ToString() + t.BookingType + t.Name + t.Amount + t.Index + t.Purpose,
+                t => t.PartnerIBAN != null, (t1, t2) => t1.PartnerIBAN == null ^ t2.PartnerIBAN == null);
+
+            RemoveDuplicates(
+                transactionRepo,
+                t => t.BookingDate.ToString() + t.BookingType + t.Name + t.Amount + t.Index + t.PartnerIBAN,
+                t => t.Purpose != null, (t1, t2) => t1.Purpose == null ^ t2.Purpose == null);
+
+            //List<Transaction> csv = CsvParser.FromMT940CSV("viele.csv").ToList();
 
 
-
-            //var newTransactions = transactionRepo.GetAll();
-
-            //categoryRepo.Set(oldCategories);
-
-            //var newCategories = categoryRepo.GetAll();
-
-
-            //var csv = CsvParser.FromMT940CSV("1.csv").ToList();
+            //var categoryService = serviceProvider.GetService<ICategoryService>();
+            //categoryService.AssignCategories(csv, updateDatabase: true);
+            //transactionRepo.Set(csv);
 
             //var categoryStore = new CategoryDatabase("categories.json");
 
@@ -219,9 +220,18 @@ namespace Moneyes.UI
             }
         }
 
-        private void RemoveDuplicates<TSelector>(TransactionRepository transactionRepository,
+        /// <summary>
+        /// Removes duplicate transaction entries from the repository.
+        /// </summary>
+        /// <typeparam name="TSelector"></typeparam>
+        /// <param name="transactionRepository">The transaction repo.</param>
+        /// <param name="selector">The selector used to identify transactions.</param>
+        /// <param name="selectDupeOverExisting">An expression used to determine whether to keep the existing transaction.</param>
+        /// <param name="delete">An expression used to determine whether this duplicate should be ignored.</param>
+        private static void RemoveDuplicates<TSelector>(TransactionRepository transactionRepository,
             Func<Transaction, TSelector> selector,
-            Func<Transaction, bool> selectDupeOverExisting)
+            Func<Transaction, bool> selectDupeOverExisting = null,
+            Func<Transaction, Transaction, bool> delete = null)
         {
             List<Transaction> transactions = transactionRepository.GetAll().ToList();
 
@@ -230,15 +240,18 @@ namespace Moneyes.UI
             // Remove duplicates, use duplicate with predicate
             foreach (Transaction transaction in transactions)
             {
-                if (done.ContainsKey(selector(transaction)))
+                _ = done.TryGetValue(selector(transaction), out Transaction existingTransaction);
+
+                if (done.ContainsKey(selector(transaction))
+                    && (delete?.Invoke(transaction, existingTransaction) ?? true))
                 {
-                    if (selectDupeOverExisting?.Invoke(done[selector(transaction)]) ?? true)
+                    if (selectDupeOverExisting?.Invoke(existingTransaction) ?? true)
                     {
-                        transactionRepository.Delete(transaction.UID);
+                        _ = transactionRepository.Delete(transaction.UID);
                     }
                     else
                     {
-                        transactionRepository.Delete(done[selector(transaction)].UID);
+                        _ = transactionRepository.Delete(existingTransaction.UID);
                     }
 
                     continue;
@@ -250,7 +263,7 @@ namespace Moneyes.UI
             }
         }
 
-        private IEnumerable<Transaction> RemoveDuplicates<TSelector>(IEnumerable<Transaction> transactions,
+        private static IEnumerable<Transaction> RemoveDuplicates<TSelector>(IEnumerable<Transaction> transactions,
             Func<Transaction, TSelector> selector,
             Func<Transaction, bool> selectDupeOverExisting)
         {

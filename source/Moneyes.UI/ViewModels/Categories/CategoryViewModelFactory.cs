@@ -60,7 +60,8 @@ namespace Moneyes.UI.ViewModels
                 PossibleParents = possibleParents,
                 Category = category,
                 IsCreated = isCreated,
-                AssignTransactions = !isCreated
+                AssignTransactions = !isCreated,
+                CanReassign = category != Category.AllCategory && category != Category.NoCategory
             };
 
             return editCategoryViewModel;

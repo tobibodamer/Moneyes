@@ -191,7 +191,6 @@ namespace Moneyes.Core
 
         private string GenerateUID()
         {
-            //return HashCode.Combine(BookingDate, Purpose, BookingType, Amount, IBAN, BIC, Name, Index);
             string s = $"{BookingDate:yyyyMMdd}{Purpose}{BookingType}{Amount}{IBAN}{BIC}{PartnerIBAN ?? ""}{Index}"
                 .Replace(" ", "")
                 .Replace(":", ".");

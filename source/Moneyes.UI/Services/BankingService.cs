@@ -59,7 +59,7 @@ namespace Moneyes.UI
             return numAccountsAdded;
         }
 
-        public Balance GetBalance(DateTime date, AccountDetails? account)
+        public Balance GetBalance(DateTime date, AccountDetails account)
         {
             //TODO: implement total balance
             if (account == null)

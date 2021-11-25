@@ -65,7 +65,8 @@ namespace Moneyes.Core.Parsing
             var config = new CsvConfiguration(CultureInfo.CurrentCulture)
             {
                 Delimiter = delimiter,
-                Encoding = System.Text.Encoding.Default                
+                Encoding = System.Text.Encoding.Default,
+                ShouldSkipRecord = x => x.Record.Any(r => r.Equals("Umsatz vorgemerkt"))
             };
             
             using var csv = new CsvReader(reader, config);
@@ -73,6 +74,7 @@ namespace Moneyes.Core.Parsing
             csv.Context.TypeConverterOptionsCache.GetOptions<string>().NullValues.Add("");
 
             var transactions = csv.GetRecords<TransactionMT940CsvEntry>().ToList()
+                .Where(t => !t.Info.Contains("vorgemerkt"))
                 .Select(record => FromMT940CsvTransaction(record));
 
             return transactions;

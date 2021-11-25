@@ -41,6 +41,7 @@ namespace Moneyes.UI.ViewModels
             }
         }
         public bool AssignTransactions { get; set; }
+        public bool CanReassign { get; init; }
 
         public override Category Category
         {
@@ -164,8 +165,7 @@ namespace Moneyes.UI.ViewModels
 
                 _categoryService.UpdateCategory(category);
 
-
-                if (AssignTransactions)
+                if (CanReassign && AssignTransactions)
                 {
                     // Call method to assign transactions
                     _categoryService.AssignCategory(category);

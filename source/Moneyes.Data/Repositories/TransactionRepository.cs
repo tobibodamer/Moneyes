@@ -55,12 +55,10 @@ namespace Moneyes.Data
 
         public IEnumerable<Transaction> AllOrderedByDate()
         {
-            //return Collection.Query()
-            //    .OrderByDescending(t => t.BookingDate)
-            //    .ToEnumerable();
-
             return GetAll()
-                .OrderByDescending(t => t.BookingDate);
+                .OrderByDescending(t => t.BookingDate)
+                .ThenByDescending(t => t.PartnerIBAN)
+                .ThenByDescending(t => t.Index);
         }
         public IEnumerable<Transaction> All(TransactionFilter filter)
         {

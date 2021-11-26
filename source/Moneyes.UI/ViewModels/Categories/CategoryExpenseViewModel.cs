@@ -32,7 +32,8 @@ namespace Moneyes.UI.ViewModels
 
         public ObservableCollection<CategoryExpenseViewModel> SubCatgeories { get; set; } = new();
 
-        public ICommand AssignToTransaction { get; set; }
+        public ICommand MoveToCategory { get; set; }
+        public ICommand CopyToCategory { get; set; }
 
         public bool IsOver => Target > 0 && TotalExpense > Target;
 

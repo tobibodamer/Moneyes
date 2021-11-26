@@ -31,6 +31,23 @@ namespace Moneyes.UI.View
 
 
 
+        public static ICommand GetPreviewDropCopyCommand(DependencyObject obj)
+        {
+            return (ICommand)obj.GetValue(PreviewDropCopyCommandProperty);
+        }
+
+        public static void SetPreviewDropCopyCommand(DependencyObject obj, ICommand value)
+        {
+            obj.SetValue(PreviewDropCopyCommandProperty, value);
+        }
+
+        // Using a DependencyProperty as the backing store for PreviewDropCopyCommand.  This enables animation, styling, binding, etc...
+        public static readonly DependencyProperty PreviewDropCopyCommandProperty =
+            DependencyProperty.RegisterAttached("PreviewDropCopyCommand", typeof(ICommand), typeof(DropBehavior),
+                new PropertyMetadata(OnPreviewDropCommandPropertyChanged));
+
+
+
         #region The PropertyChangedCallBack method
         /// <summary>
         /// The OnCommandChanged method. This event handles the initial binding and future
@@ -46,36 +63,80 @@ namespace Moneyes.UI.View
                 return;
             }
 
-            uiElement.DragOver += (sender, args) =>
+            if (inEventArgs.NewValue == null && inEventArgs.OldValue != null)
             {
-                if (args.Data.GetFormats().Length == 0) { return; }
+                uiElement.DragOver -= UiElement_DragOver;
+                uiElement.Drop -= UiElement_Drop;
 
-                object data = args.Data.GetData(args.Data.GetFormats()[0]);
-                object target = (sender as FrameworkElement)?.DataContext;
+                return;
+            }
 
-                if (!(GetPreviewDropCommand(uiElement)?.CanExecute(data) ?? false))
-                {
-                    args.Effects = DragDropEffects.None;
-                    args.Handled = true;
-                }
-            };
+            uiElement.DragOver += UiElement_DragOver;
 
-            uiElement.Drop += (sender, args) =>
-            {
-                if (args.Data.GetFormats().Length == 0) { return; }
-
-                object data = args.Data.GetData(args.Data.GetFormats()[0]);
-                object target = (sender as FrameworkElement)?.DataContext;
-
-                if (GetPreviewDropCommand(uiElement)?.CanExecute(data) ?? false)
-                {
-                    GetPreviewDropCommand(uiElement)?.Execute(data);
-                }
-
-                args.Handled = true;
-            };
+            uiElement.Drop += UiElement_Drop;
         }
-        
+
+        private static void UiElement_Drop(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetFormats().Length == 0) { return; }
+            if (sender is not FrameworkElement frameworkElement) { return; }
+
+            object data = e.Data.GetData(e.Data.GetFormats()[0]);
+
+            if (!e.KeyStates.HasFlag(DragDropKeyStates.ControlKey))
+            {
+                if (GetPreviewDropCommand(frameworkElement)?.CanExecute(data) ?? false)
+                {
+                    GetPreviewDropCommand(frameworkElement)?.Execute(data);
+                }
+            }
+            else
+            {
+                if (GetPreviewDropCopyCommand(frameworkElement)?.CanExecute(data) ?? false)
+                {
+                    GetPreviewDropCopyCommand(frameworkElement)?.Execute(data);
+                }
+            }
+
+            e.Handled = true;
+        }
+
+        private static void UiElement_DragOver(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetFormats().Length == 0)
+            {
+                e.Effects = DragDropEffects.None;
+                return;
+            }
+            if (sender is not FrameworkElement frameworkElement) { return; }
+
+            object data = e.Data.GetData(e.Data.GetFormats()[0]);
+
+            if (!e.KeyStates.HasFlag(DragDropKeyStates.ControlKey))
+            {
+                if (!(GetPreviewDropCommand(frameworkElement)?.CanExecute(data) ?? false))
+                {
+                    e.Effects = DragDropEffects.None;
+                    e.Handled = true;
+                    
+                    return;
+                }
+
+                e.Effects = DragDropEffects.Move;
+            }
+            else
+            {
+                if (!(GetPreviewDropCopyCommand(frameworkElement)?.CanExecute(data) ?? false))
+                {
+                    e.Effects = DragDropEffects.None;
+                    e.Handled = true;
+                    return;
+                }
+
+                e.Effects = DragDropEffects.Copy;
+            }
+        }
+
         #endregion
     }
 }

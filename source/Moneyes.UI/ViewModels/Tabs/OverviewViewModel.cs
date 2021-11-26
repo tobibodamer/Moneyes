@@ -120,7 +120,7 @@ namespace Moneyes.UI.ViewModels
             _expenseIncomeService.GetTotalIncome(GetFilter())
                 .OnSuccess(total => TotalIncome = total);
 
-            ExpenseCategories.UpdateCategories(GetFilter(), CategoryFlags.Real | CategoryFlags.NoCategory);
+            ExpenseCategories.UpdateCategories(GetFilter(), CategoryFlags.Real | CategoryFlags.NoCategory, order: true);
 
             CurrentBalance = _bankingService.GetBalance(Selector.EndDate, Selector.CurrentAccount);
 

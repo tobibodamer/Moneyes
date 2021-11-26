@@ -109,7 +109,7 @@ namespace Moneyes.Core.Parsing
         {
             var purposes = ParseMT940Purposes(entry.Verwendungszweck);
 
-            string purpose = purposes.GetValueOrDefault("SVWZ");
+            string purpose = purposes.GetValueOrDefault("SVWZ") ?? entry.Verwendungszweck;
             string altName = purposes.GetValueOrDefault("ABWA");
 
             return new()

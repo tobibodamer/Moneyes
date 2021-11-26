@@ -168,7 +168,9 @@ namespace Moneyes.UI.ViewModels
                 if (targetCategory == Category.AllCategory) { return false; }
 
                 // cant add to own category
-                return !transaction.Categories.Contains(targetCategory);
+                var isOwn = transaction.Categories.Contains(targetCategory);
+
+                return !isOwn;
             };
 
             return new CategoryExpenseViewModel(category, expense)

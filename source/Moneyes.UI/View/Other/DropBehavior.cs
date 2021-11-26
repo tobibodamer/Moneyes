@@ -114,7 +114,10 @@ namespace Moneyes.UI.View
 
             if (!e.KeyStates.HasFlag(DragDropKeyStates.ControlKey))
             {
-                if (!(GetPreviewDropCommand(frameworkElement)?.CanExecute(data) ?? false))
+                ICommand previewDropCommand = GetPreviewDropCommand(frameworkElement);
+                bool canExecute = previewDropCommand?.CanExecute(data) ?? false;
+
+                if (!canExecute)
                 {
                     e.Effects = DragDropEffects.None;
                     e.Handled = true;
@@ -123,10 +126,14 @@ namespace Moneyes.UI.View
                 }
 
                 e.Effects = DragDropEffects.Move;
+                e.Handled = true;
             }
             else
             {
-                if (!(GetPreviewDropCopyCommand(frameworkElement)?.CanExecute(data) ?? false))
+                ICommand previewDropCommand = GetPreviewDropCopyCommand(frameworkElement);
+                bool canExecute = previewDropCommand?.CanExecute(data) ?? false;
+
+                if (!canExecute)
                 {
                     e.Effects = DragDropEffects.None;
                     e.Handled = true;
@@ -134,6 +141,7 @@ namespace Moneyes.UI.View
                 }
 
                 e.Effects = DragDropEffects.Copy;
+                e.Handled = true;
             }
         }
 

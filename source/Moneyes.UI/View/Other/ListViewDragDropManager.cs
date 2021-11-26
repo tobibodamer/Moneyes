@@ -311,7 +311,7 @@ namespace Moneyes.UI.View
                 return;
 
             AdornerLayer adornerLayer = this.ShowDragAdornerResolved ? this.InitializeAdornerLayer(itemToDrag) : null;
-
+            
             this.InitializeDragOperation(itemToDrag);
             this.PerformDragOperation();
             this.FinishDragOperation(itemToDrag, adornerLayer);
@@ -692,7 +692,7 @@ namespace Moneyes.UI.View
         void PerformDragOperation()
         {
             ItemType selectedItem = this.listView.SelectedItem as ItemType;
-            DragDropEffects allowedEffects = DragDropEffects.Move | DragDropEffects.Move | DragDropEffects.Link;
+            DragDropEffects allowedEffects = DragDropEffects.Move | DragDropEffects.Copy | DragDropEffects.Link;
             if (DragDrop.DoDragDrop(this.listView, selectedItem, allowedEffects) != DragDropEffects.None)
             {
                 // The item was dropped into a new location,

@@ -89,10 +89,11 @@ namespace Moneyes.UI.ViewModels
     }
 
     public class RelayCommand<TParam> : RelayCommand
+        where TParam : class
     {
         public RelayCommand(Action<TParam> execute, Func<TParam, bool> canExecute = null, Action<Exception> errorHandler = null)
-            : base(param => execute((TParam)param),
-                  canExecute != null ? param => canExecute((TParam)param) : null,
+            : base(param => execute(param as TParam),
+                  canExecute != null ? param => canExecute(param as TParam) : null,
                   errorHandler)
         {
         }

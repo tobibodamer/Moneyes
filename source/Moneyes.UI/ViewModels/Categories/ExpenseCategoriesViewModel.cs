@@ -72,7 +72,7 @@ namespace Moneyes.UI.ViewModels
         /// Dynamically updates the list of category viewmodels by inserting new and updating existing entries.
         /// </summary>
         /// <param name="categorieExpenses"></param>
-        private void UpdateCategories(IList<CategoryExpenseViewModel> categorieExpenses, 
+        private void UpdateCategories(IList<CategoryExpenseViewModel> categorieExpenses,
             IComparer<CategoryExpenseViewModel> comparer)
         {
             var previouslySelectedCategory = SelectedCategory?.Category;
@@ -111,7 +111,7 @@ namespace Moneyes.UI.ViewModels
         /// Updates the category expenses by reloading them using the given <paramref name="filter"/>.
         /// </summary>
         /// <param name="filter"></param>
-        public void UpdateCategories(TransactionFilter filter, CategoryFlags categoryFlags = CategoryFlags.All, 
+        public void UpdateCategories(TransactionFilter filter, CategoryFlags categoryFlags = CategoryFlags.All,
             bool flat = false)
         {
             // Get expenses per category
@@ -157,30 +157,46 @@ namespace Moneyes.UI.ViewModels
 
         private CategoryExpenseViewModel CreateEntry(Category category, decimal expense)
         {
+            bool canAssign(Transaction transaction) 
+            {
+                Category targetCategory = category;
+
+                // cant change null transaction
+                if (transaction == null) { return false; }
+
+                // cant add to 'All' category
+                if (targetCategory == Category.AllCategory) { return false; }
+
+                // cant add to own category
+                return !transaction.Categories.Contains(targetCategory);
+            };
+
             return new CategoryExpenseViewModel(category, expense)
             {
-                AssignToTransaction = new AsyncCommand<Transaction>(async (transaction, ct) =>
+                MoveToCategory = new RelayCommand<Transaction>(transaction =>
                 {
                     Category targetCategory = category;
                     Category currentCategory = SelectedCategory?.Category;
 
                     _categoryService.MoveToCategory(transaction, currentCategory, targetCategory);
+                }, canAssign),
+                CopyToCategory = new RelayCommand<Transaction>(transaction =>
+                {
+                    Category targetCategory = category;                    
+                    
+                    _categoryService.AddToCategory(transaction, targetCategory);
+                }, transaction =>
+                {
+                    Category targetCategory = category;
+                    Category currentCategory = SelectedCategory?.Category;
 
-                    await Task.CompletedTask;
-                },
-                    (transaction) =>
+                    if (targetCategory.IsExlusive || currentCategory.IsExlusive)
                     {
-                        Category targetCategory = category;
+                        return false;
+                    }
 
-                        // cant change null transaction
-                        if (transaction == null) { return false; }
-
-                        // cant add to 'All' category
-                        if (targetCategory == Category.AllCategory) { return false; }
-
-                        // cant add to own category
-                        return !transaction.Categories.Contains(targetCategory);
-                    }),
+                    return canAssign(transaction);
+                }),
                 EditCommand = new AsyncCommand(async ct =>
                 {
                     EditCategoryViewModel = _factory.CreateEditCategoryViewModel(category);

@@ -111,10 +111,12 @@ namespace Moneyes.UI.ViewModels
         /// Updates the category expenses by reloading them using the given <paramref name="filter"/>.
         /// </summary>
         /// <param name="filter"></param>
-        public void UpdateCategories(TransactionFilter filter, CategoryFlags categoryFlags = CategoryFlags.All)
+        public void UpdateCategories(TransactionFilter filter, CategoryFlags categoryFlags = CategoryFlags.All, 
+            bool flat = false)
         {
             // Get expenses per category
-            _expenseIncomeService.GetExpensePerCategory(filter, categoryFlags.HasFlag(CategoryFlags.NoCategory))
+            _expenseIncomeService.GetExpensePerCategory(filter, categoryFlags.HasFlag(CategoryFlags.NoCategory),
+                includeSubCategories: true)
                 .OnError(() =>
                 {
                     _statusMessageService.ShowMessage("Could not get expenses of categories", "Retry",
@@ -128,8 +130,11 @@ namespace Moneyes.UI.ViewModels
                         expenses.Select(exp => CreateEntry(exp.Category, exp.TotalAmt))
                     );
 
-                    // Set sub categories
-                    SetSubCategories(categories);
+                    if (!flat)
+                    {
+                        // Set sub categories
+                        SetSubCategories(categories);
+                    }
 
                     if (categoryFlags.HasFlag(CategoryFlags.AllCategory))
                     {

@@ -12,7 +12,7 @@ namespace Moneyes.UI
             AccountDetails account,
             bool includeNoCategory = true);
         Result<IEnumerable<(Category Category, decimal TotalAmt)>> GetExpensePerCategory(
-            TransactionFilter filter, bool includeNoCategory = true);
+            TransactionFilter filter, bool includeNoCategory = true, bool includeSubCategories = false);
         Result<decimal> GetTotalExpense(TransactionFilter filter);
         Result<decimal> GetTotalExpense(TransactionFilter filter, Category category);
         Result<decimal> GetTotalIncome(TransactionFilter filter);

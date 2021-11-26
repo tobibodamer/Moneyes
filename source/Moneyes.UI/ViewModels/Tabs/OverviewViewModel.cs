@@ -18,21 +18,10 @@ namespace Moneyes.UI.ViewModels
         private readonly TransactionRepository _transactionRepository;
         private readonly IBankingService _bankingService;
 
-        //private ObservableCollection<CategoryExpenseViewModel> _categories = new();
         decimal _totalExpense;
         decimal _totalIncome;
         private Balance _currentBalance;
         public ICommand LoadedCommand { get; }
-
-        //public ObservableCollection<CategoryExpenseViewModel> Categories
-        //{
-        //    get => _categories;
-        //    set
-        //    {
-        //        _categories = value;
-        //        OnPropertyChanged();
-        //    }
-        //}
 
         public decimal TotalExpense
         {

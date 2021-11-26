@@ -13,11 +13,15 @@ namespace Moneyes.UI
     {
         private readonly IBaseRepository<Category> _categoryRepo;
         private readonly TransactionRepository _transactionRepo;
+        private readonly ICategoryService _categoryService;
 
-        public ExpenseIncomServieUsingDb(IBaseRepository<Category> categoryStore, TransactionRepository transactionStore)
+        public ExpenseIncomServieUsingDb(
+            IBaseRepository<Category> categoryStore, TransactionRepository transactionStore,
+            ICategoryService categoryService)
         {
             _categoryRepo = categoryStore ?? throw new ArgumentNullException(nameof(categoryStore));
             _transactionRepo = transactionStore ?? throw new ArgumentNullException(nameof(transactionStore));
+            _categoryService = categoryService ?? throw new ArgumentNullException(nameof(categoryService));
         }
 
         public Result<IEnumerable<(Category Category, decimal TotalAmt)>> GetExpensePerCategory(
@@ -33,7 +37,7 @@ namespace Moneyes.UI
         }
 
         public Result<IEnumerable<(Category Category, decimal TotalAmt)>> GetExpensePerCategory(
-            TransactionFilter filter, bool includeNoCategory = true)
+            TransactionFilter filter, bool includeNoCategory = true, bool includeSubCategories = false)
         {
             try
             {
@@ -50,10 +54,14 @@ namespace Moneyes.UI
                 filter.TransactionType = TransactionType.Expense;
 
                 List<(Category, decimal)> results = new();
-
+                
                 foreach (Category c in categories)
                 {
-                    List<Transaction> transactions = _transactionRepo.All(filter, c)
+                    List<Category> subCategories = _categoryService.GetSubCategories(c).ToList();
+                    subCategories.Add(c);
+
+                    List<Transaction> transactions = _transactionRepo.All(filter,
+                            includeSubCategories ? subCategories.ToArray() : new Category[] { c })
                         .ToList();
 
                     decimal sum = Math.Abs(transactions.Sum(t => t.Amount));

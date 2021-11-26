@@ -25,6 +25,7 @@ namespace Moneyes.UI.ViewModels
         private readonly TransactionRepository _transactionRepository;
         private readonly IBankingService _bankingService;
         private readonly IStatusMessageService _statusMessageService;
+        private readonly ICategoryService _categoryService;
         private Balance _currentBalance;
         private bool _isLoaded = false;
 
@@ -85,11 +86,14 @@ namespace Moneyes.UI.ViewModels
             IStatusMessageService statusMessageService,
             ExpenseCategoriesViewModel expenseCategoriesViewModel,
             SelectorViewModel selectorViewModel,
-            CategoryRepository categoryRepository)
+            CategoryRepository categoryRepository,
+            ICategoryService categoryService)
         {
             DisplayName = "Transactions";
             Categories = expenseCategoriesViewModel;
             Selector = selectorViewModel;
+
+            _categoryService = categoryService;
             _liveDataService = liveDataService;
             _transactionRepository = transactionRepository;
             _bankingService = bankingService;
@@ -173,10 +177,14 @@ namespace Moneyes.UI.ViewModels
                 {
                     Category selectedCategory = Categories.SelectedCategory?.Category;
 
+                    var withSubCategories = _categoryService.GetSubCategories(selectedCategory)
+                        .Concat(new Category[] { selectedCategory });                    
+
                     // Get all transactions for selected category and filter
                     var transactions = _transactionRepository.All(
-                        filter: GetTransactionFilter(),
-                        categories: selectedCategory).ToList();
+                            filter: GetTransactionFilter(),
+                            categories: selectedCategory)
+                        .ToList();
 
                     Transactions.DynamicUpdate(
                         transactions,

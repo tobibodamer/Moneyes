@@ -309,9 +309,9 @@ namespace Moneyes.UI
             }
 
             IEnumerable<Category> categories = GetCategories(CategoryFlags.Real)
-                .GetOrNull();
+                .GetOrNull().ToList();
 
-            return GetSubCategoriesRecursive(category, categories, depth, 0);
+            return GetSubCategoriesRecursive(category, categories, depth, 0).Distinct();
         }
 
         private IEnumerable<Category> GetSubCategoriesRecursive(
@@ -320,7 +320,7 @@ namespace Moneyes.UI
         {
             foreach (Category category in allCategories)
             {
-                if (!category.Parent?.Idquals(current) ?? false)
+                if (!category.Parent?.Idquals(current) ?? true)
                 {
                     continue;
                 }
@@ -333,7 +333,7 @@ namespace Moneyes.UI
                 }
 
                 IEnumerable<Category> subCategories = GetSubCategoriesRecursive(
-                    category, allCategories, maxDepth, currentDepth++);
+                    category, allCategories, maxDepth, ++currentDepth);
 
                 foreach (Category subCategory in subCategories)
                 {

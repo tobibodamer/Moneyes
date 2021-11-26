@@ -23,6 +23,37 @@
         <local:SingleToCollectionConverter x:Key="SingleToCollectionConverter"/>
         <local:EmptyStringNullConverter x:Key="EmptyStringNullConverter"/>
         <local:EmptyItemConverter x:Key="EmptyItemConverter"/>
+        <local:TreeLevelConverter x:Key="TreeLevelConverter"/>
+
+        <Style x:Key="MaterialDesignRemoveItemCommandButtonStyle" TargetType="{x:Type Button}" BasedOn="{StaticResource MaterialDesignMenuCommandButtonStyle}">
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="true">
+                    <Setter Property="Background" Value="{DynamicResource PrimaryHueLightBrush}" />
+                    <Setter Property="Foreground" Value="{DynamicResource PrimaryHueLightForegroundBrush}" />
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Background" Value="{DynamicResource MaterialDesignCheckBoxDisabled}"/>
+                </Trigger>
+            </Style.Triggers>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate>
+                        <Grid>
+                            <Ellipse Width="{TemplateBinding Width}" Height="{TemplateBinding Height}" Fill="{TemplateBinding Background}" />
+                            <Path Name="Path" Data="F0 M 6,38 L 0003451911513,38"
+                                                  Width="6" Height="6" Stretch="Uniform" Stroke="{TemplateBinding Foreground}" 
+                                                  StrokeThickness="2" StrokeStartLineCap="Square" StrokeEndLineCap="Square" 
+                                                  SnapsToDevicePixels="True" Opacity="0.8"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="Background" Value="{DynamicResource PrimaryHueMidBrush}" />
+            <Setter Property="Width" Value="12" />
+            <Setter Property="Height" Value="12" />
+            <Setter Property="Margin" Value="4 0 2 0" />
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryHueMidForegroundBrush}" />
+        </Style>
     </UserControl.Resources>
     <Grid Width="500" Margin="10">
         <Grid.RowDefinitions>
@@ -133,19 +164,19 @@
                             <Setter Property="Padding" Value="0"/>
                             <Setter Property="VerticalContentAlignment" Value="Center"/>
                         </Style>
-                        <Style TargetType="Button" x:Key="RemoveButtonStyle" BasedOn="{StaticResource MaterialDesignCloseItemCommandButtonStyle}">
+                        <Style TargetType="Button" x:Key="RemoveButtonStyle" BasedOn="{StaticResource MaterialDesignRemoveItemCommandButtonStyle}">
                             <Setter Property="Width" Value="25"/>
                             <Setter Property="Height" Value="25"/>
-                            <Setter Property="Padding" Value="0"/>
-                            <Setter Property="VerticalContentAlignment" Value="Center"/>
                         </Style>
                         <DataTemplate DataType="{x:Type vm:ConditionFilterViewModel}">
-                            <Border BorderBrush="Gray" BorderThickness="0" CornerRadius="3" Padding="0">
-                                <Grid Margin="5" HorizontalAlignment="Stretch">
+                            <Border BorderBrush="Gray" BorderThickness="0" CornerRadius="3" Padding="0" HorizontalAlignment="Stretch">
+                                <Grid Margin="5">
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="100"/>
-                                        <ColumnDefinition Width="100"/>
-                                        <ColumnDefinition Width="150"/>
+                                        <ColumnDefinition
+                                                          SharedSizeGroup="{Binding RelativeSource={RelativeSource Mode=FindAncestor,AncestorType={x:Type Grid}}, Converter={StaticResource TreeLevelConverter}, ConverterParameter=A}"/>
+                                        <ColumnDefinition 
+                                                          SharedSizeGroup="{Binding RelativeSource={RelativeSource Mode=FindAncestor,AncestorType={x:Type Grid}}, Converter={StaticResource TreeLevelConverter}, ConverterParameter=B}"/>
+                                        <ColumnDefinition Width="*" MaxWidth="150"/>
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
 
@@ -164,11 +195,11 @@
                                     <TextBox Height="24" VerticalContentAlignment="Center" Grid.Column="2"
                                      Style="{StaticResource MaterialDesignTextBox}"
                                      Text="{Binding Content, Converter={StaticResource CollectionStringConverter}}"
-                                     Margin="0,0,15,0"/>
+                                     Margin="0,0,15,0"/>                                    
 
                                     <StackPanel Grid.Column="3" Orientation="Horizontal">
-                                        <Button Command="{Binding AddCommand}" Style="{StaticResource AddButtonStyle}" Content="+"/>
-                                        <Button Command="{Binding DeleteCommand}" Style="{StaticResource RemoveButtonStyle}" Content="-"/>
+                                        <Button Command="{Binding AddCommand}" Style="{StaticResource AddButtonStyle}"/>
+                                        <Button Command="{Binding DeleteCommand}" Style="{StaticResource RemoveButtonStyle}"/>
                                     </StackPanel>
                                 </Grid>
                             </Border>
@@ -196,8 +227,8 @@
                                     </StackPanel>
 
                                     <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
-                                        <Button Command="{Binding AddCommand}" Style="{StaticResource AddButtonStyle}" Content="+"/>
-                                        <Button Command="{Binding DeleteCommand}" Style="{StaticResource RemoveButtonStyle}" Content="-"/>
+                                        <Button Command="{Binding AddCommand}" Style="{StaticResource AddButtonStyle}"/>
+                                        <Button Command="{Binding DeleteCommand}" Style="{StaticResource RemoveButtonStyle}"/>
                                     </StackPanel>
                                 </Grid>
                             </Border>
@@ -209,8 +240,6 @@
                             <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
                             <Setter Property="Padding" Value="1"/>
                             <Setter Property="IsExpanded" Value="True" />
-                            <Setter Property="Width" Value="{Binding Width, 
-                            RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type TreeView}}}" />
                             <Style.Triggers>
                                 <Trigger Property="IsMouseOver" Value="True">
                                     <Setter Property="Background" Value="white"/>

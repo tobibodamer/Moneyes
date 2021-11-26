@@ -112,7 +112,7 @@ namespace Moneyes.UI.ViewModels
         /// </summary>
         /// <param name="filter"></param>
         public void UpdateCategories(TransactionFilter filter, CategoryFlags categoryFlags = CategoryFlags.All,
-            bool flat = false)
+            bool flat = false, bool order = false)
         {
             // Get expenses per category
             _expenseIncomeService.GetExpensePerCategory(filter, categoryFlags.HasFlag(CategoryFlags.NoCategory),
@@ -120,7 +120,7 @@ namespace Moneyes.UI.ViewModels
                 .OnError(() =>
                 {
                     _statusMessageService.ShowMessage("Could not get expenses of categories", "Retry",
-                        () => UpdateCategories(filter, categoryFlags));
+                        () => UpdateCategories(filter, categoryFlags, flat, order));
                 })
                 .OnSuccess(expenses =>
                 {
@@ -151,13 +151,13 @@ namespace Moneyes.UI.ViewModels
                                             _statusMessageService.ShowMessage("Could not get total expense");
                                         });
                     }
-                    UpdateCategories(categories, new CategoryComparer());
+                    UpdateCategories(categories, order ? new ExpenseComparer() : new CategoryComparer());
                 });
         }
 
         private CategoryExpenseViewModel CreateEntry(Category category, decimal expense)
         {
-            bool canAssign(Transaction transaction) 
+            bool canAssign(Transaction transaction)
             {
                 Category targetCategory = category;
 
@@ -248,6 +248,23 @@ namespace Moneyes.UI.ViewModels
                 }
 
                 return x.Category.Name.CompareTo(y.Category.Name);
+            }
+        }
+
+        class ExpenseComparer : IComparer<CategoryExpenseViewModel>
+        {
+            public int Compare(CategoryExpenseViewModel x, CategoryExpenseViewModel y)
+            {
+                if (x.Target > 0 && y.Target == 0)
+                {
+                    return -1;
+                }
+                else if (x.Target == 0 && y.Target > 0)
+                {
+                    return 1;
+                }
+
+                return x.TotalExpense.CompareTo(y.TotalExpense) * -1;
             }
         }
     }

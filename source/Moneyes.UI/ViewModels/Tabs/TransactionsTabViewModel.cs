@@ -19,22 +19,18 @@ using System.Diagnostics;
 
 namespace Moneyes.UI.ViewModels
 {
-    class TransactionsTabViewModel : ViewModelBase, ITabViewModel
+    internal class TransactionsTabViewModel : ViewModelBase, ITabViewModel
     {
-        private LiveDataService _liveDataService;
-        private readonly TransactionRepository _transactionRepository;
         private readonly IBankingService _bankingService;
         private readonly IStatusMessageService _statusMessageService;
         private readonly ICategoryService _categoryService;
         private Balance _currentBalance;
-        private bool _isLoaded = false;
+        private bool _isLoaded;
 
-        private ObservableCollection<Transaction> _transactions = new();
+        private TransactionsViewModel _transactionsViewModel;
 
         #region UI Properties
         public ICommand LoadedCommand { get; }
-
-        public ICommand RemoveFromCategory { get; }
 
         public ExpenseCategoriesViewModel Categories { get; }
 
@@ -49,16 +45,15 @@ namespace Moneyes.UI.ViewModels
             }
         }
 
-        public ObservableCollection<Transaction> Transactions
+        public TransactionsViewModel TransactionsViewModel
         {
-            get => _transactions;
+            get => _transactionsViewModel;
             set
             {
-                _transactions = value;
+                _transactionsViewModel = value;
                 OnPropertyChanged();
             }
         }
-
 
         private ObservableCollection<Transaction> _selectedTransactions;
         public ObservableCollection<Transaction> SelectedTransactions
@@ -81,38 +76,23 @@ namespace Moneyes.UI.ViewModels
             }
         }
 
-        private bool _loadingTransactions;
-        public bool Loading
-        {
-            get => _loadingTransactions;
-            set
-            {
-                _loadingTransactions = value;
-                OnPropertyChanged();
-            }
-        }
-
         #endregion
         public TransactionsTabViewModel(
-            LiveDataService liveDataService,
             TransactionRepository transactionRepository,
+            CategoryRepository categoryRepository,
             IBankingService bankingService,
+            ICategoryService categoryService,
             IStatusMessageService statusMessageService,
             ExpenseCategoriesViewModel expenseCategoriesViewModel,
-            SelectorViewModel selectorViewModel,
-            CategoryRepository categoryRepository,
-            ICategoryService categoryService)
+            SelectorViewModel selectorViewModel)
         {
             DisplayName = "Transactions";
             Categories = expenseCategoriesViewModel;
             Selector = selectorViewModel;
 
             _categoryService = categoryService;
-            _liveDataService = liveDataService;
-            _transactionRepository = transactionRepository;
             _bankingService = bankingService;
             _statusMessageService = statusMessageService;
-
 
             Categories.PropertyChanged += (sender, args) =>
             {
@@ -145,61 +125,28 @@ namespace Moneyes.UI.ViewModels
                 UpdateTransactions();
             };
 
-            RemoveFromCategory = new CollectionRelayCommand<Transaction>(transactions =>
+            TransactionsViewModel = new(transactionRepository)
             {
-                Category selectedCategory = Categories.SelectedCategory.Category;
-
-                foreach (Transaction t in transactions)
+                RemoveFromCategory = new CollectionRelayCommand<Transaction>(transactions =>
                 {
-                    if (t.Categories.Contains(selectedCategory))
+                    Category selectedCategory = Categories.SelectedCategory.Category;
+
+                    foreach (Transaction t in transactions)
                     {
-                        _categoryService.RemoveFromCategory(t, selectedCategory);
+                        if (t.Categories.Contains(selectedCategory))
+                        {
+                            _categoryService.RemoveFromCategory(t, selectedCategory);
+                        }
                     }
-                }
-            }, transactions =>
-            {
-                return transactions != null
-                    && transactions.All(transaction => transaction != null &&
-                        Categories.SelectedCategory != null &&
-                        Categories.SelectedCategory.IsRealCategory &&
-                        transaction.Categories.Contains(Categories.SelectedCategory.Category));
-            });
-        }
-
-        private void UpdateTransactions()
-        {
-            _ = Dispatcher.CurrentDispatcher.BeginInvoke(() =>
-            {
-                Loading = true;
-                try
+                }, transactions =>
                 {
-                    Category selectedCategory = Categories.SelectedCategory?.Category;
-
-                    var withSubCategories = _categoryService.GetSubCategories(selectedCategory)
-                        .Concat(new Category[] { selectedCategory });
-
-                    // Get all transactions for selected category and filter
-                    var transactions = _transactionRepository.All(
-                            filter: GetTransactionFilter(),
-                            categories: selectedCategory)
-                        .ToList();
-
-                    Transactions.DynamicUpdate(
-                        transactions,
-                        (t1, t2) => t1.Idquals(t2),
-                        new TransactionSortComparer(),
-                        true);
-
-                    if (Selector.CurrentAccount != null)
-                    {
-                        CurrentBalance = _bankingService.GetBalance(Selector.EndDate, Selector.CurrentAccount);
-                    }
-                }
-                finally
-                {
-                    Loading = false;
-                }
-            });
+                    return transactions != null
+                        && transactions.All(transaction => transaction != null &&
+                            Categories.SelectedCategory != null &&
+                            Categories.SelectedCategory.IsRealCategory &&
+                            transaction.Categories.Contains(Categories.SelectedCategory.Category));
+                })
+            };
         }
 
         private TransactionFilter GetTransactionFilter()
@@ -212,18 +159,30 @@ namespace Moneyes.UI.ViewModels
             };
         }
 
+        private void UpdateTransactions()
+        {
+            _ = Dispatcher.CurrentDispatcher.BeginInvoke(() =>
+            {
+                Category selectedCategory = Categories.SelectedCategory?.Category;
+
+                //var withSubCategories = _categoryService.GetSubCategories(selectedCategory)
+                //    .Concat(new Category[] { selectedCategory });
+
+                TransactionsViewModel.UpdateTransactions(GetTransactionFilter(), selectedCategory);
+
+                if (Selector.CurrentAccount != null)
+                {
+                    CurrentBalance = _bankingService.GetBalance(Selector.EndDate, Selector.CurrentAccount);
+                }
+            });
+        }
+
         private void UpdateCategories()
         {
             _ = Dispatcher.CurrentDispatcher.BeginInvoke(() =>
             {
                 Categories.UpdateCategories(GetTransactionFilter());
             });
-        }
-
-        private void HandleError(string message)
-        {
-            _statusMessageService.ShowMessage($"Error: {message}");
-            //MessageBox.Show(message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
 
         public void OnSelect()
@@ -236,14 +195,6 @@ namespace Moneyes.UI.ViewModels
                 UpdateTransactions();
 
                 _isLoaded = true;
-            }
-        }
-
-        class TransactionSortComparer : IComparer<Transaction>
-        {
-            public int Compare(Transaction x, Transaction y)
-            {
-                return x.BookingDate.CompareTo(y.BookingDate) * -1;
             }
         }
     }

@@ -19,7 +19,7 @@ using System.Diagnostics;
 
 namespace Moneyes.UI.ViewModels
 {
-    class TransactionsViewModel : ViewModelBase, ITabViewModel
+    class TransactionsTabViewModel : ViewModelBase, ITabViewModel
     {
         private LiveDataService _liveDataService;
         private readonly TransactionRepository _transactionRepository;
@@ -93,7 +93,7 @@ namespace Moneyes.UI.ViewModels
         }
 
         #endregion
-        public TransactionsViewModel(
+        public TransactionsTabViewModel(
             LiveDataService liveDataService,
             TransactionRepository transactionRepository,
             IBankingService bankingService,

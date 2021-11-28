@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -17,13 +16,15 @@ using System.Windows.Shapes;
 namespace Moneyes.UI.View
 {
     /// <summary>
-    /// Interaktionslogik für MainPage.xaml
+    /// Interaktionslogik für TransactionsListView.xaml
     /// </summary>
-    public partial class Transactions : UserControl
+    public partial class TransactionsControl : UserControl
     {
-        public Transactions()
+        public TransactionsControl()
         {
             InitializeComponent();
+
+            _ = new ListViewDragDropManager<Core.Transaction>(transactionsListView);
         }
     }
 }

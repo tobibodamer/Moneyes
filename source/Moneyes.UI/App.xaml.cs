@@ -110,7 +110,7 @@ namespace Moneyes.UI
 
             // View models
             services.AddTransient<ITabViewModel, OverviewViewModel>();
-            services.AddTransient<ITabViewModel, TransactionsViewModel>();
+            services.AddTransient<ITabViewModel, TransactionsTabViewModel>();
             services.AddTransient<ITabViewModel, AccountsViewModel>();
             services.AddTransient<ITabViewModel, BankSetupViewModel>();
 

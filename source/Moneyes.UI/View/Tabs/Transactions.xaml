@@ -8,7 +8,7 @@
       xmlns:vm="clr-namespace:Moneyes.UI.ViewModels"
       xmlns:m="clr-namespace:Moneyes.Core;assembly=Moneyes.Core"
       xmlns:controls="clr-namespace:System.Windows.Controls;assembly=MultiSelectTreeView"
-      xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes" d:DataContext="{d:DesignInstance Type=vm:TransactionsViewModel}"
+      xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes" d:DataContext="{d:DesignInstance Type=vm:TransactionsTabViewModel}"
              TextElement.Foreground="{DynamicResource MaterialDesignBody}"
       TextElement.FontWeight="Regular"
       TextElement.FontSize="13"
@@ -177,77 +177,8 @@
                 </Separator.Style>
             </Separator>
 
-            <TextBlock Foreground="Gray" VerticalAlignment="Center" HorizontalAlignment="Center"
-                   Grid.Row="0" Grid.RowSpan="3">
-                <TextBlock.Style>
-                    <Style TargetType="TextBlock">
-                        <Setter Property="Text" Value="No transactions"/>
-                        <Setter Property="Visibility" Value="Hidden"/>
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding Transactions.Count}" Value="0">
-                                <Setter Property="Visibility" Value="Visible"/>
-                            </DataTrigger>
-                            <DataTrigger Binding="{Binding Loading}" Value="True">
-                                <Setter Property="Text" Value="Loading..."/>
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </TextBlock.Style>
-            </TextBlock>
-
-            <ListView Name="transactionsListView" ItemsSource="{Binding Transactions}" 
-                      HorizontalContentAlignment="Stretch" Margin="5,5,5,5" Grid.Row="2" 
-                      SelectionMode="Extended">
-                <ListView.ItemTemplate>
-                    <DataTemplate>
-                        <DockPanel>
-                            <StackPanel Orientation="Vertical">
-                                <TextBlock FontSize="15" Text="{Binding Name}" />
-                                <TextBlock Text="{Binding Purpose}" Foreground="Gray" TextWrapping="NoWrap" MaxWidth="500" HorizontalAlignment="Left" />
-                                <TextBlock Text="{Binding BookingDate, StringFormat=dd.MM.yyyy}" Foreground="Gray" />
-                            </StackPanel>
-                            <TextBlock FontSize="17" HorizontalAlignment="Right" Padding="0" VerticalAlignment="Top">
-                                <TextBlock.Text>
-                                    <MultiBinding StringFormat="{}{0} {1}">
-                                        <Binding Path="Amount" />
-                                        <Binding Path="Currency" />
-                                    </MultiBinding>
-                                </TextBlock.Text>
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock" BasedOn="{StaticResource MaterialDesignTextBlock}">
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding Type}" Value="{x:Static m:TransactionType.Expense}">
-                                                <Setter Property="Foreground" Value="#FFD80000"/>
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding Type}" Value="{x:Static m:TransactionType.Income}">
-                                                <Setter Property="Foreground" Value="#FF00A800"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
-                        </DockPanel>
-                    </DataTemplate>
-                </ListView.ItemTemplate>
-                <ListView.ContextMenu>
-                    <ContextMenu Focusable="False">
-                        <MenuItem Header="Remove from category"
-                                  Command="{Binding RemoveFromCategory}"
-                                  CommandParameter="{Binding PlacementTarget.SelectedItems,
-                                            RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=ContextMenu}}"/>
-                    </ContextMenu>
-                </ListView.ContextMenu>
-            </ListView>
+            <local:TransactionsControl Grid.Row="2"/>
         </Grid>
-
-        <!--<DataGrid ItemsSource="{Binding Transactions}" AutoGenerateColumns="False" Margin="5" Grid.Row="1" Grid.Column="1"
-                  IsReadOnly="True" SelectionUnit="FullRow">
-            <DataGrid.Columns>
-                <DataGridTextColumn Header="Name" Binding="{Binding Name}"/>
-                <DataGridTextColumn Header="Date" Binding="{Binding ValueDate, StringFormat=dd.MM.yyyy}" SortDirection="Descending"/>
-                <DataGridTextColumn Header="Amount" Binding="{Binding Amount}"/>
-            </DataGrid.Columns>
-        </DataGrid>-->
 
         <!--<TextBlock Text="No categories" Foreground="Gray" VerticalAlignment="Center" HorizontalAlignment="Center"
                    Grid.Row="1">
@@ -265,6 +196,7 @@
         </TextBlock>-->
 
         <local:CategoryExpenseTreeView DataContext="{Binding Categories}" Grid.Row="1"/>
+        
         <!--<local:BindableMultiSelectDataGrid x:Name="categoryListBox" Margin="5" BorderThickness="1" BorderBrush="AliceBlue"
                  ItemsSource="{Binding Categories}" AutoGenerateColumns="False" SelectedItems="{Binding SelectedCategories, Mode=OneWayToSource}"
                  Grid.Row="1" Style="{StaticResource MaterialDesignDataGrid}">            

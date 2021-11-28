@@ -56,7 +56,7 @@ namespace Moneyes.UI.ViewModels
                 }
             });
 
-            CurrentViewModel = tabs.OfType<TransactionsViewModel>().FirstOrDefault();
+            CurrentViewModel = tabs.OfType<TransactionsTabViewModel>().FirstOrDefault();
 
             statusMessageService.NewMessage += (msg, actText, act) => NewStatusMessage?.Invoke(msg, actText, act);
         }

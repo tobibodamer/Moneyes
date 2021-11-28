@@ -71,7 +71,7 @@
                 <DataTemplate DataType="{x:Type vm:OverviewViewModel}">
                     <local:Overview/>
                 </DataTemplate>
-                <DataTemplate DataType="{x:Type vm:TransactionsViewModel}">
+                <DataTemplate DataType="{x:Type vm:TransactionsTabViewModel}">
                     <local:Transactions/>
                 </DataTemplate>
                 <DataTemplate DataType="{x:Type vm:AccountsViewModel}">

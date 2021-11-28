@@ -52,7 +52,7 @@ namespace Moneyes.UI.ViewModels
 
         private EditCategoryViewModel CreateEditCategoryViewModel(Category category, bool isCreated)
         {
-            List<Category> possibleParents = _categoryService.GetCategories(CategoryFlags.Real).GetOrNull()
+            List<Category> possibleParents = _categoryService.GetCategories(CategoryTypes.Real)
                 .Where(c => !c.Idquals(category)).ToList();
 
             EditCategoryViewModel editCategoryViewModel = new(_categoryService)

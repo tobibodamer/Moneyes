@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using LiteDB;
 using Moneyes.Core;
@@ -126,6 +127,16 @@ namespace Moneyes.Data
 
             // Apply filter
             return transactions.Where(t => filter.Evaluate(t));
+        }
+
+        public DateTime EarliestTransactionDate(TransactionFilter filter)
+        {
+            return All(filter).Min(t => t.BookingDate);
+        }
+
+        public DateTime LatestTransactionDate(TransactionFilter filter)
+        {
+            return All(filter).Max(t => t.BookingDate);
         }
     }
 }

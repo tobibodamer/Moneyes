@@ -13,7 +13,7 @@
              Name="overviewPage"
              d:DataContext="{d:DesignInstance Type=vm:OverviewViewModel}"
              mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="800">
+             d:DesignHeight="450" d:DesignWidth="800" d:Background="{StaticResource MaterialDesignBackground}">
     <i:Interaction.Triggers>
         <i:EventTrigger EventName="Loaded">
             <i:InvokeCommandAction Command="{Binding LoadedCommand}" />
@@ -73,7 +73,7 @@
                 </Style.Triggers>
             </Style>
 
-            <Style TargetType="TextBlock" x:Key="BalanceTextBlock">                
+            <Style TargetType="TextBlock" x:Key="BalanceTextBlock">
                 <Style.Triggers>
                     <DataTrigger Binding="{Binding CurrentBalance.IsNegative}" Value="True">
                         <Setter Property="Foreground" Value="Red"/>
@@ -150,7 +150,18 @@
                 <Grid Margin="18">
                     <materialDesign:PackIcon Kind="ArrowDown" Height="20" Width="20" HorizontalAlignment="Right"/>
                     <TextBlock Text="Expense" FontSize="20" FontWeight="SemiBold"/>
-                    <TextBlock Text="{Binding TotalExpense, StringFormat={}{0} €}" VerticalAlignment="Bottom" FontSize="18" Margin="0,7"/>
+                    <TextBlock VerticalAlignment="Bottom" FontSize="18" Margin="0,7">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock" BasedOn="{StaticResource MaterialDesignTextBlock}">
+                                <Setter Property="Text" Value="{Binding TotalExpense, StringFormat={}{0:F2} €}"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding ShowAverage}" Value="True">
+                                        <Setter Property="Text" Value="{Binding AverageExpense, Mode=OneWay, StringFormat={}{0:F2} €}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
                 </Grid>
             </materialDesign:Card>
 
@@ -159,7 +170,18 @@
                 <Grid Margin="18">
                     <materialDesign:PackIcon Kind="ArrowUp" Height="20" Width="20" HorizontalAlignment="Right"/>
                     <TextBlock Text="Income" FontSize="20" FontWeight="SemiBold"/>
-                    <TextBlock Text="{Binding TotalIncome, StringFormat={}{0} €}" VerticalAlignment="Bottom" FontSize="18" Margin="0,7"/>
+                    <TextBlock VerticalAlignment="Bottom" FontSize="18" Margin="0,7">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock" BasedOn="{StaticResource MaterialDesignTextBlock}">
+                                <Setter Property="Text" Value="{Binding TotalIncome, StringFormat={}{0:F2} €}"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding ShowAverage}" Value="True">
+                                        <Setter Property="Text" Value="{Binding AverageIncome, Mode=OneWay, StringFormat={}{0:F2} €}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
                 </Grid>
             </materialDesign:Card>
         </DockPanel>
@@ -169,6 +191,12 @@
             <Grid DockPanel.Dock="Top" Margin="0,0,0,5">
                 <TextBlock Text="Expense Categories" FontSize="22" FontWeight="Normal" DockPanel.Dock="Top" Margin="10,0"/>
                 <TextBlock Text="Show more" HorizontalAlignment="Right" Margin="0,5,10,0" Foreground="Gray" FontSize="13"/>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                    <TextBlock Text="Average" VerticalAlignment="Center" Margin="5,-1,7,0"/>
+                    <CheckBox IsChecked="{Binding ShowAverage}" VerticalAlignment="Center" 
+                              Style="{StaticResource MaterialDesignSwitchDarkToggleButton}"/>
+                </StackPanel>
             </Grid>
 
             <ItemsControl x:Name="CategoryItems" ItemsSource="{Binding ExpenseCategories.Categories}"
@@ -199,7 +227,7 @@
                                     <TextBlock>
                                         <TextBlock.Text>
                                             <MultiBinding StringFormat="{}{0:N0} €">
-                                                <Binding Path="TotalExpense"/>
+                                                <Binding Path="AverageExpense"/>
                                                 <Binding Path="Target"/>
                                             </MultiBinding>
                                         </TextBlock.Text>
@@ -208,6 +236,11 @@
                                                 <Style.Triggers>
                                                     <DataTrigger Binding="{Binding Target}" Value="0">
                                                         <Setter Property="Text" Value="{Binding TotalExpense, StringFormat={}{0:N2} €}"/>
+                                                    </DataTrigger>
+
+                                                    <DataTrigger Binding="{Binding DataContext.ShowAverage, 
+                                                        RelativeSource={RelativeSource FindAncestor, AncestorType=ItemsControl}}" Value="True">
+                                                        <Setter Property="Text" Value="{Binding AverageExpense, Mode=OneWay, StringFormat={}{0:N2} €}"/>
                                                     </DataTrigger>
                                                 </Style.Triggers>
                                             </Style>
@@ -227,8 +260,20 @@
                                     </TextBlock>
                                 </StackPanel>
 
-                                <ProgressBar Style="{StaticResource ExpenseProgressBar}" Grid.Row="1"
-                                     Value="{Binding TotalExpense}" Maximum="{Binding Target}" />
+                                <ProgressBar Grid.Row="1" Maximum="{Binding Target}">
+
+                                    <ProgressBar.Style>
+                                        <Style TargetType="ProgressBar" BasedOn="{StaticResource ExpenseProgressBar}">
+                                            <Setter Property="Value" Value="{Binding AverageExpense, Mode=OneWay}"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding DataContext.ShowAverage, 
+                                                    RelativeSource={RelativeSource FindAncestor, AncestorType=ItemsControl}}" Value="True">
+                                                    <Setter Property="Value" Value="{Binding AverageExpense, Mode=OneWay}"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </ProgressBar.Style>
+                                </ProgressBar>
                             </Grid>
                         </materialDesign:Card>
                     </DataTemplate>

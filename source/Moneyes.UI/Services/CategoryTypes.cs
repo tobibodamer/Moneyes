@@ -1,6 +1,9 @@
-﻿namespace Moneyes.UI
+﻿using System;
+
+namespace Moneyes.UI
 {
-    public enum CategoryFlags
+    [Flags]
+    public enum CategoryTypes
     {
         Real = 1,
         NoCategory = 2,

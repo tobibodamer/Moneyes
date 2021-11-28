@@ -19,51 +19,47 @@ namespace Moneyes.UI
             _categoryRepo = categoryRepo;
         }
 
-        public Result<Category> GetCategoryByName(string name)
+        public Category GetCategoryByName(string name)
         {
-            try
-            {
-                return _categoryRepo.FindByName(name);
-            }
-            catch (Exception)
-            {
-                return Result.Failed<Category>();
-                //TODO: Log
-            }
+            return _categoryRepo.FindByName(name);
         }
 
-        public Result<IEnumerable<Category>> GetCategories(CategoryFlags includeCategories = CategoryFlags.All)
+        public IEnumerable<Category> GetCategories(CategoryTypes includeCategories = CategoryTypes.All)
         {
-            try
+            IList<Category> categories =
+                _categoryRepo.GetAll().ToList();
+
+            if (includeCategories.HasFlag(CategoryTypes.AllCategory)
+                && !categories.Any(c => c.Idquals(Category.AllCategory)))
             {
-                IEnumerable<Category> categories =
-                    _categoryRepo.GetAll();
-
-                if (!includeCategories.HasFlag(CategoryFlags.Real))
-                {
-                    categories = new Category[] {
-                        _categoryRepo.FindById(Category.NoCategory.Id),
-                        _categoryRepo.FindById(Category.AllCategory.Id)
-                    }.Where(c => c != null);
-                }
-
-                if (!includeCategories.HasFlag(CategoryFlags.NoCategory))
-                {
-                    categories = categories.Where(c => c != Category.NoCategory);
-                }
-
-                if (!includeCategories.HasFlag(CategoryFlags.AllCategory))
-                {
-                    categories = categories.Where(c => c != Category.AllCategory);
-                }
-
-                return Result.Successful(categories);
+                categories.Add(Category.AllCategory);
             }
-            catch (Exception)
+
+            if (includeCategories.HasFlag(CategoryTypes.NoCategory)
+                && !categories.Any(c => c.Idquals(Category.NoCategory)))
             {
-                return Result.Failed<IEnumerable<Category>>();
-                //TODO: Log
+                categories.Add(Category.NoCategory);
             }
+
+            if (!includeCategories.HasFlag(CategoryTypes.Real))
+            {
+                categories = new Category[] {
+                        _categoryRepo.FindById(Category.NoCategory.Id) ?? Category.NoCategory,
+                        _categoryRepo.FindById(Category.AllCategory.Id)  ?? Category.AllCategory
+                    }.Where(c => c != null).ToList();
+            }
+
+            if (!includeCategories.HasFlag(CategoryTypes.NoCategory))
+            {
+                categories = categories.Where(c => c != Category.NoCategory).ToList();
+            }
+
+            if (!includeCategories.HasFlag(CategoryTypes.AllCategory))
+            {
+                categories = categories.Where(c => c != Category.AllCategory).ToList();
+            }
+
+            return categories;
         }
 
         public void AssignCategories(Transaction transaction,
@@ -80,7 +76,7 @@ namespace Moneyes.UI
 
             // Assign categories
 
-            List<Category> categories = GetCategories(CategoryFlags.Real).Data
+            List<Category> categories = GetCategories(CategoryTypes.Real)
                 .OrderBy(c => c.IsExlusive)
                 .ToList();
 
@@ -143,7 +139,7 @@ namespace Moneyes.UI
 
             // Assign categories
 
-            List<Category> categories = GetCategories(CategoryFlags.Real).Data
+            List<Category> categories = GetCategories(CategoryTypes.Real)
                 .OrderBy(c => c.IsExlusive)
                 .ToList();
 
@@ -257,7 +253,7 @@ namespace Moneyes.UI
                     transaction.Categories.RemoveAll(c => c.Idquals(category));
                 }
 
-                var directSubCategories = GetCategories().Data
+                var directSubCategories = GetCategories()
                     .Where(c => c.Parent?.Idquals(category) ?? false);
 
                 foreach (var subCategory in directSubCategories)
@@ -329,8 +325,8 @@ namespace Moneyes.UI
                 return Enumerable.Empty<Category>();
             }
 
-            IEnumerable<Category> categories = GetCategories(CategoryFlags.Real)
-                .GetOrNull().ToList();
+            IEnumerable<Category> categories = GetCategories(CategoryTypes.Real)
+                .ToList();
 
             return GetSubCategoriesRecursive(category, categories, depth, 0).Distinct();
         }

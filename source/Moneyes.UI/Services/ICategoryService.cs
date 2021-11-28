@@ -25,6 +25,8 @@ namespace Moneyes.UI
 
         bool MoveToCategory(Transaction transaction, Category currentCategory, Category targetCategory);
 
+        bool RemoveFromCategory(Transaction transaction, Category category);
+
         Result<Category> GetCategoryByName(string name);
 
         Result<IEnumerable<Category>> GetCategories(

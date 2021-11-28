@@ -181,17 +181,24 @@ namespace Moneyes.UI.ViewModels
                 UpdateTransactions();
             };
 
-            RemoveFromCategory = new CollectionRelayCommand<Transaction>(transaction =>
+            RemoveFromCategory = new CollectionRelayCommand<Transaction>(transactions =>
             {
+                Category selectedCategory = Categories.SelectedCategory.Category;
 
+                foreach (Transaction t in transactions)
+                {
+                    if (t.Categories.Contains(selectedCategory))
+                    {
+                        _categoryService.RemoveFromCategory(t, selectedCategory);
+                    }
+                }
             }, transactions =>
             {
-                if (transactions == null) return false;
-
-                return transactions.All(transaction => transaction != null &&
-                    Categories.SelectedCategory != null &&
-                    Categories.SelectedCategory.IsRealCategory &&
-                    transaction.Categories.Contains(Categories.SelectedCategory.Category));
+                return transactions != null
+                    && transactions.All(transaction => transaction != null &&
+                        Categories.SelectedCategory != null &&
+                        Categories.SelectedCategory.IsRealCategory &&
+                        transaction.Categories.Contains(Categories.SelectedCategory.Category));
             });
         }
 

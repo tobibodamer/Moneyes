@@ -30,6 +30,8 @@ namespace Moneyes.UI.ViewModels
             }
         }
 
+        public decimal AverageExpense { get; }
+
         public ObservableCollection<CategoryExpenseViewModel> SubCatgeories { get; set; } = new();
 
         public ICommand MoveToCategory { get; set; }
@@ -39,23 +41,24 @@ namespace Moneyes.UI.ViewModels
 
         public decimal? Difference => Target == null ? null : Math.Abs(Target.Value - TotalExpense);
 
-        public CategoryExpenseViewModel(Category category, decimal totalExpense)
+        public CategoryExpenseViewModel(Category category, Expenses expenses)
         {
             Category = category;
-            TotalExpense = totalExpense;
-
+            TotalExpense = expenses.TotalAmount;
+            AverageExpense = expenses.GetMonthlyAverage();
+            
             if (IsNoCategory)
             {
-                DisplayName = $"-- No category -- ({totalExpense} €)";
+                DisplayName = $"-- No category -- ({TotalExpense} €)";
             }
             else if (category.Target > 0)
             {
 
-                DisplayName = $"{category.Name} ({totalExpense} / {category.Target} €)";
+                DisplayName = $"{category.Name} ({TotalExpense} / {category.Target} €)";
             }
             else
             {
-                DisplayName = $"{category.Name} ({totalExpense} €)";
+                DisplayName = $"{category.Name} ({TotalExpense} €)";
             }
         }
 

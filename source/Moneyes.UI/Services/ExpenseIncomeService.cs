@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Moneyes.UI
 {
-    class ExpenseIncomServieUsingDb : IExpenseIncomeService
+    partial class ExpenseIncomServieUsingDb : IExpenseIncomeService
     {
         private readonly IBaseRepository<Category> _categoryRepo;
         private readonly TransactionRepository _transactionRepo;
@@ -24,114 +24,131 @@ namespace Moneyes.UI
             _categoryService = categoryService ?? throw new ArgumentNullException(nameof(categoryService));
         }
 
-        public Result<IEnumerable<(Category Category, decimal TotalAmt)>> GetExpensePerCategory(
-            AccountDetails account, bool includeNoCategory = true)
+        public Result<Expenses> GetExpenses(
+            Category category, TransactionFilter filter, bool includeSubCategories = false)
         {
-            TransactionFilter filter = new()
-            {
-                AccountNumber = account.Number,
-                TransactionType = TransactionType.Expense
-            };
-
-            return GetExpensePerCategory(filter, includeNoCategory);
+            return GetInternal(category, filter, includeSubCategories, TransactionType.Expense);
         }
 
-        public Result<IEnumerable<(Category Category, decimal TotalAmt)>> GetExpensePerCategory(
-            TransactionFilter filter, bool includeNoCategory = true, bool includeSubCategories = false)
+        public Result<Expenses> GetIncome(
+            Category category, TransactionFilter filter, bool includeSubCategories = false)
+        {
+            return GetInternal(category, filter, includeSubCategories, TransactionType.Income);
+        }
+
+        private Result<Expenses> GetInternal(Category category, TransactionFilter filter, bool includeSubCategories,
+            TransactionType transactionType)
         {
             try
             {
-                List<Category> categories = _categoryRepo.GetAll()
-                    .OrderBy(c => c.Name)
-                    .OrderBy(c => c.IsExlusive ? 1 : 0)
-                    .ToList();
+                List<Category> categories = new() { category };
 
-                if (includeNoCategory)
+                if (includeSubCategories)
                 {
-                    categories.Insert(0, Category.NoCategory);
+                    categories.AddRange(_categoryService.GetSubCategories(category));
                 }
 
-                filter.TransactionType = TransactionType.Expense;
+                // Set filter to only include expenses
+                filter.TransactionType = transactionType;
 
-                List<(Category, decimal)> results = new();
-                
+                // Get transactions for filter and categories
+                List<Transaction> transactions = _transactionRepo.All(filter, categories.ToArray())
+                    .ToList();
+
+                // Find total start and end date
+                DateTime startDate = filter.StartDate ?? _transactionRepo.EarliestTransactionDate(filter);
+                DateTime endDate = filter.EndDate ?? _transactionRepo.LatestTransactionDate(filter);
+
+                return Result.Successful(new Expenses(transactions)
+                {
+                    StartDate = startDate,
+                    EndDate = endDate
+                });
+            }
+            catch
+            {
+                return Result.Failed<Expenses>();
+            }
+        }
+
+        public Result<IEnumerable<(Category Category, Expenses Expenses)>> GetAllExpenses(
+            TransactionFilter filter,
+            CategoryTypes categoryFlags = CategoryTypes.Real | CategoryTypes.NoCategory,
+            bool includeSubCategories = false)
+        {
+            return GetAllInternal(filter, categoryFlags, includeSubCategories, TransactionType.Expense);
+        }
+
+        public Result<IEnumerable<(Category Category, Expenses Expenses)>> GetAllIncome(
+            TransactionFilter filter,
+            CategoryTypes categoryFlags = CategoryTypes.Real | CategoryTypes.NoCategory,
+            bool includeSubCategories = false)
+        {
+            return GetAllInternal(filter, categoryFlags, includeSubCategories, TransactionType.Income);
+        }
+
+        private Result<IEnumerable<(Category Category, Expenses Expenses)>> GetAllInternal(
+            TransactionFilter filter,
+            CategoryTypes categoryFlags,
+            bool includeSubCategories,
+            TransactionType transactionType)
+        {
+            try
+            {
+                List<Category> categories = _categoryService.GetCategories(categoryFlags).ToList();
+
+                List<(Category, Expenses)> results = new();
+
                 foreach (Category c in categories)
                 {
-                    List<Category> subCategories = _categoryService.GetSubCategories(c).ToList();
-                    subCategories.Add(c);
-
-                    List<Transaction> transactions = _transactionRepo.All(filter,
-                            includeSubCategories ? subCategories.ToArray() : new Category[] { c })
-                        .ToList();
-
-                    decimal sum = Math.Abs(transactions.Sum(t => t.Amount));
-
-                    results.Add((c, sum));
+                    _ = GetInternal(c, filter, includeSubCategories, transactionType)
+                        .OnSuccess(expenses =>
+                        {
+                            results.Add((c, expenses));
+                        });
                 }
 
                 return Result.Successful(results.AsEnumerable());
             }
             catch
             {
-                return Result.Failed<IEnumerable<(Category, decimal)>>();
+                return Result.Failed<IEnumerable<(Category, Expenses)>>();
             }
         }
 
-        public Result<decimal> GetTotalExpense(TransactionFilter filter)
+        public Result<Expenses> GetTotalExpense(TransactionFilter filter)
         {
             return GetTotalInternal(filter, TransactionType.Expense);
         }
-        public Result<decimal> GetTotalExpense(TransactionFilter filter, Category category)
-        {
-            if (category == Category.NoCategory)
-            {
-                return GetExpensePerCategory(filter, true).Data
-                    .First(item => item.Category == Category.NoCategory).TotalAmt;
-            }
 
-            return GetTotalInternal(filter, category, TransactionType.Expense);
-        }
-
-        public Result<decimal> GetTotalIncome(TransactionFilter filter)
+        public Result<Expenses> GetTotalIncome(TransactionFilter filter)
         {
             return GetTotalInternal(filter, TransactionType.Income);
         }
-        public Result<decimal> GetTotalIncome(TransactionFilter filter, Category category)
-        {
-            return GetTotalInternal(filter, category, TransactionType.Income);
-        }
-        private Result<decimal> GetTotalInternal(TransactionFilter filter, TransactionType transactionType)
+        private Result<Expenses> GetTotalInternal(TransactionFilter filter, TransactionType transactionType)
         {
             try
             {
-                IEnumerable<Transaction> transactions = _transactionRepo
-                    .All(filter);
+                // Set filter to only include expenses
+                filter.TransactionType = transactionType;
 
-                return Math.Abs(transactions
-                    .Where(t => t.Type == transactionType)
-                    .Sum(t => t.Amount));
+                // Get transactions for filter and categories
+                List<Transaction> transactions = _transactionRepo.All(filter)
+                    .ToList();
+
+                // Find total start and end date
+                DateTime startDate = filter.StartDate ?? _transactionRepo.EarliestTransactionDate(filter);
+                DateTime endDate = filter.EndDate ?? _transactionRepo.LatestTransactionDate(filter);
+
+                return Result.Successful(new Expenses(transactions)
+                {
+                    StartDate = startDate,
+                    EndDate = endDate
+                });
             }
             catch
             {
-                return Result.Failed<decimal>();
-            }
-        }
-
-        private Result<decimal> GetTotalInternal(TransactionFilter filter, Category category, TransactionType transactionType)
-        {
-            try
-            {
-                IEnumerable<Transaction> transactions = _transactionRepo
-                    .All(filter);
-
-                return Math.Abs(transactions.Where(t =>
-                       t.Type == transactionType &&
-                       (t.Categories?.Contains(category) ?? false))
-                    .Sum(t => t.Amount));
-            }
-            catch
-            {
-                return Result.Failed<decimal>();
+                return Result.Failed<Expenses>();
             }
         }
     }

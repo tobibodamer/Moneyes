@@ -18,7 +18,7 @@ namespace Moneyes.UI.ViewModels
         }
         public virtual void UpdateCategories()
         {
-            foreach (Category category in CategoryService.GetCategories().Data)
+            foreach (Category category in CategoryService.GetCategories())
             {
                 Categories.Add(
                     _factory.CreateCategoryViewModel(category, editViewModel =>

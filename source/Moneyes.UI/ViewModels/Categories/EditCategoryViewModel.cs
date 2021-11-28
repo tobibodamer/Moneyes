@@ -34,7 +34,7 @@ namespace Moneyes.UI.ViewModels
             get
             {
                 Category existingCategory = _categoryService
-                    .GetCategoryByName(Name).GetOrNull();
+                    .GetCategoryByName(Name);
 
                 return !string.IsNullOrEmpty(Name) && existingCategory is null ||
                     (IsCreated && existingCategory.Idquals(base.Category));
@@ -210,7 +210,7 @@ namespace Moneyes.UI.ViewModels
             }
 
             Category existingCategory = _categoryService
-                .GetCategoryByName(Name).GetOrNull();
+                .GetCategoryByName(Name);
 
             if (existingCategory != null)
             {

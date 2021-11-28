@@ -111,51 +111,41 @@ namespace Moneyes.UI.ViewModels
         /// Updates the category expenses by reloading them using the given <paramref name="filter"/>.
         /// </summary>
         /// <param name="filter"></param>
-        public void UpdateCategories(TransactionFilter filter, CategoryFlags categoryFlags = CategoryFlags.All,
+        public void UpdateCategories(TransactionFilter filter, CategoryTypes categoryFlags = CategoryTypes.All,
             bool flat = false, bool order = false)
         {
-            // Get expenses per category
-            _expenseIncomeService.GetExpensePerCategory(filter, categoryFlags.HasFlag(CategoryFlags.NoCategory),
-                includeSubCategories: true)
-                .OnError(() =>
+            try
+            {
+                IEnumerable<Category> categories = _categoryService.GetCategories(categoryFlags);
+
+                List<CategoryExpenseViewModel> categoryExpenses = new();
+
+                foreach (Category category in categories)
                 {
-                    _statusMessageService.ShowMessage("Could not get expenses of categories", "Retry",
+                    _expenseIncomeService.GetExpenses(category, filter, includeSubCategories: true)
+                        .OnSuccess(expenses =>
+                        {
+                            categoryExpenses.Add(
+                                CreateEntry(category, expenses));
+                        });
+                }
+
+                if (!flat)
+                {
+                    // Set sub categories
+                    SetSubCategories(categoryExpenses);
+                }
+
+                UpdateCategories(categoryExpenses, order ? new ExpenseComparer() : new CategoryComparer());
+            }
+            catch
+            {
+                _statusMessageService.ShowMessage("Could not get expenses of categories", "Retry",
                         () => UpdateCategories(filter, categoryFlags, flat, order));
-                })
-                .OnSuccess(expenses =>
-                {
-                    List<CategoryExpenseViewModel> categories = new();
-
-                    categories.AddRange(
-                        expenses.Select(exp => CreateEntry(exp.Category, exp.TotalAmt))
-                    );
-
-                    if (!flat)
-                    {
-                        // Set sub categories
-                        SetSubCategories(categories);
-                    }
-
-                    if (categoryFlags.HasFlag(CategoryFlags.AllCategory))
-                    {
-                        // Get total expenses
-                        _expenseIncomeService.GetTotalExpense(filter)
-                                        .OnSuccess(totalAmt =>
-                                        {
-                                            var allCategory = CreateEntry(Category.AllCategory, totalAmt);
-
-                                            categories.Add(allCategory);
-                                        })
-                                        .OnError(() =>
-                                        {
-                                            _statusMessageService.ShowMessage("Could not get total expense");
-                                        });
-                    }
-                    UpdateCategories(categories, order ? new ExpenseComparer() : new CategoryComparer());
-                });
+            }
         }
 
-        private CategoryExpenseViewModel CreateEntry(Category category, decimal expense)
+        private CategoryExpenseViewModel CreateEntry(Category category, Expenses expenses)
         {
             bool canAssign(Transaction transaction)
             {
@@ -168,12 +158,12 @@ namespace Moneyes.UI.ViewModels
                 if (targetCategory == Category.AllCategory) { return false; }
 
                 // cant add to own category
-                var isOwn = transaction.Categories.Contains(targetCategory);
+                bool isOwn = transaction.Categories.Contains(targetCategory);
 
                 return !isOwn;
             };
 
-            return new CategoryExpenseViewModel(category, expense)
+            return new CategoryExpenseViewModel(category, expenses)
             {
                 MoveToCategory = new RelayCommand<Transaction>(transaction =>
                 {
@@ -184,8 +174,8 @@ namespace Moneyes.UI.ViewModels
                 }, canAssign),
                 CopyToCategory = new RelayCommand<Transaction>(transaction =>
                 {
-                    Category targetCategory = category;                    
-                    
+                    Category targetCategory = category;
+
                     _categoryService.AddToCategory(transaction, targetCategory);
                 }, transaction =>
                 {
@@ -213,9 +203,9 @@ namespace Moneyes.UI.ViewModels
                 })
             };
         }
-        public void AddEntry(Category category, decimal expense)
+        public void AddEntry(Category category, Expenses expenses)
         {
-            Categories.Add(CreateEntry(category, expense));
+            Categories.Add(CreateEntry(category, expenses));
         }
 
         public bool IsSelected(Category category)

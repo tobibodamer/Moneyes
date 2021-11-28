@@ -27,10 +27,10 @@ namespace Moneyes.UI
 
         bool RemoveFromCategory(Transaction transaction, Category category);
 
-        Result<Category> GetCategoryByName(string name);
+        Category GetCategoryByName(string name);
 
-        Result<IEnumerable<Category>> GetCategories(
-            CategoryFlags includeCategories = CategoryFlags.All);
+        IEnumerable<Category> GetCategories(
+            CategoryTypes includeCategories = CategoryTypes.All);
 
         bool AddCategory(Category category);
         bool UpdateCategory(Category category);

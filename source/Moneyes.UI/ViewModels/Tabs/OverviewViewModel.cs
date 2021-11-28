@@ -20,6 +20,8 @@ namespace Moneyes.UI.ViewModels
 
         decimal _totalExpense;
         decimal _totalIncome;
+        decimal _averageExpense;
+        decimal _averageIncome;
         private Balance _currentBalance;
         public ICommand LoadedCommand { get; }
 
@@ -43,6 +45,26 @@ namespace Moneyes.UI.ViewModels
             }
         }
 
+        public decimal AverageExpense
+        {
+            get => _averageExpense;
+            set
+            {
+                _averageExpense = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public decimal AverageIncome
+        {
+            get => _averageIncome;
+            set
+            {
+                _averageIncome = value;
+                OnPropertyChanged();
+            }
+        }
+
         private SelectorViewModel _selector;
         public SelectorViewModel Selector
         {
@@ -61,6 +83,19 @@ namespace Moneyes.UI.ViewModels
             {
                 _currentBalance = value;
                 OnPropertyChanged();
+            }
+        }
+
+        private bool _showAverage;
+        public bool ShowAverage
+        {
+            get => _showAverage;
+            set
+            {
+                _showAverage = value;
+                OnPropertyChanged();
+
+                UpdateCategories();
             }
         }
         public ExpenseCategoriesViewModel ExpenseCategories { get; }
@@ -104,6 +139,14 @@ namespace Moneyes.UI.ViewModels
 
         private TransactionFilter GetFilter()
         {
+            if (ShowAverage)
+            {
+                return new TransactionFilter()
+                {
+                    AccountNumber = Selector.CurrentAccount?.Number
+                };
+            }
+
             return new TransactionFilter()
             {
                 AccountNumber = Selector.CurrentAccount?.Number,
@@ -115,44 +158,22 @@ namespace Moneyes.UI.ViewModels
         private void UpdateCategories()
         {
             _expenseIncomeService.GetTotalExpense(GetFilter())
-                    .OnSuccess(total => TotalExpense = total);
+                .OnSuccess(expenses =>
+                {
+                    TotalExpense = expenses.TotalAmount;
+                    AverageExpense = expenses.GetMonthlyAverage();
+                });
 
             _expenseIncomeService.GetTotalIncome(GetFilter())
-                .OnSuccess(total => TotalIncome = total);
+                .OnSuccess(expenses =>
+                {
+                    TotalIncome = expenses.TotalAmount;
+                    AverageIncome = expenses.GetMonthlyAverage();
+                });
 
-            ExpenseCategories.UpdateCategories(GetFilter(), CategoryFlags.Real | CategoryFlags.NoCategory, order: true);
+            ExpenseCategories.UpdateCategories(GetFilter(), CategoryTypes.Real | CategoryTypes.NoCategory, order: true);
 
             CurrentBalance = _bankingService.GetBalance(Selector.EndDate, Selector.CurrentAccount);
-
-            //// Get expenses per category
-            //_expenseIncomeService.GetExpensePerCategory(GetFilter(), true)
-            //    .OnError(() => { })
-            //    .OnSuccess(expenses =>
-            //    {
-            //        Categories.Clear();
-
-            //        foreach ((Category category, decimal amt) in expenses
-            //            .OrderBy(p => p.Category.Target == 0)
-            //            .ThenByDescending(p => p.Category == Category.NoCategory))
-            //        {
-
-            //            Categories.Add(
-            //                new CategoryExpenseViewModel(category, amt)
-            //                {
-            //                });
-            //        }
-
-            //        // Set sub categories
-            //        foreach (CategoryExpenseViewModel category in Categories)
-            //        {
-            //            Category parent = category.Category?.Parent;
-            //            if (parent == null) { continue; }
-
-            //            // Add category as sub category in parent
-            //            Categories.FirstOrDefault(c => c.Category.Equals(parent))
-            //                .SubCatgeories.Add(category);
-            //        }
-            //    });
         }
 
         public void OnSelect()

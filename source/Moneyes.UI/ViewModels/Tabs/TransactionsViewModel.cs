@@ -34,6 +34,8 @@ namespace Moneyes.UI.ViewModels
         #region UI Properties
         public ICommand LoadedCommand { get; }
 
+        public ICommand RemoveFromCategory { get; }
+
         public ExpenseCategoriesViewModel Categories { get; }
 
         private SelectorViewModel _selector;
@@ -53,6 +55,18 @@ namespace Moneyes.UI.ViewModels
             set
             {
                 _transactions = value;
+                OnPropertyChanged();
+            }
+        }
+
+
+        private ObservableCollection<Transaction> _selectedTransactions;
+        public ObservableCollection<Transaction> SelectedTransactions
+        {
+            get => _selectedTransactions;
+            set
+            {
+                _selectedTransactions = value;
                 OnPropertyChanged();
             }
         }
@@ -166,6 +180,19 @@ namespace Moneyes.UI.ViewModels
                 UpdateCategories();
                 UpdateTransactions();
             };
+
+            RemoveFromCategory = new CollectionRelayCommand<Transaction>(transaction =>
+            {
+
+            }, transactions =>
+            {
+                if (transactions == null) return false;
+
+                return transactions.All(transaction => transaction != null &&
+                    Categories.SelectedCategory != null &&
+                    Categories.SelectedCategory.IsRealCategory &&
+                    transaction.Categories.Contains(Categories.SelectedCategory.Category));
+            });
         }
 
         private void UpdateTransactions()
@@ -178,7 +205,7 @@ namespace Moneyes.UI.ViewModels
                     Category selectedCategory = Categories.SelectedCategory?.Category;
 
                     var withSubCategories = _categoryService.GetSubCategories(selectedCategory)
-                        .Concat(new Category[] { selectedCategory });                    
+                        .Concat(new Category[] { selectedCategory });
 
                     // Get all transactions for selected category and filter
                     var transactions = _transactionRepository.All(

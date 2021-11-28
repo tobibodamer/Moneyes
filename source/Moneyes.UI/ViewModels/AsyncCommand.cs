@@ -27,7 +27,21 @@ namespace Moneyes.UI.ViewModels
             }
         }
 
-        public event EventHandler CanExecuteChanged;
+        public event EventHandler CanExecuteChanged
+        {
+            add
+            {
+                CommandManager.RequerySuggested += value;
+                CanExecuteChangedInternal += value;
+            }
+            remove
+            {
+                CommandManager.RequerySuggested -= value;
+                CanExecuteChangedInternal -= value;
+            }
+        }
+
+        protected event EventHandler CanExecuteChangedInternal;
         public event PropertyChangedEventHandler PropertyChanged;
 
         public AsyncCommand(Func<CancellationToken, Task> execute, Func<bool> canExecute = null, Action<Exception> errorHandler = null)
@@ -85,7 +99,7 @@ namespace Moneyes.UI.ViewModels
 
         public void OnCanExecuteChanged()
         {
-            CanExecuteChanged?.Invoke(this, EventArgs.Empty);
+            CanExecuteChangedInternal?.Invoke(this, EventArgs.Empty);
         }
 
         public void Cancel()
@@ -118,7 +132,21 @@ namespace Moneyes.UI.ViewModels
 
         public bool IsExecuting { get; private set; }
 
-        public event EventHandler CanExecuteChanged;
+        public event EventHandler CanExecuteChanged
+        {
+            add
+            {
+                CommandManager.RequerySuggested += value;
+                CanExecuteChangedInternal += value;
+            }
+            remove
+            {
+                CommandManager.RequerySuggested -= value;
+                CanExecuteChangedInternal -= value;
+            }
+        }
+
+        protected event EventHandler CanExecuteChangedInternal;
 
         public AsyncCommand(Func<T, CancellationToken, Task> execute, Func<T, bool> canExecute = null, Action<Exception> errorHandler = null)
         {
@@ -166,7 +194,7 @@ namespace Moneyes.UI.ViewModels
 
         public void OnCanExecuteChanged()
         {
-            CanExecuteChanged?.Invoke(this, EventArgs.Empty);
+            CanExecuteChangedInternal?.Invoke(this, EventArgs.Empty);
         }
 
         public void Cancel()

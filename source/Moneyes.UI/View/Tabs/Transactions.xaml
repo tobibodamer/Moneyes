@@ -119,14 +119,14 @@
                             <MultiBinding StringFormat="{}{1} transaction(s)">
                                 <MultiBinding.Bindings>
                                     <Binding Path="Categories.SelectedCategory"/>
-                                    <Binding Path="Transactions.Count"/>
+                                    <Binding Path="TransactionsViewModel.Transactions.Count"/>
                                 </MultiBinding.Bindings>
                             </MultiBinding>
                         </TextBlock.Text>
                         <TextBlock.Style>
                             <Style TargetType="TextBlock">
                                 <Style.Triggers>
-                                    <DataTrigger Binding="{Binding Transactions.Count}" Value="0">
+                                    <DataTrigger Binding="{Binding TransactionsViewModel.Transactions.Count}" Value="0">
                                         <Setter Property="Visibility" Value="Hidden"/>
                                     </DataTrigger>
                                 </Style.Triggers>
@@ -166,10 +166,10 @@
                     <Style TargetType="Separator">
                         <Setter Property="Visibility" Value="Visible"/>
                         <Style.Triggers>
-                            <DataTrigger Binding="{Binding Loading}" Value="True">
+                            <DataTrigger Binding="{Binding TransactionsViewModel.Loading}" Value="True">
                                 <Setter Property="Visibility" Value="Hidden"/>
                             </DataTrigger>
-                            <DataTrigger Binding="{Binding Transactions.Count}" Value="0">
+                            <DataTrigger Binding="{Binding TransactionsViewModel.Transactions.Count}" Value="0">
                                 <Setter Property="Visibility" Value="Hidden"/>
                             </DataTrigger>
                         </Style.Triggers>
@@ -177,7 +177,7 @@
                 </Separator.Style>
             </Separator>
 
-            <local:TransactionsControl Grid.Row="2"/>
+            <local:TransactionsControl DataContext="{Binding TransactionsViewModel}" Grid.Row="2"/>
         </Grid>
 
         <!--<TextBlock Text="No categories" Foreground="Gray" VerticalAlignment="Center" HorizontalAlignment="Center"

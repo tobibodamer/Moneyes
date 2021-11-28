@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
 
@@ -22,7 +25,22 @@ namespace Moneyes.UI.ViewModels
             }
         }
 
-        public event EventHandler CanExecuteChanged;
+        public event EventHandler CanExecuteChanged
+        {
+            add
+            {
+                CommandManager.RequerySuggested += value;
+                CanExecuteChangedInternal += value;
+            }
+            remove
+            {
+                CommandManager.RequerySuggested -= value;
+                CanExecuteChangedInternal -= value;
+            }
+        }
+
+        protected event EventHandler CanExecuteChangedInternal;
+
         public event PropertyChangedEventHandler PropertyChanged;
 
         public RelayCommand(Action<object> execute, Func<object, bool> canExecute = null, Action<Exception> errorHandler = null)
@@ -80,7 +98,7 @@ namespace Moneyes.UI.ViewModels
 
         protected void OnCanExecuteChanged()
         {
-            CanExecuteChanged?.Invoke(this, EventArgs.Empty);
+            CanExecuteChangedInternal?.Invoke(this, EventArgs.Empty);
         }
         protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
@@ -94,6 +112,18 @@ namespace Moneyes.UI.ViewModels
         public RelayCommand(Action<TParam> execute, Func<TParam, bool> canExecute = null, Action<Exception> errorHandler = null)
             : base(param => execute(param as TParam),
                   canExecute != null ? param => canExecute(param as TParam) : null,
+                  errorHandler)
+        {
+        }
+    }
+
+    public class CollectionRelayCommand<TParam> : RelayCommand<IEnumerable>
+        where TParam : class
+    {
+        public CollectionRelayCommand(Action<IEnumerable<TParam>> execute, Func<IEnumerable<TParam>, bool> canExecute = null,
+            Action<Exception> errorHandler = null)
+            : base(param => execute(param?.Cast<TParam>()),
+                  canExecute != null ? param => canExecute(param?.Cast<TParam>()) : null,
                   errorHandler)
         {
         }

@@ -197,7 +197,7 @@
 
             <ListView Name="transactionsListView" ItemsSource="{Binding Transactions}" 
                       HorizontalContentAlignment="Stretch" Margin="5,5,5,5" Grid.Row="2" 
-                      SelectionMode="Multiple">
+                      SelectionMode="Extended">
                 <ListView.ItemTemplate>
                     <DataTemplate>
                         <DockPanel>
@@ -229,6 +229,14 @@
                         </DockPanel>
                     </DataTemplate>
                 </ListView.ItemTemplate>
+                <ListView.ContextMenu>
+                    <ContextMenu Focusable="False">
+                        <MenuItem Header="Remove from category"
+                                  Command="{Binding RemoveFromCategory}"
+                                  CommandParameter="{Binding PlacementTarget.SelectedItems,
+                                            RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=ContextMenu}}"/>
+                    </ContextMenu>
+                </ListView.ContextMenu>
             </ListView>
         </Grid>
 

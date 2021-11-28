@@ -122,61 +122,25 @@ namespace Moneyes.UI.ViewModels
                 }
             };
 
-            categoryRepository.EntityUpdated += (category) =>
+            categoryRepository.RepositoryChanged += (args) =>
             {
-                Debug.WriteLine("Category updated");
                 UpdateCategories();
 
-                if (Categories.IsSelected(category))
+                if (args.Actions.HasFlag(RepositoryChangedAction.Replace)
+                 && args.ReplacedItems.Any(c => Categories.IsSelected(c)))
                 {
                     UpdateTransactions();
                 }
             };
 
-            categoryRepository.EntityAdded += (category) =>
+            transactionRepository.RepositoryChanged += (args) =>
             {
-                Debug.WriteLine("Category added");
-                UpdateCategories();
-            };
-
-            categoryRepository.EntityDeleted += (category) =>
-            {
-                Debug.WriteLine("Category deleted");
-                UpdateCategories();
-            };
-
-            _transactionRepository.EntityAdded += (transaction) =>
-            {
-                Debug.WriteLine("Entity added");
                 UpdateCategories();
                 UpdateTransactions();
-                //Transactions.Add(transaction);
-            };
-
-            _transactionRepository.EntityUpdated += (transaction) =>
-            {
-                Debug.WriteLine("Entity updated");
-                UpdateCategories();
-                UpdateTransactions();
-                //Transactions.AddOrUpdate(transaction, t => t.UID);
-            };
-
-            _transactionRepository.EntityDeleted += (transaction) =>
-            {
-                Debug.WriteLine("Entity deleted");
-                int index = Transactions.IndexOfFirst(t => t.UID.Equals(transaction.UID));
-
-                if (index > -1)
-                {
-                    Transactions.RemoveAt(index);
-                }
-
-                UpdateCategories();
             };
 
             Selector.SelectorChanged += (sender, args) =>
             {
-                //Debug.WriteLine("Selector changed");
                 UpdateCategories();
                 UpdateTransactions();
             };

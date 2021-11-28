@@ -6,6 +6,26 @@ using LiteDB;
 
 namespace Moneyes.Data
 {
+    public class RepositoryChangedEventArgs<T> : EventArgs
+    {
+        public IReadOnlyList<T> AddedItems { get; init; }
+        public IReadOnlyList<T> ReplacedItems { get; init; }
+        public IReadOnlyList<T> RemovedItems { get; init; }
+        public RepositoryChangedAction Actions { get; }
+
+        public RepositoryChangedEventArgs(RepositoryChangedAction actions)
+        {
+            Actions = actions;
+        }
+    }
+
+    [Flags]
+    public enum RepositoryChangedAction
+    {
+        Add = 1,
+        Replace = 2,
+        Remove = 4
+    }
     public class CachedRepository<T> : IBaseRepository<T>
     {
         protected ILiteDatabase DB { get; }
@@ -19,6 +39,7 @@ namespace Moneyes.Data
         public event Action<T> EntityAdded;
         public event Action<T> EntityUpdated;
         public event Action<T> EntityDeleted;
+        public event Action<RepositoryChangedEventArgs<T>> RepositoryChanged;
 
         protected CachedRepository(IDatabaseProvider databaseProvider)
         {
@@ -66,6 +87,7 @@ namespace Moneyes.Data
                 _ = Cache.AddOrUpdate(id, id => entity, (id, oldValue) => entity);
 
                 OnEntityAdded(entity);
+                OnRepositoryChanged(RepositoryChangedAction.Add, addedItems: new List<T>() { entity });
 
                 return entity;
             }
@@ -105,6 +127,7 @@ namespace Moneyes.Data
                 _ = Cache.AddOrUpdate(id, id => entity, (id, oldValue) => entity);
 
                 OnEntityAdded(entity);
+                OnRepositoryChanged(RepositoryChangedAction.Add, addedItems: new List<T>() { entity });
 
                 return true;
             }
@@ -118,7 +141,8 @@ namespace Moneyes.Data
 
             //if (!oldValue.Equals(entity))
             //{
-                OnEntityUpdated(entity);
+            OnEntityUpdated(entity);
+            OnRepositoryChanged(RepositoryChangedAction.Replace, replacedItems: new List<T>() { entity });
             //}
 
             return false;
@@ -130,12 +154,16 @@ namespace Moneyes.Data
 
             int counter = Collection.Upsert(entitiesToSet);
 
+            List<T> addedEntities = new();
+            List<T> updatedEntities = new();
+
             foreach (T entity in entities)
             {
                 object id = GetIdOrHash(entity);
 
                 if (Cache.TryAdd(id, entity))
                 {
+                    addedEntities.Add(entity);
                     OnEntityAdded(entity);
                     continue;
                 }
@@ -147,9 +175,14 @@ namespace Moneyes.Data
 
                 if (!oldValue.Equals(entity))
                 {
+                    updatedEntities.Add(entity);
                     OnEntityUpdated(entity);
                 }
             }
+
+            OnRepositoryChanged(RepositoryChangedAction.Add | RepositoryChangedAction.Replace,
+                addedItems: addedEntities,
+                replacedItems: updatedEntities);
 
             return counter;
         }
@@ -161,6 +194,7 @@ namespace Moneyes.Data
                 _ = Cache.TryRemove(id, out T entity);
 
                 OnEntityDeleted(entity);
+                OnRepositoryChanged(RepositoryChangedAction.Remove, replacedItems: new List<T>() { entity });
 
                 return true;
             }
@@ -193,6 +227,20 @@ namespace Moneyes.Data
         protected virtual void OnEntityDeleted(T entity)
         {
             EntityDeleted?.Invoke(entity);
+        }
+
+        protected virtual void OnRepositoryChanged(
+            RepositoryChangedAction actions,
+            IReadOnlyList<T> addedItems = null,
+            IReadOnlyList<T> replacedItems = null,
+            IReadOnlyList<T> removedItems = null)
+        {
+            RepositoryChanged?.Invoke(new(actions)
+            {
+                AddedItems = addedItems,
+                ReplacedItems = replacedItems,
+                RemovedItems = removedItems
+            });
         }
     }
 }

@@ -251,7 +251,7 @@ namespace Moneyes.UI
             if (_categoryRepo.Delete(category.Id))
             {
                 var transactions = _transactionRepository.GetByCategory(category).ToList();
-                
+
                 foreach (var transaction in transactions)
                 {
                     transaction.Categories.RemoveAll(c => c.Idquals(category));
@@ -299,6 +299,27 @@ namespace Moneyes.UI
             _transactionRepository.Set(transaction);
 
             return true;
+        }
+
+        public bool RemoveFromCategory(Transaction transaction, Category category)
+        {
+            if (transaction == null ||
+                category == null ||
+                !transaction.Categories.Contains(category) ||
+                category == Category.AllCategory ||
+                category == Category.NoCategory)
+            {
+                return false;
+            }
+
+            if (transaction.Categories.Remove(category))
+            {
+                _transactionRepository.Set(transaction);
+
+                return true;
+            }
+
+            return false;
         }
 
         public IEnumerable<Category> GetSubCategories(Category category, int depth = -1)

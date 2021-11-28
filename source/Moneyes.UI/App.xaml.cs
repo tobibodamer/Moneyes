@@ -12,10 +12,12 @@ using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Markup;
 using System.Windows.Threading;
 
 namespace Moneyes.UI
@@ -27,19 +29,37 @@ namespace Moneyes.UI
     {
         private IDatabaseProvider _dbProvider;
 
-        protected override async void OnStartup(StartupEventArgs e)
+        private static void InitializeCultures()
         {
-            base.OnStartup(e);
+            CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.CurrentCulture;
+            CultureInfo.DefaultThreadCurrentCulture = CultureInfo.CurrentCulture;
+            FrameworkElement.LanguageProperty.OverrideMetadata(typeof(FrameworkElement), new FrameworkPropertyMetadata(
+                XmlLanguage.GetLanguage(CultureInfo.CurrentCulture.IetfLanguageTag)));
+        }
 
-            RegisterGlobalExceptionHandling((ex, msg) =>
-            {
-                Log.Logger.Error(ex, msg);
-            });
-
+        private static void RegisterIdSelectors()
+        {
             IDSelectors.Register<Category>(c => c.Id);
             IDSelectors.Register<AccountDetails>(acc => acc.IBAN);
             IDSelectors.Register<Transaction>(t => t.UID);
+        }
 
+        private static LiteDbConfig CreateDbConfiguration()
+        {
+            string userHome = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            string dataDir = Path.Combine(userHome, ".moneyes");
+            Directory.CreateDirectory(dataDir);
+
+            LiteDbConfig databaseConfig = new()
+            {
+                DatabasePath = Path.Combine(dataDir, "database.db")
+            };
+
+            return databaseConfig;
+        }
+
+        private static void SetupLogging()
+        {
             var appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
             var logDir = Path.Combine(appData, @"Moneyes\logs");
 
@@ -50,26 +70,30 @@ namespace Moneyes.UI
                 .WriteTo.File(path: Path.Combine(logDir, "log.txt"), rollingInterval: RollingInterval.Day)
                 .MinimumLevel.Debug()
                 .CreateLogger();
+        }
+        protected override async void OnStartup(StartupEventArgs e)
+        {
+            base.OnStartup(e);
 
+            RegisterGlobalExceptionHandling((ex, msg) =>
+            {
+                Log.Logger.Error(ex, msg);
+            });
+
+            InitializeCultures();
+
+            RegisterIdSelectors();
+
+            SetupLogging();
 
             IServiceCollection services = new ServiceCollection();
 
-            // Create DB config
-
-            string userHome = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            string dataDir = Path.Combine(userHome, ".moneyes");
-            Directory.CreateDirectory(dataDir);
-
-            LiteDbConfig databaseConfig = new()
-            {
-                DatabasePath = Path.Combine(dataDir, "database.db")
-            };
-
-            services.AddSingleton<LiteDbConfig>(databaseConfig);
+            // Database
+            services.AddSingleton<LiteDbConfig>(CreateDbConfiguration());
             services.AddSingleton<IDatabaseProvider, DatabaseProvider>(CreateDatabaseProvider);
 
-            // Repositories
 
+            // Repositories
             services.AddScoped<CategoryRepository>();
             services.AddScoped<IBaseRepository<Category>, CategoryRepository>(p => p.GetRequiredService<CategoryRepository>());
             services.AddScoped<TransactionRepository>();

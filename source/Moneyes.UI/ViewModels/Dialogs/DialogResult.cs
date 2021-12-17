@@ -1,6 +1,6 @@
 ﻿namespace Moneyes.UI.ViewModels
 {
-    enum DialogResult
+    public enum DialogResult
     {
         None = 0,
         OK,

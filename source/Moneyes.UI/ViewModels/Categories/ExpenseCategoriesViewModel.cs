@@ -10,6 +10,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Windows.Threading;
 
 namespace Moneyes.UI.ViewModels
 {
@@ -107,22 +108,18 @@ namespace Moneyes.UI.ViewModels
             SelectedCategory = categoryExpense;
         }
 
-        /// <summary>
-        /// Updates the category expenses by reloading them using the given <paramref name="filter"/>.
-        /// </summary>
-        /// <param name="filter"></param>
-        public void UpdateCategories(TransactionFilter filter, CategoryTypes categoryFlags = CategoryTypes.All,
-            bool flat = false, bool order = false)
+        private Task<List<CategoryExpenseViewModel>> GetExpensesAsync(
+            TransactionFilter filter, CategoryTypes categoryTypes, bool flat)
         {
-            try
+            return Task.Run(() =>
             {
-                IEnumerable<Category> categories = _categoryService.GetCategories(categoryFlags);
-
                 List<CategoryExpenseViewModel> categoryExpenses = new();
+
+                IEnumerable<Category> categories = _categoryService.GetCategories(categoryTypes);
 
                 foreach (Category category in categories)
                 {
-                    _expenseIncomeService.GetExpenses(category, filter, includeSubCategories: true)
+                    _ = _expenseIncomeService.GetExpenses(category, filter, includeSubCategories: true)
                         .OnSuccess(expenses =>
                         {
                             categoryExpenses.Add(
@@ -136,12 +133,29 @@ namespace Moneyes.UI.ViewModels
                     SetSubCategories(categoryExpenses);
                 }
 
+                return categoryExpenses;
+            });
+        }
+
+        /// <summary>
+        /// Updates the category expenses by reloading them using the given <paramref name="filter"/>.
+        /// </summary>        
+        /// <param name="filter"></param>
+        /// <param name="categoryFlags"></param>
+        /// <param name="flat"></param>
+        public async Task UpdateCategories(TransactionFilter filter, CategoryTypes categoryFlags = CategoryTypes.All,
+            bool flat = false, bool order = false)
+        {
+            try
+            {
+                var categoryExpenses = await GetExpensesAsync(filter, categoryFlags, flat);
+
                 UpdateCategories(categoryExpenses, order ? new ExpenseComparer() : new CategoryComparer());
             }
             catch
             {
                 _statusMessageService.ShowMessage("Could not get expenses of categories", "Retry",
-                        () => UpdateCategories(filter, categoryFlags, flat, order));
+                        async () => await UpdateCategories(filter, categoryFlags, flat, order));
             }
         }
 

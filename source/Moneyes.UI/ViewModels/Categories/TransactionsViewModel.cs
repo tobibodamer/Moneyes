@@ -3,7 +3,10 @@ using Moneyes.Core.Filters;
 using Moneyes.Data;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Input;
 using System.Windows.Threading;
 
@@ -44,31 +47,52 @@ namespace Moneyes.UI.ViewModels
         {
             _transactionRepository = transactionRepository;
         }
-
-        public void UpdateTransactions(TransactionFilter filter, params Category[] categories)
+        private CancellationTokenSource _updateCTS = new();
+        public async Task UpdateTransactions(TransactionFilter filter, params Category[] categories)
         {
-            _ = Dispatcher.CurrentDispatcher.BeginInvoke(() =>
+            if (IsLoading)
             {
-                IsLoading = true;
-                try
+                _updateCTS.Cancel();
+
+                while (IsLoading)
                 {
-                    // Get all transactions for selected category and filter
-                    var transactions = _transactionRepository.All(
+                    await Task.Delay(5);
+                }
+            }
+
+            _updateCTS = new();
+
+            IsLoading = true;
+            try
+            {
+                List<Transaction> transactions =
+                    await Task.Run(() =>
+                    {
+                        return _transactionRepository.All(
                             filter: filter,
                             categories: categories)
                         .ToList();
+                    });
 
-                    Transactions.DynamicUpdate(
-                        transactions,
-                        (t1, t2) => t1.Idquals(t2),
-                        new TransactionSortComparer(),
-                        true);
-                }
-                finally
+                if (_updateCTS.IsCancellationRequested)
                 {
-                    IsLoading = false;
+                    return;
                 }
-            });
+
+                Transactions.DynamicUpdate(
+                       transactions,
+                       (t1, t2) => t1.Idquals(t2),
+                       new TransactionSortComparer(),
+                       true);
+            }
+            finally
+            {
+                IsLoading = false;
+
+                _updateCTS.Dispose();
+                _updateCTS = null;
+            }
+
         }
 
         class TransactionSortComparer : IComparer<Transaction>

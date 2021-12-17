@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Moneyes.UI.ViewModels
 {
-    class ImportAccountsViewModel : ViewModelBase
+    public class ImportAccountsViewModel : ViewModelBase
     {
         private ObservableCollection<AccountViewModel> _accounts;
         public ObservableCollection<AccountViewModel> Accounts

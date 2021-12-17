@@ -7,6 +7,8 @@
     <local:EmptyItemConverter x:Key="EmptyItemConverter"/>
     <local:EmptyStringNullConverter x:Key="EmptyStringNullConverter"/>
     <local:CategoryPieSeriesConverter x:Key="CategoryPieSeriesConverter"/>
+    <local:ComparisonConverter x:Key="ComparisonConverter"/>
+    <local:AlternativeValueConverter x:Key="AlternativeValueConverter"/>
 
     <Style TargetType="Button" x:Key="FetchOnlineButton" BasedOn="{StaticResource MaterialDesignFlatButton}">
         <Setter Property="Padding" Value="5"/>

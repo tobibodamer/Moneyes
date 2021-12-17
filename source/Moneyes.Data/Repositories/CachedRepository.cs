@@ -95,6 +95,38 @@ namespace Moneyes.Data
             return default;
         }
 
+        public int DeleteAll()
+        {
+            int counter = Collection.DeleteAll();
+
+            Cache.Clear();
+
+            return counter;
+        }
+
+        public int DeleteMany(Func<T, bool> predicate)
+        {
+            int counter = Collection.DeleteMany(entity => predicate(entity));
+
+            List<T> removedEntities = new();            
+
+            foreach (var kvp in Cache.Where(kvp => predicate(kvp.Value)))
+            {
+                object id = kvp.Key;
+
+                if (Cache.TryRemove(id, out var entity))
+                {
+                    removedEntities.Add(entity);
+                    OnEntityDeleted(entity);
+                    continue;
+                }
+            }
+
+            OnRepositoryChanged(RepositoryChangedAction.Remove, removedItems: removedEntities);
+
+            return counter;
+        }
+
         public virtual IEnumerable<T> GetAll()
         {
             return Cache.Values.ToList();

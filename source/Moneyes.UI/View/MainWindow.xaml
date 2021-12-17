@@ -18,7 +18,8 @@
         Background="{DynamicResource MaterialDesignPaper}"
         FontFamily="{DynamicResource MaterialDesignFont}"
         mc:Ignorable="d"
-        Title="Moneyes" Height="650" Width="1100" WindowStyle="None"
+        WindowStartupLocation="CenterScreen"
+        Title="Moneyes" Height="800" Width="1200" WindowStyle="None"
         Icon="../Resources/Icon.png">
     <!--<i:Interaction.Triggers>
         <i:EventTrigger EventName="Loaded">

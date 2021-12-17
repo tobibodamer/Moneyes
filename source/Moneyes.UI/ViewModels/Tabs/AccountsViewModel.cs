@@ -12,7 +12,7 @@ using System.Windows.Input;
 
 namespace Moneyes.UI.ViewModels
 {
-    class AccountsViewModel : ViewModelBase, ITabViewModel
+    public class AccountsViewModel : TabViewModelBase
     {
         private readonly LiveDataService _liveDataService;
         private readonly IBankingService _bankingService;
@@ -94,8 +94,10 @@ namespace Moneyes.UI.ViewModels
             errorHandler: (ex) => _statusMessageService.ShowMessage("Error while importing accounts"));
         }
 
-        public void OnSelect()
+        public override void OnSelect()
         {
+            base.OnSelect();
+
             if (!_bankingService.HasBankingDetails)
             {
                 // No bank connection configured -> show message?

@@ -24,8 +24,10 @@ namespace Moneyes.UI.ViewModels
                     return;
                 }
 
+                _currentViewModel?.OnDeselect();
                 _currentViewModel = value;
-                value.OnSelect();
+                value?.OnSelect();
+
                 OnPropertyChanged();
             }
         }
@@ -48,7 +50,7 @@ namespace Moneyes.UI.ViewModels
         {
             Tabs = new(tabs);
 
-            LoadedCommand = new AsyncCommand(async ct =>
+            LoadedCommand = new RelayCommand(() =>
             {
                 if (!bankingConfigStore.HasBankingDetails)
                 {

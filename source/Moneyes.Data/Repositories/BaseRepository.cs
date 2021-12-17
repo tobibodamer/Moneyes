@@ -99,5 +99,15 @@ namespace Moneyes.Data
         {
             EntityDeleted?.Invoke(entity);
         }
+
+        public int DeleteMany(Func<T, bool> predicate)
+        {
+            return Collection.DeleteMany(x => predicate.Invoke(x));
+        }
+
+        public int DeleteAll()
+        {
+            return Collection.DeleteAll();
+        }
     }
 }

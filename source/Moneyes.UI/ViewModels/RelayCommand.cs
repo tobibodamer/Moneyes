@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
+using System.Windows.Threading;
 
 namespace Moneyes.UI.ViewModels
 {
@@ -50,7 +51,9 @@ namespace Moneyes.UI.ViewModels
             _errorHandler = errorHandler;
         }
         public RelayCommand(Action execute, Func<bool> canExecute = null, Action<Exception> errorHandler = null)
-            : this(param => execute(), param => canExecute(), errorHandler)
+            : this(execute == null ? null : param => execute(),
+                  canExecute == null ? null : param => canExecute(),
+                  errorHandler)
         {
         }
 

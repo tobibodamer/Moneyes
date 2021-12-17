@@ -11,7 +11,7 @@ using System.Windows.Input;
 
 namespace Moneyes.UI.ViewModels
 {
-    partial class OverviewViewModel : ViewModelBase, ITabViewModel
+    partial class OverviewViewModel : TabViewModelBase
     {
         private LiveDataService _liveDataService;
         private IExpenseIncomeService _expenseIncomeService;
@@ -95,7 +95,7 @@ namespace Moneyes.UI.ViewModels
                 _showAverage = value;
                 OnPropertyChanged();
 
-                UpdateCategories();
+                UpdateCategories().FireAndForgetSafeAsync();
             }
         }
         public ExpenseCategoriesViewModel ExpenseCategories { get; }
@@ -116,24 +116,26 @@ namespace Moneyes.UI.ViewModels
             _transactionRepository = transactionRepository;
             _bankingService = bankingService;
 
-            Selector.SelectorChanged += (sender, args) =>
+            NeedsUpdate = true;
+
+            Selector.SelectorChanged += async (sender, args) =>
             {
-                UpdateCategories();
+                if (PostponeUpdate())
+                {
+                    return;
+                }
+
+                await UpdateCategories();
             };
 
-            _transactionRepository.EntityAdded += (transaction) =>
+            transactionRepository.RepositoryChanged += async (args) =>
             {
-                UpdateCategories();
-            };
+                if (PostponeUpdate())
+                {
+                    return;
+                }
 
-            _transactionRepository.EntityUpdated += (transaction) =>
-            {
-                UpdateCategories();
-            };
-
-            _transactionRepository.EntityDeleted += (transaction) =>
-            {
-                UpdateCategories();
+                await UpdateCategories();
             };
         }
 
@@ -155,31 +157,37 @@ namespace Moneyes.UI.ViewModels
             };
         }
 
-        private void UpdateCategories()
+        private async Task UpdateCategories()
         {
-            _expenseIncomeService.GetTotalExpense(GetFilter())
+            _ = _expenseIncomeService.GetTotalExpense(GetFilter())
                 .OnSuccess(expenses =>
                 {
                     TotalExpense = expenses.TotalAmount;
                     AverageExpense = expenses.GetMonthlyAverage();
                 });
 
-            _expenseIncomeService.GetTotalIncome(GetFilter())
+            _ = _expenseIncomeService.GetTotalIncome(GetFilter())
                 .OnSuccess(expenses =>
                 {
                     TotalIncome = expenses.TotalAmount;
                     AverageIncome = expenses.GetMonthlyAverage();
                 });
 
-            ExpenseCategories.UpdateCategories(GetFilter(), CategoryTypes.Real | CategoryTypes.NoCategory, order: true);
+            await ExpenseCategories.UpdateCategories(GetFilter(), CategoryTypes.Real | CategoryTypes.NoCategory, order: true);
 
             CurrentBalance = _bankingService.GetBalance(Selector.EndDate, Selector.CurrentAccount);
         }
 
-        public void OnSelect()
+        public override void OnSelect()
         {
-            Selector.RefreshAccounts();
-            UpdateCategories();
+            base.OnSelect();
+
+            if (NeedsUpdate)
+            {
+                UpdateCategories()
+                    .ContinueWith(t => NeedsUpdate = false)
+                    .FireAndForgetSafeAsync();
+            }
         }
     }
 }

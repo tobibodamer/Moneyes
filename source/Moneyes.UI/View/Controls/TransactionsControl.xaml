@@ -56,7 +56,14 @@
                 <DataTemplate>
                     <DockPanel>
                         <StackPanel Orientation="Vertical">
-                            <TextBlock FontSize="15" Text="{Binding Name}" />
+                            <TextBlock FontSize="15" >
+                                <TextBlock.Text>
+                                    <MultiBinding Converter="{StaticResource AlternativeValueConverter}">
+                                        <Binding Path="AltName"/>
+                                        <Binding Path="Name"/>
+                                    </MultiBinding>
+                                </TextBlock.Text>
+                            </TextBlock>
                             <TextBlock Text="{Binding Purpose}" Foreground="Gray" TextWrapping="NoWrap" MaxWidth="500" HorizontalAlignment="Left" />
                             <TextBlock Text="{Binding BookingDate, StringFormat=dd.MM.yyyy}" Foreground="Gray" />
                         </StackPanel>

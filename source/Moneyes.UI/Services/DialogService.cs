@@ -8,13 +8,13 @@ using System.Windows;
 
 namespace Moneyes.UI.Services
 {
-    interface IDialogService
+    public interface IDialogService
     {
         DialogResult ShowDialog(ViewModelBase viewModel);
         Task<DialogResult> ShowDialogAsync(ViewModelBase viewModel);
     }
 
-    interface IDialogService<TViewModel> : IDialogService
+    public interface IDialogService<TViewModel> : IDialogService
         where TViewModel : ViewModelBase
     {
         DialogResult ShowDialog(TViewModel viewModel);

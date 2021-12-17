@@ -19,7 +19,7 @@ using System.Diagnostics;
 
 namespace Moneyes.UI.ViewModels
 {
-    internal class TransactionsTabViewModel : ViewModelBase, ITabViewModel
+    internal class TransactionsTabViewModel : TabViewModelBase
     {
         private readonly IBankingService _bankingService;
         private readonly IStatusMessageService _statusMessageService;
@@ -94,36 +94,62 @@ namespace Moneyes.UI.ViewModels
             _bankingService = bankingService;
             _statusMessageService = statusMessageService;
 
+            NeedsUpdate = true;
+
             Categories.PropertyChanged += (sender, args) =>
             {
-                if (args.PropertyName == nameof(Categories.SelectedCategory))
+                if (args.PropertyName == nameof(Categories.SelectedCategory) && Categories.SelectedCategory is not null)
                 {
-                    UpdateTransactions();
+                    BeginUpdateTransactions();
                 }
             };
 
-            categoryRepository.RepositoryChanged += (args) =>
+            categoryRepository.RepositoryChanged += async (e) =>
             {
-                UpdateCategories();
-
-                if (args.Actions.HasFlag(RepositoryChangedAction.Replace)
-                 && args.ReplacedItems.Any(c => Categories.IsSelected(c)))
+                if (PostponeUpdate())
                 {
-                    UpdateTransactions();
+                    return;
+                }
+
+                await UpdateCategories();
+
+                if (e.Actions.HasFlag(RepositoryChangedAction.Replace)
+                 && e.ReplacedItems.Any(c => Categories.IsSelected(c)))
+                {
+                    await UpdateTransactions();
                 }
             };
 
-            transactionRepository.RepositoryChanged += (args) =>
+            transactionRepository.RepositoryChanged += async (args) =>
             {
-                UpdateCategories();
-                UpdateTransactions();
+                if (PostponeUpdate())
+                {
+                    return;
+                }
+
+                await UpdateCategories();
+                await UpdateTransactions();
             };
 
-            Selector.SelectorChanged += (sender, args) =>
+            Selector.SelectorChanged += async (sender, args) =>
             {
-                UpdateCategories();
-                UpdateTransactions();
+                if (PostponeUpdate())
+                {
+                    return;
+                }
+
+                await UpdateCategories();
+                await UpdateTransactions();
             };
+
+            //Selector.PropertyChanged += async (Sender, args) =>
+            //{
+            //    if (args.PropertyName == nameof(Selector.EndDate))
+            //    {
+            //        await UpdateCategories();
+            //        await UpdateTransactions();
+            //    }
+            //};
 
             TransactionsViewModel = new(transactionRepository)
             {
@@ -159,42 +185,56 @@ namespace Moneyes.UI.ViewModels
             };
         }
 
-        private void UpdateTransactions()
+        private void BeginUpdateTransactions()
         {
-            _ = Dispatcher.CurrentDispatcher.BeginInvoke(() =>
+            UpdateTransactions().FireAndForgetSafeAsync();
+        }
+
+        private async Task UpdateTransactions()
+        {
+            if (Selector.CurrentAccount != null)
             {
-                Category selectedCategory = Categories.SelectedCategory?.Category;
+                CurrentBalance = _bankingService.GetBalance(Selector.EndDate, Selector.CurrentAccount);
+            }
 
-                //var withSubCategories = _categoryService.GetSubCategories(selectedCategory)
-                //    .Concat(new Category[] { selectedCategory });
+            Category selectedCategory = Categories.SelectedCategory?.Category;
 
-                TransactionsViewModel.UpdateTransactions(GetTransactionFilter(), selectedCategory);
+            //var withSubCategories = _categoryService.GetSubCategories(selectedCategory)
+            //    .Concat(new Category[] { selectedCategory });
 
-                if (Selector.CurrentAccount != null)
+            await TransactionsViewModel.UpdateTransactions(GetTransactionFilter(), selectedCategory);
+        }
+
+        private async Task UpdateCategories()
+        {
+            await Categories.UpdateCategories(GetTransactionFilter());
+        }
+
+        public void Refresh()
+        {
+            UpdateCategories().ContinueWith(async t =>
                 {
-                    CurrentBalance = _bankingService.GetBalance(Selector.EndDate, Selector.CurrentAccount);
-                }
-            });
+                    await UpdateTransactions();
+                    NeedsUpdate = false;
+                })
+                .FireAndForgetSafeAsync();
         }
 
-        private void UpdateCategories()
+        public override void OnSelect()
         {
-            _ = Dispatcher.CurrentDispatcher.BeginInvoke(() =>
-            {
-                Categories.UpdateCategories(GetTransactionFilter());
-            });
-        }
-
-        public void OnSelect()
-        {
-            Selector.RefreshAccounts();
+            base.OnSelect();
 
             if (!_isLoaded)
             {
-                UpdateCategories();
-                UpdateTransactions();
-
-                _isLoaded = true;
+                UpdateCategories().ContinueWith(t =>
+                    {
+                        _isLoaded = true;
+                    })
+                    .FireAndForgetSafeAsync();
+            }
+            else if (NeedsUpdate)
+            {
+                Refresh();
             }
         }
     }

@@ -13,7 +13,13 @@ namespace Moneyes.Core
         public decimal Amount { get; init; }
         public string Currency { get; init; }
         public bool IsNegative => Amount < 0;
+        public string UID => _uidLazy.Value;
 
+        private Lazy<string> _uidLazy;
+        public Balance()
+        {
+            _uidLazy = new Lazy<string>(() => Account.IBAN + Date.ToString("u"));
+        }
         public override bool Equals(object obj)
         {
             return obj is Balance balance &&

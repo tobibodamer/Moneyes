@@ -35,7 +35,7 @@
                                Margin="0,0"
                           materialDesign:ComboBoxAssist.ShowSelectedItem="True" BorderThickness="0"
                   VerticalAlignment="Stretch" HorizontalAlignment="Right" 
-                  Width="175" Grid.Column="0" VerticalContentAlignment="Center" Padding="10,0,0,0">
+                  Width="195" Grid.Column="0" VerticalContentAlignment="Center" Padding="10,0,0,0">
             <ComboBox.Style>
                 <Style TargetType="ComboBox" BasedOn="{StaticResource MaterialDesignDataGridComboBox}">
                     <Style.Triggers>
@@ -47,20 +47,24 @@
             </ComboBox.Style>
             <ComboBox.ItemTemplate>
                 <DataTemplate>
-                    <TextBlock>
+                    <StackPanel Orientation="Vertical">
+                    <TextBlock FontSize="14" FontWeight="SemiBold">
                         <TextBlock.Style>
                             <Style TargetType="TextBlock">
                                 <Setter Property="Text">
                                     <Setter.Value>
-                                        <MultiBinding StringFormat="{}{0} ({1})">
+                                        <MultiBinding StringFormat="{}{0}">
                                             <Binding Path="Type" />
-                                            <Binding Path="Number" />
+                                            <!--<Binding Path="Number" />-->
                                         </MultiBinding>
                                     </Setter.Value>
                                 </Setter>
                             </Style>
                         </TextBlock.Style>
                     </TextBlock>
+                        <TextBlock Text="{Binding Number}" FontSize="11" Margin="0,1,0,0"/>
+                        <TextBlock Text="{Binding OwnerName}" FontSize="11" Margin="0,1,0,0"/>
+                    </StackPanel>
                 </DataTemplate>
             </ComboBox.ItemTemplate>
         </ComboBox>

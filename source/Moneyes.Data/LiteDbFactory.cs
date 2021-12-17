@@ -33,10 +33,11 @@ namespace Moneyes.Data
             bsonMapper.Entity<Transaction>()
                 .Id(t => t.UID, false)
                 .DbRef(t => t.Categories, "Category");
-            bsonMapper.Entity<Balance>()
+            bsonMapper.Entity<Balance>()     
+                .Id(b => b.UID, false)
                 .Ignore(b => b.IsNegative)
                 .DbRef(b => b.Account, "AccountDetails");
-
+            
             ConnectionString connectionString = new(_config.Value.DatabasePath);
 
             if (password == "")

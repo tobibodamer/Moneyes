@@ -11,6 +11,8 @@ namespace Moneyes.Data
         bool Set(T entity);
         int Set(IEnumerable<T> entities);
         bool Delete(object id);
+        int DeleteAll();
+        int DeleteMany(Func<T, bool> predicate);
 
         event Action<T> EntityAdded;
         event Action<T> EntityUpdated;

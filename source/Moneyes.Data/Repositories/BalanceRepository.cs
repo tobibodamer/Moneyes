@@ -21,7 +21,7 @@ namespace Moneyes.Data
         /// <returns></returns>
         public Balance GetByDate(DateTime date, AccountDetails account)
         {
-            return Collection.Query()
+            return Cache.Values
                 .Where(b => b.Account.IBAN.Equals(account.IBAN))
                 .Where(b => b.Date <= date)
                 .OrderByDescending(b => b.Date)

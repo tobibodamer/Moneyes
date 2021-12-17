@@ -23,7 +23,7 @@ namespace Moneyes.UI.ViewModels
         ConnectionFailed,
         ConnectionSuccessful
     }
-    class BankSetupViewModel : ViewModelBase, ITabViewModel, INotifyDataErrorInfo
+    class BankSetupViewModel : TabViewModelBase, INotifyDataErrorInfo
     {
         private readonly LiveDataService _liveDataService;
         private readonly IBankingService _bankingService;
@@ -249,8 +249,10 @@ namespace Moneyes.UI.ViewModels
             BankLookupCompleted = true;
         }
 
-        public void OnSelect()
+        public override void OnSelect()
         {
+            base.OnSelect();
+
             if (_bankingService.HasBankingDetails)
             {
                 OnlineBankingDetails bankingDetails = _bankingService.BankingDetails;

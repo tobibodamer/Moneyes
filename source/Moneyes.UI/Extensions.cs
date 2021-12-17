@@ -3,7 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Threading;
 
 namespace Moneyes.UI
 {
@@ -41,17 +44,17 @@ namespace Moneyes.UI
             {
                 if (comparer == null)
                 {
-                    list.Add(newValue);
+                    DispatcherHelper.InvokeIfNecessary(() => list.Add(newValue));
                 }
                 else
                 {
-                    InsertUsingComparer(list, comparer, newValue);
+                    DispatcherHelper.InvokeIfNecessary(() => InsertUsingComparer(list, comparer, newValue));
                 }
 
                 return true;
             }
 
-            list[index] = newValue;
+            DispatcherHelper.InvokeIfNecessary(() => list[index] = newValue);
 
             return false;
         }
@@ -96,24 +99,51 @@ namespace Moneyes.UI
             IComparer<T> insertComparer = null,
             bool removeOldValues = true)
         {
-            if (removeOldValues)
-            {
-                var valuesToRemove = list
-                            .Where(oldValue => !newValues.Any(newValue =>
-                                equalityPredicate?.Invoke(oldValue, newValue) ?? oldValue.Equals(newValue)))
-                            .ToList();
+            DispatcherHelper.InvokeIfNecessary(() =>
+           {
+               if (removeOldValues)
+               {
+                   var valuesToRemove = list
+                               .Where(oldValue => !newValues.Any(newValue =>
+                                   equalityPredicate?.Invoke(oldValue, newValue) ?? oldValue.Equals(newValue)))
+                               .ToList();
 
-                foreach (var value in valuesToRemove)
-                {
-                    list.Remove(value);
-                }
-            }
-            foreach (var value in newValues)
+                   foreach (var value in valuesToRemove)
+                   {
+                       list.Remove(value);
+                   }
+               }
+               foreach (var value in newValues)
+               {
+                   list.AddOrUpdate(
+                       value,
+                       oldValue => equalityPredicate?.Invoke(value, oldValue) ?? oldValue.Equals(value),
+                       insertComparer);
+               }
+           });
+        }
+    }
+
+    public class DispatcherHelper
+    {
+        public static async Task YieldIfNecessary()
+        {
+            Dispatcher dispatcher = Dispatcher.FromThread(Thread.CurrentThread);
+            if (dispatcher != null)
             {
-                list.AddOrUpdate(
-                    value,
-                    oldValue => equalityPredicate?.Invoke(value, oldValue) ?? oldValue.Equals(value),
-                    insertComparer);
+                await Dispatcher.Yield();
+            }
+        }
+
+        public static void InvokeIfNecessary(Action action)
+        {
+            if (Thread.CurrentThread == Application.Current.Dispatcher.Thread)
+            {
+                action();
+            }
+            else
+            {
+                Application.Current.Dispatcher.Invoke(action);
             }
         }
     }

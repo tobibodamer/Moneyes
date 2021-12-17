@@ -1,9 +1,11 @@
 ﻿using Moneyes.Core;
 using Moneyes.LiveData;
 using Moneyes.UI.Services;
+using Moneyes.UI.View;
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows.Input;
 
 namespace Moneyes.UI.ViewModels
@@ -22,14 +24,6 @@ namespace Moneyes.UI.ViewModels
             {
                 _accounts = value;
 
-                //if (value != null && value.Any())
-                //{
-                //    if (CurrentAccount == null)
-                //    {
-                //        CurrentAccount = value.First();
-                //    }                    
-                //}
-
                 OnPropertyChanged();
             }
         }
@@ -40,10 +34,12 @@ namespace Moneyes.UI.ViewModels
             set
             {
                 _selectorStore.CurrentAccount = value;
+                
                 OnPropertyChanged();
             }
         }
 
+        private DateTime _fromDate;
         public DateTime FromDate
         {
             get => _selectorStore.StartDate;
@@ -54,6 +50,7 @@ namespace Moneyes.UI.ViewModels
             }
         }
 
+        private DateTime _endDate;
         public DateTime EndDate
         {
             get => _selectorStore.EndDate;
@@ -64,8 +61,16 @@ namespace Moneyes.UI.ViewModels
             }
         }
 
-        public AsyncCommand MonthMinusCommand { get; }
-        public AsyncCommand MonthPlusCommand { get; }
+        private DateSelectionMode _dateSelection = DateSelectionMode.Month;
+        public DateSelectionMode DateSelection
+        {
+            get => _dateSelection;
+            set
+            {
+                _dateSelection = value;
+                OnPropertyChanged();
+            }
+        }
 
         public AsyncCommand FetchOnlineCommand { get; }
 
@@ -79,34 +84,6 @@ namespace Moneyes.UI.ViewModels
 
             FromDate = new(DateTime.Now.Year, DateTime.Now.Month, 1);
             EndDate = DateTime.Now;
-
-            MonthMinusCommand = new AsyncCommand(async ct =>
-            {
-                FromDate = FromDate.AddMonths(-1);
-
-                var lastDayOfMonth = FromDate.Month == DateTime.Now.Month
-                    ? DateTime.Now.Day : DateTime.DaysInMonth(FromDate.Year, FromDate.Month);
-
-                EndDate = new(FromDate.Year, FromDate.Month, lastDayOfMonth);
-
-                MonthPlusCommand.RaiseCanExecuteChanged();
-            });
-
-            MonthPlusCommand = new AsyncCommand(async ct =>
-            {
-                FromDate = FromDate.AddMonths(1);
-
-                var lastDayOfMonth = FromDate.Month == DateTime.Now.Month
-                    ? DateTime.Now.Day : DateTime.DaysInMonth(FromDate.Year, FromDate.Month);
-
-                EndDate = new(FromDate.Year, FromDate.Month, lastDayOfMonth);
-            }, () =>
-            {
-                var nextMonth = FromDate.AddMonths(1);
-
-                return nextMonth.Year < DateTime.Now.Year
-                    || (nextMonth.Year == DateTime.Now.Year && nextMonth.Month <= DateTime.Now.Month);
-            });
 
             FetchOnlineCommand = new AsyncCommand(async ct =>
             {

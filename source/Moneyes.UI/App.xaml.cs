@@ -42,6 +42,7 @@ namespace Moneyes.UI
             IDSelectors.Register<Category>(c => c.Id);
             IDSelectors.Register<AccountDetails>(acc => acc.IBAN);
             IDSelectors.Register<Transaction>(t => t.UID);
+            IDSelectors.Register<Balance>(b => b.UID);
         }
 
         private static LiteDbConfig CreateDbConfiguration()
@@ -142,7 +143,7 @@ namespace Moneyes.UI
 
             services.AddScoped<CategoryViewModelFactory>();
             services.AddTransient<ExpenseCategoriesViewModel>();
-            services.AddTransient<SelectorViewModel>();
+            services.AddScoped<SelectorViewModel>();
 
             services.AddTransient<GetMasterPasswordDialogViewModel>();
             services.AddTransient<InitMasterPasswordDialogViewModel>();
@@ -210,6 +211,15 @@ namespace Moneyes.UI
             //    }
             //}
 
+            //var balances = balanceRepo.GetAll().ToList();
+
+            //var noDuplicates = RemoveDuplicates(balances, b => b.UID,
+            //    (existing, duplicate) => existing.Amount > duplicate.Amount ? existing : duplicate);
+
+            //_ = balanceRepo.DeleteAll();
+
+            //balanceRepo.Set(noDuplicates);
+
             MainWindowViewModel mainWindowViewModel = serviceProvider.GetRequiredService<MainWindowViewModel>();
 
             this.MainWindow = new MainWindow(mainWindowViewModel);
@@ -245,70 +255,108 @@ namespace Moneyes.UI
         }
 
         /// <summary>
-        /// Removes duplicate transaction entries from the repository.
+        /// Removes duplicate transaction entries that equal by a selector but have different UIDs from the repository.
         /// </summary>
         /// <typeparam name="TSelector"></typeparam>
         /// <param name="transactionRepository">The transaction repo.</param>
-        /// <param name="selector">The selector used to identify transactions.</param>
-        /// <param name="selectDupeOverExisting">An expression used to determine whether to keep the existing transaction.</param>
+        /// <param name="uniqueDuplicateIdentifier">The selector used to identify transactions.</param>
+        /// <param name="keepOld">An expression used to determine whether to keep the existing transaction.</param>
         /// <param name="delete">An expression used to determine whether this duplicate should be ignored.</param>
-        private static void RemoveDuplicates<TSelector>(TransactionRepository transactionRepository,
-            Func<Transaction, TSelector> selector,
-            Func<Transaction, bool> selectDupeOverExisting = null,
-            Func<Transaction, Transaction, bool> delete = null)
+        private static void RemoveDuplicates<T, TSelector>(IBaseRepository<T> transactionRepository,
+            Func<T, TSelector> uniqueDuplicateIdentifier,
+            Func<T, bool> keepOld = null,
+            Func<T, T, bool> delete = null)
         {
-            List<Transaction> transactions = transactionRepository.GetAll().ToList();
+            List<T> transactions = transactionRepository.GetAll().ToList();
 
-            Dictionary<TSelector, Transaction> done = new();
+            Dictionary<TSelector, T> done = new();
 
             // Remove duplicates, use duplicate with predicate
-            foreach (Transaction transaction in transactions)
+            foreach (T transaction in transactions)
             {
-                _ = done.TryGetValue(selector(transaction), out Transaction existingTransaction);
+                _ = done.TryGetValue(uniqueDuplicateIdentifier(transaction), out T existingTransaction);
 
-                if (done.ContainsKey(selector(transaction))
+                if (done.ContainsKey(uniqueDuplicateIdentifier(transaction))
                     && (delete?.Invoke(transaction, existingTransaction) ?? true))
                 {
-                    if (selectDupeOverExisting?.Invoke(existingTransaction) ?? true)
+                    if (keepOld?.Invoke(existingTransaction) ?? true)
                     {
-                        _ = transactionRepository.Delete(transaction.UID);
+                        _ = transactionRepository.Delete(IDSelectors.Resolve(transaction));
                     }
                     else
                     {
-                        _ = transactionRepository.Delete(existingTransaction.UID);
+                        _ = transactionRepository.Delete(IDSelectors.Resolve(existingTransaction));
                     }
 
                     continue;
                 }
                 else
                 {
-                    done[selector(transaction)] = transaction;
+                    done[uniqueDuplicateIdentifier(transaction)] = transaction;
                 }
             }
         }
 
-        private static IEnumerable<Transaction> RemoveDuplicates<TSelector>(IEnumerable<Transaction> transactions,
-            Func<Transaction, TSelector> selector,
-            Func<Transaction, bool> selectDupeOverExisting)
+        private static IEnumerable<T> RemoveDuplicates<T, TSelector>(IEnumerable<T> entities,
+            Func<T, TSelector> selector,
+            Func<T, T, T> keepSelector)
         {
-            Dictionary<TSelector, Transaction> done = new();
+            Dictionary<TSelector, T> done = new();
 
             // Remove duplicates, use duplicate with predicate
-            foreach (Transaction oldTransaction in transactions)
+            foreach (T entity in entities)
             {
-                if (done.ContainsKey(selector(oldTransaction)) &&
-                    (selectDupeOverExisting?.Invoke(done[selector(oldTransaction)]) ?? true))
+                TSelector selectorValue = selector(entity);
+
+                if (done.ContainsKey(selectorValue) && keepSelector != null)
                 {
-                    continue;
+                    done[selectorValue] = keepSelector.Invoke(done[selectorValue], entity);
                 }
                 else
                 {
-                    done[selector(oldTransaction)] = oldTransaction;
+                    done[selectorValue] = entity;
                 }
             }
 
             return done.Values;
         }
+
+        ///// <summary>
+        ///// 
+        ///// </summary>
+        ///// <typeparam name="T"></typeparam>
+        ///// <typeparam name="TSelector"></typeparam>
+        ///// <typeparam name="TDeleteSelector"></typeparam>
+        ///// <param name="repository"></param>
+        ///// <param name="selector"></param>
+        ///// <param name="deleteSelector">Unique selector to differentiate even between duplicates (e.g. amount in balance)</param>
+        //private static void RemoveDuplicates<T, TSelector, TDeleteSelector>(IBaseRepository<T> repository,
+        //    Func<T, TSelector> selector,
+        //    Func<T, TDeleteSelector> deleteSelector)
+        //{
+        //    List<T> entities = repository.GetAll().ToList();
+        //    Dictionary<TSelector, T> done = new();
+        //    Dictionary<TSelector, List<TDeleteSelector>> duplicates = new();
+
+        //    foreach (T entity in entities)
+        //    {
+        //        if (done.ContainsKey(selector(entity)))
+        //        {
+        //            duplicates.TryAdd(selector(entity), new());
+
+        //            duplicates[selector(entity)].Add(deleteSelector(entity));
+        //        }
+        //        else
+        //        {
+        //            done[selector(entity)] = entity;
+        //        }
+        //    }
+
+        //    repository.DeleteMany(x => toDelete.Contains)
+
+
+        //    return done.Values;
+        //}
 
         private void RestoreFromDatabase(string userHome)
         {

@@ -199,13 +199,13 @@ namespace Moneyes.UI
             AssignCategories(transactions, assignMethod, true);
         }
 
-        public void AssignCategory(Category category, AssignMethod assignMethod = AssignMethod.KeepPrevious)
+        public int AssignCategory(Category category, AssignMethod assignMethod = AssignMethod.KeepPrevious)
         {
             // Get transactions
             var transactions = _transactionRepository.All().ToList();
             var transactionsToUpdate = new List<Transaction>();
 
-            if (category.Filter == null) { return; }
+            if (category.Filter == null) { return 0; }
 
             foreach (Transaction transaction in transactions)
             {
@@ -229,7 +229,9 @@ namespace Moneyes.UI
             }
 
             // Store
-            _transactionRepository.Set(transactionsToUpdate);
+            _ = _transactionRepository.Set(transactionsToUpdate);
+
+            return transactionsToUpdate.Count;
         }
 
         public bool AddCategory(Category category)

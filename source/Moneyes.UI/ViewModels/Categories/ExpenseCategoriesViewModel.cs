@@ -1,4 +1,5 @@
-﻿using Moneyes.Core;
+﻿using LiteDB;
+using Moneyes.Core;
 using Moneyes.Core.Filters;
 using Moneyes.Data;
 using Moneyes.LiveData;
@@ -203,17 +204,25 @@ namespace Moneyes.UI.ViewModels
 
                     return canAssign(transaction);
                 }),
-                EditCommand = new AsyncCommand(async ct =>
+                EditCommand = new RelayCommand(() =>
                 {
                     EditCategoryViewModel = _factory.CreateEditCategoryViewModel(category);
                 }),
-                DeleteCommand = new AsyncCommand(async ct =>
+                DeleteCommand = new RelayCommand(() =>
                 {
-                    _categoryService.DeleteCategory(category);
-                }),
-                ReassignCommand = new AsyncCommand(async ct =>
+                    if (_categoryService.DeleteCategory(category))
+                    {
+                        _statusMessageService.ShowMessage($"Category '{category.Name}' deleted");
+                    }
+                }, () => !category.Idquals(Category.AllCategory) && !category.Idquals(Category.NoCategory)),
+                ReassignCommand = new RelayCommand(() =>
                 {
-                    _categoryService.AssignCategory(category);
+                    int reassignedCount = _categoryService.AssignCategory(category);
+
+                    if (reassignedCount > 0)
+                    {
+                        _statusMessageService.ShowMessage($"{reassignedCount} transaction(s) reassigned");
+                    }
                 })
             };
         }

@@ -19,22 +19,21 @@ namespace Moneyes.UI.ViewModels
             CategoryViewModel categoryViewModel = new()
             {
                 Category = category,
-                EditCommand = new AsyncCommand(async ct =>
+                EditCommand = new RelayCommand(() =>
                 {
                     EditCategoryViewModel editViewModel = CreateEditCategoryViewModel(category);
 
                     editAction?.Invoke(editViewModel);
                 }),
-                ReassignCommand = new AsyncCommand(async ct =>
+                ReassignCommand = new RelayCommand(() =>
                 {
                     _categoryService.AssignCategory(category);
-                })
+                }),
+                DeleteCommand = new RelayCommand(() =>
+                {
+                    _categoryService.DeleteCategory(category);
+                }, () => !category.Idquals(Category.AllCategory) && !category.Idquals(Category.NoCategory))
             };
-
-            categoryViewModel.DeleteCommand = new AsyncCommand(async ct =>
-            {
-                _categoryService.DeleteCategory(category);
-            });
 
             return categoryViewModel;
         }

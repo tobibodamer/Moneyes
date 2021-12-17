@@ -213,8 +213,60 @@
             </TextBlock.Style>
         </TextBlock>-->
 
-        <local:CategoryExpenseTreeView DataContext="{Binding Categories}" Grid.Row="1" Width="250"/>
-        
+        <Grid Grid.Row="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            
+            <local:CategoryExpenseTreeView DataContext="{Binding Categories}" Grid.Row="0" Width="250"/>
+
+            <StackPanel Orientation="Horizontal" Grid.Row="0" HorizontalAlignment="Right" Margin="2,5"
+                        VerticalAlignment="Bottom">
+                <!--<StackPanel.Effect>
+                    <DropShadowEffect BlurRadius="10" ShadowDepth="0" Opacity="0.2"/>
+                </StackPanel.Effect>-->
+                <Button Command="{Binding Categories.SelectedCategory.DeleteCommand}"
+                        Padding="0" Height="25" Width="25"
+                        ToolTip="Delete category">
+                    <Button.Content>
+                        <materialDesign:PackIcon Kind="Delete"/>
+                    </Button.Content>
+                    <Button.Style>
+                        <Style TargetType="Button" BasedOn="{StaticResource MaterialDesignCommandButtonStyle}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Categories.SelectedCategory}" Value="{x:Null}">
+                                    <Setter Property="IsEnabled" Value="False"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                </Button>
+                <Button Command="{Binding Categories.SelectedCategory.EditCommand}"
+                        Padding="0" Height="25" Width="25"
+                        ToolTip="Edit category...">
+                    <Button.Content>
+                        <materialDesign:PackIcon Kind="Edit"/>
+                    </Button.Content>
+                    <Button.Style>
+                        <Style TargetType="Button" BasedOn="{StaticResource MaterialDesignCommandButtonStyle}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Categories.SelectedCategory}" Value="{x:Null}">
+                                    <Setter Property="IsEnabled" Value="False"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                </Button>
+                <Button Command="{Binding Categories.AddCommand}"
+                        Style="{StaticResource MaterialDesignCommandButtonStyle}" Padding="0" Height="25" Width="25"
+                        ToolTip="Add new category...">
+                    <Button.Content>
+                        <materialDesign:PackIcon Kind="AddBold"/>
+                    </Button.Content>
+                </Button>
+            </StackPanel>
+        </Grid>
         <!--<local:BindableMultiSelectDataGrid x:Name="categoryListBox" Margin="5" BorderThickness="1" BorderBrush="AliceBlue"
                  ItemsSource="{Binding Categories}" AutoGenerateColumns="False" SelectedItems="{Binding SelectedCategories, Mode=OneWayToSource}"
                  Grid.Row="1" Style="{StaticResource MaterialDesignDataGrid}">            

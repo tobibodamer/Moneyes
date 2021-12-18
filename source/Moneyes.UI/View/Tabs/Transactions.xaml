@@ -297,11 +297,17 @@
                     <TextBlock Text="Categories" FontSize="13" FontWeight="Bold"
                                VerticalAlignment="Center"/>
                         
-                    <ToggleButton HorizontalAlignment="Right" VerticalAlignment="Center"
+                    <Button HorizontalAlignment="Right" VerticalAlignment="Center" Click="ConfigureCategoriesButton_Clicked"
                                   Style="{StaticResource MaterialDesignFlatDarkButton}" materialDesign:ButtonAssist.CornerRadius="3"
                                   Height="20" Width="Auto" Margin="0" Padding="5,0" VerticalContentAlignment="Center" Cursor="Hand">
                         <materialDesign:PackIcon Kind="DotsHorizontal" VerticalAlignment="Center"/>
-                    </ToggleButton>
+                            <Button.ContextMenu>
+                                <ContextMenu ContextMenuService.Placement="Bottom">
+                                    <MenuItem IsCheckable="True" IsChecked="{Binding FlatCategories}" 
+                                              Header="Flat Display"/>
+                                </ContextMenu>
+                            </Button.ContextMenu>
+                    </Button>
                     </Grid>
                 </Border>
                 

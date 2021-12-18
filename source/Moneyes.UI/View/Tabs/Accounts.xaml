@@ -32,7 +32,7 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <Button Command="{Binding ImportAccountsCommand}" Style="{StaticResource MaterialDesignRaisedAccentButton}" HorizontalAlignment="Center"
+                <Button Command="{Binding ImportAccountsCommand}" Style="{StaticResource MaterialDesignFlatButton}" HorizontalAlignment="Center"
                 Height="24" Margin="5" VerticalAlignment="Center" Width="100" Padding="0" Grid.Column="3">
                     <StackPanel Orientation="Horizontal">
                         <!--<materialDesign:PackIcon Kind="ProgressDownload"/>-->

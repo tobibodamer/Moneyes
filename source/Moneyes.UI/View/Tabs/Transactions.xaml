@@ -8,8 +8,9 @@
       xmlns:vm="clr-namespace:Moneyes.UI.ViewModels"
       xmlns:m="clr-namespace:Moneyes.Core;assembly=Moneyes.Core"
       xmlns:controls="clr-namespace:System.Windows.Controls;assembly=MultiSelectTreeView"
-      xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes" d:DataContext="{d:DesignInstance Type=vm:TransactionsTabViewModel}"
-             TextElement.Foreground="{DynamicResource MaterialDesignBody}"
+      xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes" 
+      d:DataContext="{d:DesignInstance Type=vm:TransactionsTabViewModel}"
+      TextElement.Foreground="{DynamicResource MaterialDesignBody}"
       TextElement.FontWeight="Regular"
       TextElement.FontSize="13"
       TextOptions.TextFormattingMode="Ideal"
@@ -32,16 +33,16 @@
             </Style.Triggers>
         </Style>
     </UserControl.Style>
-    <UserControl.Resources>        
+    <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="../Resources.xaml"/>
             </ResourceDictionary.MergedDictionaries>
 
-            
+
         </ResourceDictionary>
-        
-        
+
+
     </UserControl.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
@@ -102,7 +103,7 @@
                                  Content="Custom" Style="{StaticResource MaterialDesignTabRadioButton}"                                  
                                  HorizontalContentAlignment="Center" VerticalContentAlignment="Center" 
                                  FontSize="13" Height="Auto" MinHeight="0" Width="Auto" MinWidth="10" HorizontalAlignment="Center"
-                                 Margin="1,0,0,0" Padding="10,5" FocusVisualStyle="{x:Null}" Grid.Column="2"/>                    
+                                 Margin="1,0,0,0" Padding="10,5" FocusVisualStyle="{x:Null}" Grid.Column="2"/>
                 </Grid>
 
                 <ToggleButton Name="QuickFilterButton" Style="{StaticResource FlatToggleButton}" Grid.Column="3"
@@ -129,7 +130,7 @@
             </materialDesign:ColorZone.Effect>
         </materialDesign:ColorZone>
 
-        
+
         <Grid Grid.Column="1" Grid.Row="1" Margin="0,20,0,0">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
@@ -143,39 +144,39 @@
                     Visibility="{Binding ElementName=QuickFilterButton, Path=IsChecked, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <Grid Grid.Row="0" HorizontalAlignment="Stretch" VerticalAlignment="Top" Height="40" 
                   Background="#5ccc">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
 
-                <ToggleButton Style="{StaticResource FlatToggleButton}"
+                    <ToggleButton Style="{StaticResource FlatToggleButton}"
                               Margin="10,0,5,0" Width="Auto" Height="25" Padding="5,0" FontSize="13"
                               Grid.Column="0" IsChecked="{Binding TransactionFilter.FilterIncome}"
                               VerticalAlignment="Center" ToolTip="Show incoming transactions">
 
-                    <materialDesign:PackIcon Kind="ArrowUp" Height="20" Width="20"/>
-                </ToggleButton>
-                <ToggleButton Style="{StaticResource FlatToggleButton}"
+                        <materialDesign:PackIcon Kind="ArrowUp" Height="20" Width="20"/>
+                    </ToggleButton>
+                    <ToggleButton Style="{StaticResource FlatToggleButton}"
                               Margin="5,0" Width="Auto" Height="25" Padding="5,0" FontSize="13"
                               Grid.Column="1" IsChecked="{Binding TransactionFilter.FilterExpenses}"
                               VerticalAlignment="Center" ToolTip="Show outgoing transactions">
-                    <StackPanel Orientation="Horizontal">
-                        <materialDesign:PackIcon Kind="ArrowDown" Height="20" Width="20" Margin="0,0,2,0"/>
-                        <!--<TextBlock Text="Expense" VerticalAlignment="Center"/>-->
-                    </StackPanel>
-                </ToggleButton>
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="ArrowDown" Height="20" Width="20" Margin="0,0,2,0"/>
+                            <!--<TextBlock Text="Expense" VerticalAlignment="Center"/>-->
+                        </StackPanel>
+                    </ToggleButton>
 
-                <ToggleButton IsChecked="{Binding TransactionFilter.CaseSensitive}" Width="Auto" Height="25" Grid.Column="3"
+                    <ToggleButton IsChecked="{Binding TransactionFilter.CaseSensitive}" Width="Auto" Height="25" Grid.Column="3"
                               Style="{StaticResource FlatToggleButton}"
                               VerticalAlignment="Center" ToolTip="Case sensitive">
-                    <materialDesign:PackIcon Kind="FormatUppercase" Height="20" Width="20"/>
-                </ToggleButton>
+                        <materialDesign:PackIcon Kind="FormatUppercase" Height="20" Width="20"/>
+                    </ToggleButton>
 
-                <TextBox Width="300" HorizontalAlignment="Right" VerticalContentAlignment="Center" Grid.Column="4"
+                    <TextBox Width="300" HorizontalAlignment="Right" VerticalContentAlignment="Center" Grid.Column="4"
                          Text="{Binding TransactionFilter.SearchTerm, UpdateSourceTrigger=PropertyChanged}"
                          Height="25" Padding="5,4" Margin="10,2"
                          VerticalAlignment="Center"
@@ -185,11 +186,11 @@
                          materialDesign:TextFieldAssist.HasLeadingIcon="True"
                          materialDesign:TextFieldAssist.LeadingIcon="Search" Cursor="IBeam"/>
 
-                <!--<Separator VerticalAlignment="Bottom" Grid.ColumnSpan="10" Background="{StaticResource PrimaryHueMidBrush}" Opacity="0.2"/>-->
-            </Grid>
-        </Border>
+                    <!--<Separator VerticalAlignment="Bottom" Grid.ColumnSpan="10" Background="{StaticResource PrimaryHueMidBrush}" Opacity="0.2"/>-->
+                </Grid>
+            </Border>
 
-        <DockPanel Grid.Row="1" Margin="10,0" LastChildFill="true" HorizontalAlignment="Stretch" >
+            <DockPanel Grid.Row="1" Margin="10,0" LastChildFill="true" HorizontalAlignment="Stretch" >
                 <StackPanel Orientation="Vertical" Grid.Column="0" VerticalAlignment="Center">
                     <!--<TextBlock FontSize="15" Text="{Binding Date, StringFormat={}'Balance / 'dd.MM.yyyy}" Foreground="#333" />-->
                     <TextBlock FontSize="15" Foreground="#333">
@@ -286,79 +287,79 @@
                 </Grid>
             </GroupBox.Header>-->
             <Grid Grid.Row="1" Margin="0,0,0,0">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-            </Grid.RowDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
 
                 <Border Margin="0,0,0,0" Height="41" BorderBrush="LightGray" BorderThickness="0 0 0 1" Padding="9,10,9,5"
                         Background="#5ccc">
                     <Grid>
-                    <TextBlock Text="Categories" FontSize="13" FontWeight="Bold"
+                        <TextBlock Text="Categories" FontSize="13" FontWeight="Bold"
                                VerticalAlignment="Center"/>
-                        
-                    <Button HorizontalAlignment="Right" VerticalAlignment="Center" Click="ConfigureCategoriesButton_Clicked"
+
+                        <Button HorizontalAlignment="Right" VerticalAlignment="Center" Click="ConfigureCategoriesButton_Clicked"
                                   Style="{StaticResource MaterialDesignFlatDarkButton}" materialDesign:ButtonAssist.CornerRadius="3"
                                   Height="20" Width="Auto" Margin="0" Padding="5,0" VerticalContentAlignment="Center" Cursor="Hand">
-                        <materialDesign:PackIcon Kind="DotsHorizontal" VerticalAlignment="Center"/>
+                            <materialDesign:PackIcon Kind="DotsHorizontal" VerticalAlignment="Center"/>
                             <Button.ContextMenu>
                                 <ContextMenu ContextMenuService.Placement="Bottom">
                                     <MenuItem IsCheckable="True" IsChecked="{Binding FlatCategories}" 
                                               Header="Flat Display"/>
                                 </ContextMenu>
                             </Button.ContextMenu>
-                    </Button>
+                        </Button>
                     </Grid>
                 </Border>
-                
-            <local:CategoryExpenseTreeView DataContext="{Binding Categories}" Grid.Row="1" Width="250" Margin="0,5,0,0"/>
 
-            <StackPanel Orientation="Horizontal" Grid.Row="1" HorizontalAlignment="Right" Margin="5,7"
+                <local:CategoryExpenseTreeView DataContext="{Binding Categories}" Grid.Row="1" Width="250" Margin="0,5,0,0"/>
+
+                <StackPanel Orientation="Horizontal" Grid.Row="1" HorizontalAlignment="Right" Margin="5,7"
                         VerticalAlignment="Bottom">
-                <!--<StackPanel.Effect>
+                    <!--<StackPanel.Effect>
                     <DropShadowEffect BlurRadius="10" ShadowDepth="0" Opacity="0.2"/>
                 </StackPanel.Effect>-->
-                <Button Command="{Binding Categories.SelectedCategory.DeleteCommand}"
+                    <Button Command="{Binding Categories.SelectedCategory.DeleteCommand}"
                         Padding="0" Height="25" Width="25"
                         ToolTip="Delete category">
-                    <Button.Content>
-                        <materialDesign:PackIcon Kind="Delete"/>
-                    </Button.Content>
-                    <Button.Style>
-                        <Style TargetType="Button" BasedOn="{StaticResource MaterialDesignCommandButtonStyle}">
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding Categories.SelectedCategory}" Value="{x:Null}">
-                                    <Setter Property="IsEnabled" Value="False"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Button.Style>
-                </Button>
-                <Button Command="{Binding Categories.SelectedCategory.EditCommand}"
+                        <Button.Content>
+                            <materialDesign:PackIcon Kind="Delete"/>
+                        </Button.Content>
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource MaterialDesignCommandButtonStyle}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Categories.SelectedCategory}" Value="{x:Null}">
+                                        <Setter Property="IsEnabled" Value="False"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                    <Button Command="{Binding Categories.SelectedCategory.EditCommand}"
                         Padding="0" Height="25" Width="25"
                         ToolTip="Edit category...">
-                    <Button.Content>
-                        <materialDesign:PackIcon Kind="Edit"/>
-                    </Button.Content>
-                    <Button.Style>
-                        <Style TargetType="Button" BasedOn="{StaticResource MaterialDesignCommandButtonStyle}">
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding Categories.SelectedCategory}" Value="{x:Null}">
-                                    <Setter Property="IsEnabled" Value="False"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Button.Style>
-                </Button>
-                <Button Command="{Binding Categories.AddCommand}"
+                        <Button.Content>
+                            <materialDesign:PackIcon Kind="Edit"/>
+                        </Button.Content>
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource MaterialDesignCommandButtonStyle}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Categories.SelectedCategory}" Value="{x:Null}">
+                                        <Setter Property="IsEnabled" Value="False"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                    <Button Command="{Binding Categories.AddCommand}"
                         Style="{StaticResource MaterialDesignCommandButtonStyle}" Padding="0" Height="25" Width="25"
                         ToolTip="Add new category...">
-                    <Button.Content>
-                        <materialDesign:PackIcon Kind="AddBold"/>
-                    </Button.Content>
-                </Button>
-            </StackPanel>
-        </Grid>
+                        <Button.Content>
+                            <materialDesign:PackIcon Kind="AddBold"/>
+                        </Button.Content>
+                    </Button>
+                </StackPanel>
+            </Grid>
         </Border>
 
         <!--<local:BindableMultiSelectDataGrid x:Name="categoryListBox" Margin="5" BorderThickness="1" BorderBrush="AliceBlue"

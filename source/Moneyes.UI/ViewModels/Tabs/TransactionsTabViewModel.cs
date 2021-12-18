@@ -76,6 +76,8 @@ namespace Moneyes.UI.ViewModels
             }
         }
 
+        public TransactionFilterViewModel TransactionFilter { get; } = new();
+
         #endregion
         public TransactionsTabViewModel(
             TransactionRepository transactionRepository,
@@ -173,6 +175,16 @@ namespace Moneyes.UI.ViewModels
                             transaction.Categories.Contains(Categories.SelectedCategory.Category));
                 })
             };
+
+            TransactionFilter.FilterChanged += (sender, args) =>
+            {
+                if (!IsActive)
+                {
+                    return;
+                }
+
+                BeginUpdateTransactions();
+            };
         }
 
         private TransactionFilter GetTransactionFilter()
@@ -181,7 +193,8 @@ namespace Moneyes.UI.ViewModels
             {
                 StartDate = Selector.FromDate,
                 EndDate = Selector.EndDate,
-                AccountNumber = Selector.CurrentAccount?.Number
+                AccountNumber = Selector.CurrentAccount?.Number,
+                Criteria = TransactionFilter.GetFilter()
             };
         }
 

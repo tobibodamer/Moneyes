@@ -49,7 +49,7 @@
             <ColumnDefinition/>
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
-            <RowDefinition Height="105"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
@@ -105,10 +105,16 @@
                                  Margin="1,0,0,0" Padding="10,5" FocusVisualStyle="{x:Null}" Grid.Column="2"/>                    
                 </Grid>
 
-                
+                <ToggleButton Name="QuickFilterButton" Style="{StaticResource FlatToggleButton}" Grid.Column="3"
+                              Padding="5" Margin="5,0" HorizontalAlignment="Right" Cursor="Hand">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="FilterOutline" Margin="0"/>
+                        <TextBlock Text="Quick Filter" Margin="5,0"/>
+                    </StackPanel>
+                </ToggleButton>
 
                 <Button Style="{StaticResource MaterialDesignFlatButton}" Grid.Column="4"                         
-                    Height="25" Padding="0" Margin="5,0" HorizontalAlignment="Right" IsEnabled="False">
+                    Padding="5" Margin="5,0" HorizontalAlignment="Right" IsEnabled="False">
                     <StackPanel Orientation="Horizontal">
                         <materialDesign:PackIcon Kind="Import" Margin="0"/>
                         <TextBlock Text="Import transactions..." Margin="5,0"/>
@@ -123,13 +129,67 @@
             </materialDesign:ColorZone.Effect>
         </materialDesign:ColorZone>
 
-        <Grid Grid.Column="1" Grid.Row="1">
+        
+        <Grid Grid.Column="1" Grid.Row="1" Margin="0,20,0,0">
             <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
-            <DockPanel Grid.Row="0" Margin="10,0" LastChildFill="true" HorizontalAlignment="Stretch" >
+
+            <Border Grid.Row="0" HorizontalAlignment="Stretch" VerticalAlignment="Top" Margin="0,-20,0,10"
+                    BorderBrush="LightGray" BorderThickness="0 0 0 1"
+                    Visibility="{Binding ElementName=QuickFilterButton, Path=IsChecked, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <Grid Grid.Row="0" HorizontalAlignment="Stretch" VerticalAlignment="Top" Height="40" 
+                  Background="#5ccc">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <ToggleButton Style="{StaticResource FlatToggleButton}"
+                              Margin="10,0,5,0" Width="Auto" Height="25" Padding="5,0" FontSize="13"
+                              Grid.Column="0" IsChecked="{Binding TransactionFilter.FilterIncome}"
+                              VerticalAlignment="Center" ToolTip="Show incoming transactions">
+
+                    <materialDesign:PackIcon Kind="ArrowUp" Height="20" Width="20"/>
+                </ToggleButton>
+                <ToggleButton Style="{StaticResource FlatToggleButton}"
+                              Margin="5,0" Width="Auto" Height="25" Padding="5,0" FontSize="13"
+                              Grid.Column="1" IsChecked="{Binding TransactionFilter.FilterExpenses}"
+                              VerticalAlignment="Center" ToolTip="Show outgoing transactions">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="ArrowDown" Height="20" Width="20" Margin="0,0,2,0"/>
+                        <!--<TextBlock Text="Expense" VerticalAlignment="Center"/>-->
+                    </StackPanel>
+                </ToggleButton>
+
+                <ToggleButton IsChecked="{Binding TransactionFilter.CaseSensitive}" Width="Auto" Height="25" Grid.Column="3"
+                              Style="{StaticResource FlatToggleButton}"
+                              VerticalAlignment="Center" ToolTip="Case sensitive">
+                    <materialDesign:PackIcon Kind="FormatUppercase" Height="20" Width="20"/>
+                </ToggleButton>
+
+                <TextBox Width="300" HorizontalAlignment="Right" VerticalContentAlignment="Center" Grid.Column="4"
+                         Text="{Binding TransactionFilter.SearchTerm, UpdateSourceTrigger=PropertyChanged}"
+                         Height="25" Padding="5,4" Margin="10,2"
+                         VerticalAlignment="Center"
+                         Style="{StaticResource MaterialDesignOutlinedTextBox}"                         
+                         materialDesign:HintAssist.Hint="Filter transactions" 
+                         materialDesign:HintAssist.IsFloating="False"
+                         materialDesign:TextFieldAssist.HasLeadingIcon="True"
+                         materialDesign:TextFieldAssist.LeadingIcon="Search" Cursor="IBeam"/>
+
+                <!--<Separator VerticalAlignment="Bottom" Grid.ColumnSpan="10" Background="{StaticResource PrimaryHueMidBrush}" Opacity="0.2"/>-->
+            </Grid>
+        </Border>
+
+        <DockPanel Grid.Row="1" Margin="10,0" LastChildFill="true" HorizontalAlignment="Stretch" >
                 <StackPanel Orientation="Vertical" Grid.Column="0" VerticalAlignment="Center">
                     <!--<TextBlock FontSize="15" Text="{Binding Date, StringFormat={}'Balance / 'dd.MM.yyyy}" Foreground="#333" />-->
                     <TextBlock FontSize="15" Foreground="#333">
@@ -179,7 +239,7 @@
                     <TextBlock Text="{Binding Date, StringFormat=dd.MM.yyyy}" FontSize="11" HorizontalAlignment="Right" Foreground="Gray" />
                 </StackPanel>
             </DockPanel>
-            <Separator Grid.Row="1" BorderBrush="Black" BorderThickness="0.5">
+            <Separator Grid.Row="2" BorderBrush="LightGray" BorderThickness="0.5">
                 <Separator.Style>
                     <Style TargetType="Separator">
                         <Setter Property="Visibility" Value="Visible"/>
@@ -195,7 +255,7 @@
                 </Separator.Style>
             </Separator>
 
-            <local:TransactionsControl DataContext="{Binding TransactionsViewModel}" Grid.Row="2"/>
+            <local:TransactionsControl DataContext="{Binding TransactionsViewModel}" Grid.Row="3"/>
         </Grid>
 
         <!--<TextBlock Text="No categories" Foreground="Gray" VerticalAlignment="Center" HorizontalAlignment="Center"
@@ -213,15 +273,41 @@
             </TextBlock.Style>
         </TextBlock>-->
 
-        <Grid Grid.Row="1">
+        <Border Grid.Row="1" BorderBrush="LightGray" BorderThickness="0 0 1 0">
+            <!--<GroupBox.Header>
+                <Grid>
+                    <TextBlock Text="Categories" Foreground="{StaticResource MaterialDesignDarkForeground}"
+                               VerticalAlignment="Center" FontWeight="Bold"/>
+                    <ToggleButton HorizontalAlignment="Right" 
+                                  Style="{StaticResource MaterialDesignFlatLightButton}" 
+                                  Height="20" Margin="0" Padding="5,0" VerticalContentAlignment="Center">
+                        <materialDesign:PackIcon Kind="Menu" Height="16" Width="16"/>
+                    </ToggleButton>
+                </Grid>
+            </GroupBox.Header>-->
+            <Grid Grid.Row="1" Margin="0,0,0,0">
             <Grid.RowDefinitions>
-                <RowDefinition Height="*"/>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
-            
-            <local:CategoryExpenseTreeView DataContext="{Binding Categories}" Grid.Row="0" Width="250"/>
 
-            <StackPanel Orientation="Horizontal" Grid.Row="0" HorizontalAlignment="Right" Margin="2,5"
+                <Border Margin="0,0,0,0" Height="41" BorderBrush="LightGray" BorderThickness="0 0 0 1" Padding="9,10,9,5"
+                        Background="#5ccc">
+                    <Grid>
+                    <TextBlock Text="Categories" FontSize="13" FontWeight="Bold"
+                               VerticalAlignment="Center"/>
+                        
+                    <ToggleButton HorizontalAlignment="Right" VerticalAlignment="Center"
+                                  Style="{StaticResource MaterialDesignFlatDarkButton}" materialDesign:ButtonAssist.CornerRadius="3"
+                                  Height="20" Width="Auto" Margin="0" Padding="5,0" VerticalContentAlignment="Center" Cursor="Hand">
+                        <materialDesign:PackIcon Kind="DotsHorizontal" VerticalAlignment="Center"/>
+                    </ToggleButton>
+                    </Grid>
+                </Border>
+                
+            <local:CategoryExpenseTreeView DataContext="{Binding Categories}" Grid.Row="1" Width="250" Margin="0,5,0,0"/>
+
+            <StackPanel Orientation="Horizontal" Grid.Row="1" HorizontalAlignment="Right" Margin="5,7"
                         VerticalAlignment="Bottom">
                 <!--<StackPanel.Effect>
                     <DropShadowEffect BlurRadius="10" ShadowDepth="0" Opacity="0.2"/>
@@ -267,6 +353,8 @@
                 </Button>
             </StackPanel>
         </Grid>
+        </Border>
+
         <!--<local:BindableMultiSelectDataGrid x:Name="categoryListBox" Margin="5" BorderThickness="1" BorderBrush="AliceBlue"
                  ItemsSource="{Binding Categories}" AutoGenerateColumns="False" SelectedItems="{Binding SelectedCategories, Mode=OneWayToSource}"
                  Grid.Row="1" Style="{StaticResource MaterialDesignDataGrid}">            

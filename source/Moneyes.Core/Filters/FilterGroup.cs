@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 
 namespace Moneyes.Core.Filters
 {
@@ -41,7 +42,7 @@ namespace Moneyes.Core.Filters
         /// <param name="conditionOperator">The condition operator to use.</param>
         /// <param name="values">The values used by the condition.</param>
         /// <returns></returns>
-        public ConditionFilter<T, TValue> AddCondition<TValue>(Func<T, TValue> selector,
+        public ConditionFilter<T, TValue> AddCondition<TValue>(Expression<Func<T, TValue>> selector,
             ConditionOperator conditionOperator, params TValue[] values)
         {
             var conditionFilter = new ConditionFilter<T, TValue>()
@@ -50,7 +51,7 @@ namespace Moneyes.Core.Filters
                 Operator = conditionOperator,
                 Values = values.ToList()
             };
-
+            
             Conditions.Add(conditionFilter);
 
             return conditionFilter;
@@ -86,6 +87,11 @@ namespace Moneyes.Core.Filters
         /// <returns><c>true</c> if the input satisfies the filter, <c>false</c> otherwise.</returns>
         public bool Evaluate(T input)
         {
+            if (!Conditions.Any() && !ChildFilters.Any())
+            {
+                return true;
+            }
+
             bool conditionEvaluation = Conditions.EvaluateFilters(input, Operator);
             bool childFilterEvaluation = ChildFilters.EvaluateFilters(input, Operator);
 

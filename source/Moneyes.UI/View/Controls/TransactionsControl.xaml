@@ -102,10 +102,50 @@
 
         <!--<DataGrid ItemsSource="{Binding Transactions}" AutoGenerateColumns="False" Margin="5" Grid.Row="1" Grid.Column="1"
                   IsReadOnly="True" SelectionUnit="FullRow">
+            --><!--<DataGrid.RowStyle>
+                <Style TargetType="DataGridRow" BasedOn="{StaticResource MaterialDesignDataGridRow}">
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding Type}" Value="{x:Static m:TransactionType.Expense}">
+                            <Setter Property="Foreground" Value="#FFD80000"/>
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding Type}" Value="{x:Static m:TransactionType.Income}">
+                            <Setter Property="Foreground" Value="#FF00A800"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </DataGrid.RowStyle>--><!--
             <DataGrid.Columns>
-                <DataGridTextColumn Header="Name" Binding="{Binding Name}"/>
+                <DataGridTextColumn Header="Name">
+                    <DataGridTextColumn.Binding>
+                        <MultiBinding Converter="{StaticResource AlternativeValueConverter}">
+                            <Binding Path="AltName"/>
+                            <Binding Path="Name"/>
+                        </MultiBinding>
+                    </DataGridTextColumn.Binding>
+                </DataGridTextColumn>
+                <DataGridTextColumn Header="Purpose" Binding="{Binding Purpose}"/>
                 <DataGridTextColumn Header="Date" Binding="{Binding ValueDate, StringFormat=dd.MM.yyyy}" SortDirection="Descending"/>
-                <DataGridTextColumn Header="Amount" Binding="{Binding Amount}"/>
+                <DataGridTextColumn Header="Amount">
+                    <DataGridTextColumn.Binding>
+                        <MultiBinding StringFormat="{}{0} {1}">
+                            <Binding Path="Amount" />
+                            <Binding Path="Currency" />
+                        </MultiBinding>
+                    </DataGridTextColumn.Binding>
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock" BasedOn="{StaticResource MaterialDesignDataGridTextColumnStyle}">
+                            <Setter Property="HorizontalAlignment" Value="Right"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Type}" Value="{x:Static m:TransactionType.Expense}">
+                                    <Setter Property="Foreground" Value="#FFD80000"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Type}" Value="{x:Static m:TransactionType.Income}">
+                                    <Setter Property="Foreground" Value="#FF00A800"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
             </DataGrid.Columns>
         </DataGrid>-->
     </Grid>

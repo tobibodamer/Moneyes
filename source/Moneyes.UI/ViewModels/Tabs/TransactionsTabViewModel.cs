@@ -76,6 +76,18 @@ namespace Moneyes.UI.ViewModels
             }
         }
 
+        private bool _flatCategories;
+        public bool FlatCategories
+        {
+            get => _flatCategories;
+            set
+            {
+                _flatCategories = value;
+                OnPropertyChanged();
+                UpdateCategories().FireAndForgetSafeAsync();
+            }
+        }
+
         public TransactionFilterViewModel TransactionFilter { get; } = new();
 
         #endregion
@@ -220,7 +232,7 @@ namespace Moneyes.UI.ViewModels
 
         private async Task UpdateCategories()
         {
-            await Categories.UpdateCategories(GetTransactionFilter());
+            await Categories.UpdateCategories(GetTransactionFilter(), flat: FlatCategories);
         }
 
         public void Refresh()

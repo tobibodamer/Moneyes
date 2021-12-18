@@ -25,5 +25,16 @@ namespace Moneyes.UI.View
         {
             InitializeComponent();
         }
+
+        private void ConfigureCategoriesButton_Clicked(object sender, RoutedEventArgs e)
+        {
+            FrameworkElement element = sender as FrameworkElement;
+            ContextMenu contextMenu = element.ContextMenu;
+            contextMenu.PlacementTarget = element;
+            contextMenu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+            contextMenu.HorizontalOffset = -150;
+            contextMenu.VerticalOffset = 5;
+            contextMenu.IsOpen = true;
+        }
     }
 }

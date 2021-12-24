@@ -209,9 +209,9 @@ namespace Moneyes.UI.ViewModels
         {
             try
             {
-                var categoryExpenses = await GetCategoriesAsync(filter, categoryFlags, flat);
+                var categories = await GetCategoriesAsync(filter, categoryFlags, flat);
 
-                UpdateCategoriesInternal(categoryExpenses, GetComparer(order));
+                UpdateCategoriesInternal(categories, GetComparer(order));
             }
             catch
             {

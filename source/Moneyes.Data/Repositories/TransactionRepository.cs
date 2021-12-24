@@ -131,12 +131,26 @@ namespace Moneyes.Data
 
         public DateTime EarliestTransactionDate(TransactionFilter filter)
         {
-            return All(filter).Min(t => t.BookingDate);
+            var allTransactions = All(filter);
+
+            if (allTransactions.Any())
+            {
+                return allTransactions.Min(t => t.BookingDate);
+            }
+
+            return DateTime.MinValue;
         }
 
         public DateTime LatestTransactionDate(TransactionFilter filter)
         {
-            return All(filter).Max(t => t.BookingDate);
+            var allTransactions = All(filter);
+
+            if (allTransactions.Any())
+            {
+                return allTransactions.Max(t => t.BookingDate);
+            }
+
+            return DateTime.MinValue;
         }
     }
 }

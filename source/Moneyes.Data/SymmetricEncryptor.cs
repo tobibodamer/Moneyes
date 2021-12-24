@@ -19,24 +19,31 @@ namespace Moneyes.Data
                     return null;
                 }
 
-                var key = GetKey(password);
-
-                using (var aes = Aes.Create())
+                try
                 {
-                    var iv = GenerateRandomBytes(AesBlockByteSize);
+                    var key = GetKey(password);
 
-                    using (var encryptor = aes.CreateEncryptor(key, iv))
+                    using (var aes = Aes.Create())
                     {
-                        var plainText = Encoding.UTF8.GetBytes(toEncrypt);
-                        var cipherText = encryptor
-                            .TransformFinalBlock(plainText, 0, plainText.Length);
+                        var iv = GenerateRandomBytes(AesBlockByteSize);
 
-                        var result = new byte[iv.Length + cipherText.Length];
-                        iv.CopyTo(result, 0);
-                        cipherText.CopyTo(result, iv.Length);
+                        using (var encryptor = aes.CreateEncryptor(key, iv))
+                        {
+                            var plainText = Encoding.UTF8.GetBytes(toEncrypt);
+                            var cipherText = encryptor
+                                .TransformFinalBlock(plainText, 0, plainText.Length);
 
-                        return Convert.ToBase64String(result);
+                            var result = new byte[iv.Length + cipherText.Length];
+                            iv.CopyTo(result, 0);
+                            cipherText.CopyTo(result, iv.Length);
+
+                            return Convert.ToBase64String(result);
+                        }
                     }
+                }
+                catch
+                {
+                    return null;
                 }
             }
 
@@ -47,20 +54,27 @@ namespace Moneyes.Data
                     return null;
                 }
 
-                byte[] encryptedData = Convert.FromBase64String(encryptedString);
-                var key = GetKey(password);
-
-                using (var aes = Aes.Create())
+                try
                 {
-                    var iv = encryptedData.Take(AesBlockByteSize).ToArray();
-                    var cipherText = encryptedData.Skip(AesBlockByteSize).ToArray();
+                    byte[] encryptedData = Convert.FromBase64String(encryptedString);
+                    var key = GetKey(password);
 
-                    using (var encryptor = aes.CreateDecryptor(key, iv))
+                    using (var aes = Aes.Create())
                     {
-                        var decryptedBytes = encryptor
-                            .TransformFinalBlock(cipherText, 0, cipherText.Length);
-                        return Encoding.UTF8.GetString(decryptedBytes);
+                        var iv = encryptedData.Take(AesBlockByteSize).ToArray();
+                        var cipherText = encryptedData.Skip(AesBlockByteSize).ToArray();
+
+                        using (var encryptor = aes.CreateDecryptor(key, iv))
+                        {
+                            var decryptedBytes = encryptor
+                                .TransformFinalBlock(cipherText, 0, cipherText.Length);
+                            return Encoding.UTF8.GetString(decryptedBytes);
+                        }
                     }
+                }
+                catch
+                {
+                    return null;
                 }
             }
 

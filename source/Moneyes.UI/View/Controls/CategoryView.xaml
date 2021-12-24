@@ -55,14 +55,14 @@
             <Setter Property="Foreground" Value="{DynamicResource PrimaryHueMidForegroundBrush}" />
         </Style>
     </UserControl.Resources>
-    <Grid Width="500" Margin="10">
+    <Grid MinWidth="500" Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="0"/>
+        <Grid.ColumnDefinitions>            
             <ColumnDefinition/>
         </Grid.ColumnDefinitions>
 
@@ -107,12 +107,23 @@
                          Style="{StaticResource MaterialDesignFloatingHintTextBox}"
                 Grid.Column="1" Grid.Row="3" Width="80" materialDesign:TextFieldAssist.SuffixText="EUR"
                 HorizontalAlignment="Stretch" VerticalAlignment="Top" materialDesign:HintAssist.Hint="Budget" 
-                FontSize="15"/>
+                FontSize="15" Cursor="IBeam"/>
             </StackPanel>
         </StackPanel>
 
-        <GroupBox Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Margin="5" Header="Filter" Style="{StaticResource MaterialDesignCardGroupBox}"
+        <!--<CheckBox Content="Use Filter" Grid.Row="2" IsChecked="True" Margin="5,10,10,10"/>-->
+
+        <GroupBox Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Margin="5" Header="Filter" Style="{StaticResource MaterialDesignCardGroupBox}"
                   Visibility="{Binding IsRealCategory, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <!--<GroupBox.HeaderTemplate>
+                <DataTemplate>
+                    <Grid>
+                        <TextBlock Text="Filter" VerticalAlignment="Center"/>
+                        
+                        <CheckBox HorizontalAlignment="Right" Style="{StaticResource MaterialDesignLightCheckBox}"/>
+                    </Grid>
+                </DataTemplate>
+            </GroupBox.HeaderTemplate>-->
             <Grid Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2" Margin="0">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
@@ -133,17 +144,17 @@
                     <ComboBox Name="TransactionTypeComboBox" Style="{StaticResource MaterialDesignFloatingHintComboBox}"
                           SelectedItem="{Binding TransactionType}" Grid.Column="0"
                           materialDesign:HintAssist.Hint="Transaction type" materialDesign:ComboBoxAssist.ShowSelectedItem="True"
-                          Grid.Row="0" Width="130" HorizontalAlignment="Left" Margin="10,0,0,20"/>
+                          Grid.Row="0" Margin="10,0,10,20"/>
 
                     <TextBox Style="{StaticResource MaterialDesignFloatingHintTextBox}"
                           Text="{Binding MinAmount, Converter={StaticResource EmptyStringNullConverter}}" Grid.Column="1"
                           materialDesign:HintAssist.Hint="Min amount" materialDesign:ComboBoxAssist.ShowSelectedItem="True"
-                          Grid.Row="0" Width="130" HorizontalAlignment="Left" Margin="10,0,0,20"/>
+                          Grid.Row="0" Margin="10,0,10,20"/>
 
                     <TextBox Style="{StaticResource MaterialDesignFloatingHintTextBox}"                             
                           Text="{Binding MaxAmount, Converter={StaticResource EmptyStringNullConverter}}" Grid.Column="2"
                           materialDesign:HintAssist.Hint="Max amount" materialDesign:ComboBoxAssist.ShowSelectedItem="True"
-                          Grid.Row="0" Width="130" HorizontalAlignment="Left" Margin="10,0,0,20" Cursor="IBeam"/>
+                          Grid.Row="0" Margin="10,0,10,20" Cursor="IBeam"/>
                 </Grid>
 
                 <TreeView Grid.Row="4" ItemsSource="{Binding Filter, Converter={StaticResource SingleToCollectionConverter}}" Grid.Column="0"
@@ -172,11 +183,12 @@
                             <Border BorderBrush="Gray" BorderThickness="0" CornerRadius="3" Padding="0" HorizontalAlignment="Stretch">
                                 <Grid Margin="5">
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition
+                                        <ColumnDefinition Width="0.3*"
                                                           SharedSizeGroup="{Binding RelativeSource={RelativeSource Mode=FindAncestor,AncestorType={x:Type Grid}}, Converter={StaticResource TreeLevelConverter}, ConverterParameter=A}"/>
-                                        <ColumnDefinition 
+                                        <ColumnDefinition Width="0.3*"
                                                           SharedSizeGroup="{Binding RelativeSource={RelativeSource Mode=FindAncestor,AncestorType={x:Type Grid}}, Converter={StaticResource TreeLevelConverter}, ConverterParameter=B}"/>
-                                        <ColumnDefinition Width="*" MaxWidth="150"/>
+                                        <ColumnDefinition Width="0.6*"
+                                                          SharedSizeGroup="{Binding RelativeSource={RelativeSource Mode=FindAncestor,AncestorType={x:Type Grid}}, Converter={StaticResource TreeLevelConverter}, ConverterParameter=C}"/>
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
 
@@ -192,10 +204,12 @@
                                 VerticalContentAlignment="Center"                                          
                                 Margin="0,0,15,0"/>
 
-                                    <TextBox Height="24" VerticalContentAlignment="Center" Grid.Column="2"
+                                    <TextBox Height="24" Grid.Column="2" Margin="0,0,15,0" Visibility="Hidden" x:Name="TemplateTextBox"/>
+
+                                    <TextBox Height="24" VerticalContentAlignment="Center" Grid.Column="2" MaxWidth="{Binding ElementName=TemplateTextBox, Path=ActualWidth}"
                                      Style="{StaticResource MaterialDesignTextBox}"
                                      Text="{Binding Content, Converter={StaticResource CollectionStringConverter}}"
-                                     Margin="0,0,15,0"/>                                    
+                                     Margin="0,0,15,0"/>
 
                                     <StackPanel Grid.Column="3" Orientation="Horizontal">
                                         <Button Command="{Binding AddCommand}" Style="{StaticResource AddButtonStyle}"/>

@@ -1,31 +1,25 @@
 ﻿using Moneyes.Core;
+using Moneyes.Core.Filters;
 using Moneyes.Data;
+using Moneyes.UI.Services;
 
 namespace Moneyes.UI.ViewModels
 {
-    class CategoriesViewModel : CategoriesViewModelBase<CategoryViewModel>
+    internal class CategoriesViewModel : CategoriesViewModelBase<CategoryViewModel>
     {
-        CategoryViewModelFactory _factory;
-        protected ICategoryService CategoryService { get; }
-        protected TransactionRepository TransactionService { get; }
         public CategoriesViewModel(CategoryViewModelFactory factory,
-            ICategoryService categoryService, TransactionRepository transactionRepository) 
-            : base(factory)
+            ICategoryService categoryService, IStatusMessageService statusMessageService)
+            : base(factory, categoryService, statusMessageService)
         {
-            _factory = factory;
-            CategoryService = categoryService;
-            TransactionService = transactionRepository;
         }
-        public virtual void UpdateCategories()
+        protected override CategoryViewModel CreateEntry(Category category, TransactionFilter filter, CategoryTypes categoryTypes, bool flat)
         {
-            foreach (Category category in CategoryService.GetCategories())
-            {
-                Categories.Add(
-                    _factory.CreateCategoryViewModel(category, editViewModel =>
-                    {
-                        EditCategoryViewModel = editViewModel;
-                    }));
-            }
+            return Factory.CreateCategoryViewModel(category,
+                getCurrentCategory: () => SelectedCategory?.Category,
+                editViewModel =>
+                {
+                    EditCategoryViewModel = editViewModel;
+                });
         }
     }
 }

@@ -56,6 +56,9 @@ namespace Moneyes.Core
         /// </summary>
         public bool IsExlusive { get; set; }
 
+
+        public bool IsReal => this.Id != NoCategory.Id && this.Id != AllCategory.Id;
+
         public override bool Equals(object obj)
         {
             return obj is Category category &&
@@ -68,6 +71,26 @@ namespace Moneyes.Core
         public override int GetHashCode()
         {
             return HashCode.Combine(Name, Filter, Target);
+        }
+
+        public static bool operator ==(Category left, Category right)
+        {
+            if (ReferenceEquals(left, right))
+            {
+                return true;
+            }
+
+            if (left is null ^ right is null)
+            {
+                return false;
+            }
+
+            return left.Id == right.Id;
+        }
+
+        public static bool operator !=(Category left, Category right)
+        {
+            return !(left == right);
         }
     }
 }

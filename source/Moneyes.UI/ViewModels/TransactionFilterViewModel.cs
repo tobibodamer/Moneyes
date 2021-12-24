@@ -71,6 +71,18 @@ namespace Moneyes.UI.ViewModels
             }
         }
 
+        private bool _isEnabled;
+        public bool IsEnabled
+        {
+            get => _isEnabled;
+            set
+            {
+                _isEnabled = value;
+                OnPropertyChanged();
+                OnFilterChanged();
+            }
+        }
+
         public event EventHandler FilterChanged;
 
         public FilterGroup<Transaction> GetFilter()

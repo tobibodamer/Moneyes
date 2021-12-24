@@ -18,12 +18,12 @@ namespace Moneyes.Data
 
         public IEnumerable<Transaction> GetByCategory(Category category)
         {
-            if (category == null || category == Category.AllCategory)
+            if (category == null || category.Idquals(Category.AllCategory))
             {
                 return AllOrderedByDate();
             }
 
-            if (category == Category.NoCategory)
+            if (category.Idquals(Category.NoCategory))
             {
                 //return Collection.Query()
                 //    .Where(t => t.Categories == null || t.Categories.Count == 0)

@@ -1,4 +1,5 @@
 ﻿using Moneyes.Core;
+using Moneyes.UI.Services;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -32,16 +33,13 @@ namespace Moneyes.UI.ViewModels
 
         public decimal AverageExpense { get; }
 
-        public ObservableCollection<CategoryExpenseViewModel> SubCatgeories { get; set; } = new();
-
-        public ICommand MoveToCategory { get; set; }
-        public ICommand CopyToCategory { get; set; }
-
         public bool IsOver => Target > 0 && TotalExpense > Target;
 
         public decimal? Difference => Target == null ? null : Math.Abs(Target.Value - TotalExpense);
 
-        public CategoryExpenseViewModel(Category category, Expenses expenses)
+        public CategoryExpenseViewModel(Category category, Expenses expenses, 
+            ICategoryService categoryService, IStatusMessageService statusMessageService) 
+            : base(categoryService, statusMessageService)
         {
             Category = category;
             TotalExpense = expenses.TotalAmount;

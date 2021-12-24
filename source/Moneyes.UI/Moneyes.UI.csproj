@@ -56,6 +56,12 @@
     <Compile Update="View\Setup Wizard\ImportAccountsStep.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Update="View\Tabs\Categories.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="View\Tabs\AddressBook.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Update="View\Tabs\SettingsPage.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -79,6 +85,14 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Update="View\Setup Wizard\ImportAccountsStep.xaml">
+      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="View\Tabs\Categories.xaml">
+      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="View\Tabs\AddressBook.xaml">
       <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
       <SubType>Designer</SubType>
     </Page>

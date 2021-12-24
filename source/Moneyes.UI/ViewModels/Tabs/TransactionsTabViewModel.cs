@@ -206,7 +206,7 @@ namespace Moneyes.UI.ViewModels
                 StartDate = Selector.FromDate,
                 EndDate = Selector.EndDate,
                 AccountNumber = Selector.CurrentAccount?.Number,
-                Criteria = TransactionFilter.GetFilter()
+                Criteria = TransactionFilter.IsEnabled ? TransactionFilter.GetFilter() : null
             };
         }
 

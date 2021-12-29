@@ -53,7 +53,7 @@ namespace Moneyes.BankService
             // Save service if created
             _cache.Set(id, service, new MemoryCacheEntryOptions()
             {
-                SlidingExpiration = TimeSpan.FromSeconds(30)
+                SlidingExpiration = TimeSpan.FromMinutes(30)
             });
 
             return service;

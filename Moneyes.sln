@@ -15,6 +15,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Moneyes.Data", "source\Moneyes.Data\Moneyes.Data.csproj", "{5178E1B6-560F-497A-9DB5-80F1145C8F22}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Moneyes.BankService", "source\Moneyes.BankService\Moneyes.BankService.csproj", "{CE42441F-BD39-44CF-B582-E86D2FDDD1E0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -41,6 +43,10 @@ Global
 		{5178E1B6-560F-497A-9DB5-80F1145C8F22}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5178E1B6-560F-497A-9DB5-80F1145C8F22}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5178E1B6-560F-497A-9DB5-80F1145C8F22}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CE42441F-BD39-44CF-B582-E86D2FDDD1E0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CE42441F-BD39-44CF-B582-E86D2FDDD1E0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CE42441F-BD39-44CF-B582-E86D2FDDD1E0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CE42441F-BD39-44CF-B582-E86D2FDDD1E0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

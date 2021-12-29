@@ -38,25 +38,24 @@ namespace Moneyes.LiveData
 
             ValidateBankingDetails(bankingDetailsCopy);
 
-            string serverUrl;
-
             if (bankingDetailsCopy.Server is null)
             {
                 FinTsInstitute institute = BankInstitutes.GetInstituteInternal(bankingDetailsCopy.BankCode);
 
                 ValidateInstitute(institute);
 
-                serverUrl = institute.FinTs_Url;
+                bankingDetailsCopy = new()
+                {
+                    BankCode = bankingDetails.BankCode,
+                    UserId = bankingDetails.UserId,
+                    Pin = bankingDetails.Pin,
+                    Server = new(institute.FinTs_Url)
+                };
             }
-            else
-            {
-                serverUrl = bankingDetailsCopy.Server.AbsoluteUri;
-            }
-            
 
             ConnectionDetails details = new()
             {
-                Url = serverUrl,
+                Url = bankingDetailsCopy.Server.AbsoluteUri,
                 Blz = bankingDetailsCopy.BankCode,
                 UserId = bankingDetailsCopy.UserId,
                 Pin = bankingDetailsCopy.Pin,

@@ -244,7 +244,7 @@ namespace Moneyes.UI
 
             if (_onlineBankingService == null ||
                 !_onlineBankingService.BankingDetails.BankCode.Equals(bankingDetails.BankCode) ||
-                _onlineBankingService.BankingDetails.Server != null &&
+                _onlineBankingService.BankingDetails.Server != null && bankingDetails.Server != null &&
                 !_onlineBankingService.BankingDetails.Server.Equals(bankingDetails.Server))
             {
                 _logger?.LogInformation("Bank with code {bankCode} not initialized, creating now",

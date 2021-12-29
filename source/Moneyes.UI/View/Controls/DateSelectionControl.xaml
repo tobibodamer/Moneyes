@@ -1,0 +1,72 @@
+﻿<UserControl x:Class="Moneyes.UI.View.DateSelectionControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:local="clr-namespace:Moneyes.UI.View" 
+             xmlns:viewmodels="clr-namespace:Moneyes.UI.ViewModels"
+             mc:Ignorable="d" d:Background="White"
+             Name="MonthSelectionControl">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="../Resources.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
+
+        </ResourceDictionary>
+    </UserControl.Resources>
+    <Grid>
+        <StackPanel Orientation="Horizontal">
+            <StackPanel.Style>
+                <Style TargetType="StackPanel">
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding ElementName=MonthSelectionControl, Path=SelectionMode}" Value="Custom">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </StackPanel.Style>
+            <Button Style="{StaticResource MaterialDesignToolButton}" 
+                Command="{Binding ElementName=MonthSelectionControl, Path=DecrementCommand}"
+                VerticalAlignment="Center" VerticalContentAlignment="Center" Name="DecrementMonthButton">
+                <materialDesign:PackIcon Kind="ChevronLeft" Width="20" Height="20"/>
+            </Button>
+
+            <TextBlock VerticalAlignment="Center" Margin="15,0" Width="110" TextAlignment="Center">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock" BasedOn="{StaticResource MaterialDesignButtonTextBlock}">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding ElementName=MonthSelectionControl, Path=SelectionMode}" Value="Month">
+                                <Setter Property="Text" 
+                                    Value="{Binding ElementName=MonthSelectionControl, Path=StartDate, StringFormat={}{0:MMMM yyyy}}"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding ElementName=MonthSelectionControl, Path=SelectionMode}" Value="Year">
+                                <Setter Property="Text" 
+                                    Value="{Binding ElementName=MonthSelectionControl, Path=StartDate, StringFormat={}{0:yyyy}}"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+
+
+            <Button Style="{StaticResource MaterialDesignToolButton}"
+                Command="{Binding ElementName=MonthSelectionControl, Path=IncrementCommand}"
+                VerticalAlignment="Center" VerticalContentAlignment="Center" Name="IncrementMonthButton" Cursor="Hand">
+                <materialDesign:PackIcon Kind="ChevronRight" Width="20" Height="20"/>
+            </Button>
+        </StackPanel>
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center"
+                            Visibility="{Binding ElementName=MonthSelectionControl, Path=SelectionMode, 
+                    Converter={StaticResource EqualityToVisibilityConverter}, ConverterParameter={x:Static local:DateSelectionMode.Custom}}">
+            <DatePicker SelectedDate="{Binding ElementName=MonthSelectionControl, Path=StartDate}" IsTodayHighlighted="True"/>
+
+            <TextBlock Text="-" Margin="10,0" VerticalAlignment="Center"/>
+
+            <DatePicker SelectedDate="{Binding ElementName=MonthSelectionControl, Path=EndDate}" IsTodayHighlighted="True"/>
+        </StackPanel>
+    </Grid>
+</UserControl>

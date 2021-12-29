@@ -1,7 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System;
 
-namespace MoneyesParser.JSON
+namespace Moneyes.Core.JSON
 {
     class ConcreteTypeConverter<TConcrete> : JsonConverter
     {

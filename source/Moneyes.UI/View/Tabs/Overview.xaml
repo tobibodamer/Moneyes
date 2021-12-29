@@ -1,0 +1,428 @@
+﻿<UserControl x:Class="Moneyes.UI.View.Overview"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:i="clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity"
+             xmlns:local="clr-namespace:Moneyes.UI.View"                      
+             xmlns:vm="clr-namespace:Moneyes.UI.ViewModels"
+             xmlns:m="clr-namespace:Moneyes.Core;assembly=Moneyes.Core"
+             xmlns:controls="clr-namespace:System.Windows.Controls;assembly=MultiSelectTreeView"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:lvc="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
+             Name="overviewPage"
+             d:DataContext="{d:DesignInstance Type=vm:OverviewViewModel}"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800" d:Background="{StaticResource MaterialDesignBackground}">
+    <i:Interaction.Triggers>
+        <i:EventTrigger EventName="Loaded">
+            <i:InvokeCommandAction Command="{Binding LoadedCommand}" />
+        </i:EventTrigger>
+    </i:Interaction.Triggers>
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="../Resources.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
+            <Style TargetType="ProgressBar" x:Key="ExpenseProgressBar">
+                <Setter Property="Background" Value="{DynamicResource PrimaryHueLightBrush}"/>
+                <Setter Property="BorderThickness" Value="0"/>
+                <Setter Property="Margin" Value="0,5,0,0"/>
+                <Setter Property="Height" Value="5"/>
+                <Setter Property="Foreground" Value="{DynamicResource PrimaryHueMidBrush}"/>
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding IsOver}" Value="True">
+                        <Setter Property="Foreground" Value="#d41204"/>
+                    </DataTrigger>
+                    <DataTrigger Binding="{Binding Target}" Value="0">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+
+            <Style TargetType="TextBlock" x:Key="CategoryCardName">
+                <Setter Property="Margin" Value="0"/>
+                <Setter Property="FontSize" Value="13"/>
+                <Setter Property="FontWeight" Value="Bold"/>
+                <Setter Property="VerticalAlignment" Value="Top"/>
+                <Setter Property="HorizontalAlignment" Value="Left"/>
+                <Setter Property="TextWrapping" Value="WrapWithOverflow"/>
+                <Setter Property="Foreground" Value="{DynamicResource MaterialDesignLightForeground}"/>
+            </Style>
+
+            <Style TargetType="TextBlock" x:Key="ExpenseTextBlock">
+                <Setter Property="FontSize" Value="15"/>
+                <Setter Property="FontWeight" Value="Bold"/>
+                <Setter Property="TextWrapping" Value="WrapWithOverflow"/>
+                <Setter Property="Foreground" Value="{DynamicResource PrimaryHueMidBrush}"/>
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding IsOver}" Value="True">
+                        <Setter Property="Foreground" Value="#d41204"/>
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+
+            <Style TargetType="{x:Type materialDesign:Card}" x:Key="CategoryCard">
+                <Setter Property="Background" Value="{DynamicResource MaterialDesignBackground}"/>
+                <Setter Property="Margin" Value="10"/>
+                <Setter Property="UniformCornerRadius" Value="10"/>
+                <Style.Triggers>
+                    <Trigger Property="IsMouseOver" Value="True">
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+
+            <Style TargetType="TextBlock" x:Key="BalanceTextBlock">
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding CurrentBalance.IsNegative}" Value="True">
+                        <Setter Property="Foreground" Value="Red"/>
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+        </ResourceDictionary>
+    </UserControl.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <materialDesign:ColorZone Mode="Standard" Padding="12" Grid.ColumnSpan="2" Height="80">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <local:AccountComboBox DataContext="{Binding Selector}"/>
+
+                <local:DateSelectionControl x:Name="DateSelectionControl" DataContext="{Binding Selector}" 
+                                            StartDate="{Binding FromDate}" EndDate="{Binding EndDate}"
+                                            SelectionMode="{Binding DateSelection}"
+                                            HorizontalAlignment="Center" Grid.ColumnSpan="10" 
+                                            VerticalAlignment="Bottom" Margin="0,0,0,-3"/>
+
+                <Grid Grid.ColumnSpan="10" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,-5,0,0" Width="200">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1*"/>
+                    <ColumnDefinition Width="1*"/>
+                    <ColumnDefinition Width="1*"/>
+                </Grid.ColumnDefinitions>
+
+                <RadioButton x:Name="YearRadioButton" 
+                                 IsChecked="{Binding ElementName=DateSelectionControl, Path=SelectionMode, 
+                                            Converter={StaticResource ComparisonConverter}, 
+                                            ConverterParameter={x:Static local:DateSelectionMode.Year}}"
+                                 Content="Year" Style="{StaticResource MaterialDesignTabRadioButton}"                                  
+                                 HorizontalContentAlignment="Center" VerticalContentAlignment="Center" 
+                                 FontSize="13" Height="Auto" MinHeight="0" Width="Auto" MinWidth="10" HorizontalAlignment="Center"
+                                 Margin="0,0,1,0" Padding="10,5" FocusVisualStyle="{x:Null}" Grid.Column="0"/>
+                <RadioButton x:Name="MonthRadioButton"
+                                 IsChecked="{Binding ElementName=DateSelectionControl, Path=SelectionMode, 
+                                            Converter={StaticResource ComparisonConverter}, 
+                                            ConverterParameter={x:Static local:DateSelectionMode.Month}}"
+                                 Content="Month" Style="{StaticResource MaterialDesignTabRadioButton}"
+                                 HorizontalContentAlignment="Center" VerticalContentAlignment="Center" 
+                                 FontSize="13" Height="Auto" MinHeight="0" Width="Auto" MinWidth="10" HorizontalAlignment="Center"
+                                 Margin="1,0,1,0" Padding="10,5" FocusVisualStyle="{x:Null}" Grid.Column="1"/>
+                <RadioButton x:Name="CustomRadioButton"
+                                 IsChecked="{Binding ElementName=DateSelectionControl, Path=SelectionMode, 
+                                            Converter={StaticResource ComparisonConverter}, 
+                                            ConverterParameter={x:Static local:DateSelectionMode.Custom}}"
+                                 Content="Custom" Style="{StaticResource MaterialDesignTabRadioButton}"                                  
+                                 HorizontalContentAlignment="Center" VerticalContentAlignment="Center" 
+                                 FontSize="13" Height="Auto" MinHeight="0" Width="Auto" MinWidth="10" HorizontalAlignment="Center"
+                                 Margin="1,0,0,0" Padding="10,5" FocusVisualStyle="{x:Null}" Grid.Column="2"/>
+            </Grid>
+
+            <!--<StackPanel Orientation="Horizontal" Grid.Column="1">
+                    <DatePicker SelectedDate="{Binding FromDate}" IsTodayHighlighted="False" Grid.Column="1">
+                        <i:Interaction.Triggers>
+                            <i:EventTrigger EventName="SelectedDateChanged">
+                                <i:InvokeCommandAction Command="{Binding DateChangedCommand}"/>
+                            </i:EventTrigger>
+                        </i:Interaction.Triggers>
+                    </DatePicker>
+
+                    <TextBlock Text="-" Margin="10,0" VerticalAlignment="Center"/>
+
+                    <DatePicker SelectedDate="{Binding EndDate}" IsTodayHighlighted="True" Grid.Column="2">
+                        <i:Interaction.Triggers>
+                            <i:EventTrigger EventName="SelectedDateChanged">
+                                <i:InvokeCommandAction Command="{Binding DateChangedCommand}"/>
+                            </i:EventTrigger>
+                        </i:Interaction.Triggers>
+                    </DatePicker>
+                </StackPanel>-->
+
+                <Button Command="{Binding Selector.FetchOnlineCommand}" Style="{StaticResource FetchOnlineButton}" Grid.Column="3" Cursor="Hand"/>
+            </Grid>
+            <materialDesign:ColorZone.Effect>
+                <DropShadowEffect BlurRadius="14" ShadowDepth="4.5" Direction="270" Color="{StaticResource MaterialDesignShadow}"
+                                  Opacity=".22" RenderingBias="Performance" />
+            </materialDesign:ColorZone.Effect>
+        </materialDesign:ColorZone>
+
+        <DockPanel HorizontalAlignment="Center" Margin="20,20,20,20" VerticalAlignment="Top" Grid.Row="1">
+            <!--<TextBlock Text="Spending" FontSize="22" FontWeight="Normal" DockPanel.Dock="Top" Margin="0"/>-->
+
+            <materialDesign:Card Width="220" Height="110" UniformCornerRadius="10" HorizontalAlignment="Left" Margin="10,15"
+                                 Background="{DynamicResource MaterialDesignShadowBrush}" Foreground="{DynamicResource PrimaryHueDarkForegroundBrush}">
+                <Grid Margin="18">
+                    <materialDesign:PackIcon Kind="AccountBalance" Height="20" Width="20" HorizontalAlignment="Right"/>
+                    <TextBlock Text="Balance" FontSize="20" FontWeight="SemiBold"/>
+                    <TextBlock Text="{Binding CurrentBalance.Amount, StringFormat={}{0} €}" Style="{StaticResource BalanceTextBlock}"
+                               VerticalAlignment="Bottom" FontSize="18" Margin="0,7"/>
+                </Grid>
+            </materialDesign:Card>
+
+            <materialDesign:Card Width="220" Height="110" UniformCornerRadius="10" HorizontalAlignment="Left" Margin="10,15"
+                                 Background="{DynamicResource SecondaryHueMidBrush}">
+                <Grid Margin="18">
+                    <materialDesign:PackIcon Kind="ArrowDown" Height="20" Width="20" HorizontalAlignment="Right"/>
+                    <TextBlock Text="Expense" FontSize="20" FontWeight="SemiBold"/>
+                    <TextBlock VerticalAlignment="Bottom" FontSize="18" Margin="0,7">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock" BasedOn="{StaticResource MaterialDesignTextBlock}">
+                                <Setter Property="Text" Value="{Binding TotalExpense, StringFormat={}{0:F2} €}"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding ShowAverage}" Value="True">
+                                        <Setter Property="Text" Value="{Binding AverageExpense, Mode=OneWay, StringFormat={}{0:F2} €}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </Grid>
+            </materialDesign:Card>
+
+            <materialDesign:Card Width="220" Height="110" UniformCornerRadius="10" HorizontalAlignment="Left" Margin="10,15"
+                                 Background="{DynamicResource PrimaryHueDarkBrush}" Foreground="{DynamicResource PrimaryHueDarkForegroundBrush}">
+                <Grid Margin="18">
+                    <materialDesign:PackIcon Kind="ArrowUp" Height="20" Width="20" HorizontalAlignment="Right"/>
+                    <TextBlock Text="Income" FontSize="20" FontWeight="SemiBold"/>
+                    <TextBlock VerticalAlignment="Bottom" FontSize="18" Margin="0,7">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock" BasedOn="{StaticResource MaterialDesignTextBlock}">
+                                <Setter Property="Text" Value="{Binding TotalIncome, StringFormat={}{0:F2} €}"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding ShowAverage}" Value="True">
+                                        <Setter Property="Text" Value="{Binding AverageIncome, Mode=OneWay, StringFormat={}{0:F2} €}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </Grid>
+            </materialDesign:Card>
+        </DockPanel>
+
+
+        <DockPanel HorizontalAlignment="Stretch" Margin="20,0,20,20" VerticalAlignment="Top" Grid.Row="2">
+            <Grid DockPanel.Dock="Top" Margin="0,0,0,5">
+                <TextBlock Text="Expense Categories" FontSize="22" FontWeight="Normal" DockPanel.Dock="Top" Margin="10,0"/>
+                <TextBlock Text="Show more" HorizontalAlignment="Right" Margin="0,5,10,0" Foreground="Gray" FontSize="13"/>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                    <TextBlock Text="Average" VerticalAlignment="Center" Margin="5,-1,7,0"/>
+                    <CheckBox IsChecked="{Binding ShowAverage}" VerticalAlignment="Center" 
+                              Style="{StaticResource MaterialDesignSwitchDarkToggleButton}"/>
+                </StackPanel>
+            </Grid>
+
+            <ItemsControl x:Name="CategoryItems" ItemsSource="{Binding ExpenseCategories.Categories}"
+                          VerticalAlignment="Top" HorizontalAlignment="Left" Height="110">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <local:DraggAnimatedPanel SwapCommand="{Binding SwapCommand, ElementName=overviewPage}"
+                                                  ItemsWidth="200" ItemsHeight="110" ItemSeparation="0" Height="110"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="{x:Type vm:CategoryExpenseViewModel}">
+                        <materialDesign:Card Width="175" Height="90" Style="{StaticResource CategoryCard}" Cursor="Hand">
+                            <Grid Name="MyGrid" Margin="15">
+                                <Grid.RenderTransform>
+                                    <TransformGroup>
+                                        <ScaleTransform/>
+                                    </TransformGroup>
+                                </Grid.RenderTransform>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Text="{Binding Name}" Style="{StaticResource CategoryCardName}" />
+
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,0" VerticalAlignment="Bottom" HorizontalAlignment="Left">
+                                    <TextBlock>
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock" BasedOn="{StaticResource ExpenseTextBlock}">
+                                                <Setter Property="Text" Value="{Binding TotalExpense, StringFormat={}{0:N0} €}"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding DataContext.ShowAverage,
+                                                        RelativeSource={RelativeSource FindAncestor, AncestorType=ItemsControl}}" Value="True">
+                                                        <Setter Property="Text" Value="{Binding AverageExpense, Mode=OneWay, StringFormat={}{0:N0} €}"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+
+                                    <TextBlock Text="{Binding Target, StringFormat={} / {0:N0} €}">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock" BasedOn="{StaticResource ExpenseTextBlock}">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Target}" Value="0">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </StackPanel>
+
+                                <ProgressBar Grid.Row="1" Maximum="{Binding Target}">
+                                    <ProgressBar.Style>
+                                        <Style TargetType="ProgressBar" BasedOn="{StaticResource ExpenseProgressBar}">
+                                            <Setter Property="Value" Value="{Binding TotalExpense, Mode=OneWay}"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding DataContext.ShowAverage, 
+                                                    RelativeSource={RelativeSource FindAncestor, AncestorType=ItemsControl}}" Value="True">
+                                                    <Setter Property="Value" Value="{Binding AverageExpense, Mode=OneWay}"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </ProgressBar.Style>
+                                </ProgressBar>
+                            </Grid>
+                        </materialDesign:Card>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </DockPanel>
+
+        <lvc:PieChart Grid.Row="3" Height="250" Width="350" DataTooltip="{x:Null}" Margin="20"
+                      Series="{Binding ExpenseCategories.Categories, Converter={StaticResource CategoryPieSeriesConverter}}" 
+                      InnerRadius="0">
+            <lvc:PieChart.ChartLegend>
+                <local:CategoryExpenseLegend/>
+            </lvc:PieChart.ChartLegend>
+        </lvc:PieChart>
+
+
+        <!--<WrapPanel>
+            <ItemsControl ItemsSource="{Binding Categories}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel Orientation="Vertical"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="{x:Type vm:CategoryViewModel}">
+                        <materialDesign:Card Width="175" Height="80" Margin="10" UniformCornerRadius="10">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+                                
+                            <TextBlock Text="{Binding Name}" Margin="12,15"  FontSize="13" VerticalAlignment="Top" HorizontalAlignment="left"
+                                       TextWrapping="WrapWithOverflow" Foreground="{DynamicResource MaterialDesignLightForeground}" Grid.Column="1"/>
+
+                                <StackPanel Orientation="Horizontal" Margin="12,10" VerticalAlignment="Bottom" HorizontalAlignment="Left" Grid.Column="1">
+                                <TextBlock  FontSize="15" FontWeight="Bold" 
+                                       TextWrapping="WrapWithOverflow" Foreground="{DynamicResource MaterialDesignLightForeground}" Grid.Column="1">
+                                    <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                                <Setter Property="Text">
+                                                    <Setter.Value>
+                                                            <MultiBinding StringFormat="{}{0} €">
+                                                            <Binding Path="Difference"/>
+                                                            <Binding Path="Target"/>
+                                                        </MultiBinding>
+                                                    </Setter.Value>
+                                                </Setter>
+                                                        <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Target}" Value="0">
+                                                        <Setter Property="Text" Value="{Binding TotalExpense, StringFormat={}{0} €}"/>                                                        
+                                                </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                    </TextBlock.Style>                                    
+                                </TextBlock>
+                                    <TextBlock  FontSize="15" FontWeight="Normal" Margin="5,0,0,0" 
+                                       TextWrapping="WrapWithOverflow" Foreground="Gray" Grid.Column="1">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Text" Value="left"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsOver}" Value="True">
+                                                        <Setter Property="Text" Value="over"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Target}" Value="0">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </StackPanel>
+                                <local:CircularProgressBar CurrentValue="{Binding TotalExpense}" Minimum="0" Maximum="{Binding Target}" 
+                                    InnerThickness="4" OuterThickness="4" OverlayMode="Centered"                                                       
+                                                       BackgroundStroke="{DynamicResource PrimaryHueLightBrush}"
+                                                   HorizontalAlignment="Left" Margin="12,0,0,0" Height="45" Width="45" >
+                                    <local:CircularProgressBar.Style>
+                                        <Style TargetType="{x:Type local:CircularProgressBar}">
+                                            <Setter Property="ForegroundStroke" Value="{DynamicResource PrimaryHueMidBrush}"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsOver}" Value="True">
+                                                    <Setter Property="ForegroundStroke" Value="{DynamicResource MaterialDesignValidationErrorBrush}"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Target}" Value="0">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                        </local:CircularProgressBar.Style>
+                                            <local:CircularProgressBar.ProgressContent>
+                                <StackPanel>
+                                            <TextBlock TextAlignment="Center" FontSize="10" Foreground="{DynamicResource MaterialDesignLightForeground}">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                -->
+        <!--<Setter Property="Text">
+                                                    <Setter.Value>
+                                                            <MultiBinding StringFormat="{}{0} /&#x0a; {1} €">
+                                                            <Binding Path="TotalExpense"/>
+                                                            <Binding Path="Target"/>
+                                                        </MultiBinding>
+                                                    </Setter.Value>
+                                                </Setter>-->
+        <!--
+
+                                                        <Setter Property="Text" Value="{Binding TotalExpense, StringFormat={}{0} €}"/>
+                                                        <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Target}" Value="0">
+                                                        <Setter Property="Text" Value="{Binding TotalExpense, StringFormat={}{0} €}"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>                                    
+                                </StackPanel>
+                            </local:CircularProgressBar.ProgressContent>
+                        </local:CircularProgressBar>
+                            </Grid>
+                        </materialDesign:Card>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </WrapPanel>-->
+
+    </Grid>
+</UserControl>

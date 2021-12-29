@@ -8,17 +8,114 @@
 						{
 							"Selector": "Name",
 							"Operator": "Contains",
-							"Values": [ "EDEKA", "REWE", "DENN S", "K+U", "BIOMARKT", "BAECKEREI",
-										"Backwaren", "Kaufland", "Aktiv Markt", "DM", "NETTO", "LIDL", "NORMA",
-										"ALDI", "Frischemarkt", "MARKET", "MUEHLE", "ALNATURA", "UNVERPACKT", 
-										"MUELLER", "E-CENTER", "ECENTER", "PLAPLA", "Schuettgut"],
-							"CaseSensitive": false,
+							"Values": [
+								"EDEKA",
+								"REWE",
+								"DENN S",
+								"K+U",
+								"BIOMARKT",
+								"BAECKEREI",
+								"Backwaren",
+								"Kaufland",
+								"Aktiv Markt",
+								"DM",
+								"NETTO",
+								"LIDL",
+								"NORMA",
+								"ALDI",
+								"Frischemarkt",
+								"MARKET",
+								"MUEHLE",
+								"ALNATURA",
+								"UNVERPACKT",
+								"MUELLER",
+								"E-CENTER",
+								"ECENTER",
+								"PLAPLA",
+								"Schuettgut",
+								"DIRK ROSSMANN GMBH",
+								"BROT"
+							],
+							"CaseSensitive": false
 						},
 						{
-							"Selector": "IntendedUse",
+							"Selector": "Purpose",
+							"Operator": "Contains",
+							"Values": [ "ICONICDRINK", "BIOGEWINNER" ],
+							"CaseSensitive": false
+						}
+					]
+				}
+			},
+			"Target": 250
+		},
+		{
+			"name": "Supermarket classic",
+			"Filter": {
+				"Criteria": {
+					"Operator": "Or",
+					"Conditions": [
+						{
+							"Selector": "Name",
+							"Operator": "Contains",
+							"Values": [
+								"EDEKA",
+								"REWE",
+								"Kaufland",
+								"Aktiv Markt",
+								"NETTO",
+								"LIDL",
+								"NORMA",
+								"ALDI",
+								"Frischemarkt",
+								"MARKET",
+								"E-CENTER",
+								"ECENTER",
+								"K+U",
+								"BAECKEREI",
+								"Backwaren",
+								"BROT"
+							],
+							"CaseSensitive": false
+						}
+					]
+				}
+			}
+		},
+		{
+			"name": "Bio etc.",
+			"Filter": {
+				"Criteria": {
+					"Operator": "Or",
+					"Conditions": [
+						{
+							"Selector": "Name",
+							"Operator": "Contains",
+							"Values": [ "DENN S", "BIOMARKT", "Frischemarkt", "MUEHLE", "ALNATURA", "UNVERPACKT", 
+										"PLAPLA", "Schuettgut"],
+							"CaseSensitive": false
+						},
+						{
+							"Selector": "Purpose",
 							"Operator": "Contains",
 							"Values": [ "ICONICDRINK", "BIOGEWINNER"],
-							"CaseSensitive": false,
+							"CaseSensitive": false
+						}
+					]					
+				}
+			}
+		},
+		{
+			"name": "Drogerie",
+			"Filter": {
+				"Criteria": {
+					"Operator": "Or",
+					"Conditions": [
+						{
+							"Selector": "Name",
+							"Operator": "Contains",
+							"Values": [ "DM", "MUELLER", "DIRK ROSSMANN GMBH", "ROSSMANN"],
+							"CaseSensitive": false
 						}
 					]					
 				}
@@ -34,49 +131,30 @@
 							"Selector": "Name",
 							"Operator": "Contains",
 							"Values": [ "PACO unlimited" ],
-							"CaseSensitive": false,
+							"CaseSensitive": false
 						}
 					],
 					"ChildFilters": [
 						{
 							"Operator": "And",
-							"Conditions": [ 
+							"Conditions": [
 								{
 									"Selector": "Amount",
-									"Operator": "GreaterOrEqual",
+									"Operator": "SmallerOrEqual",
 									"Values": [ 100 ]
 								},
 								{
 									"Selector": "Name",
 									"Operator": "Contains",
 									"Values": [ "GWG", "Studierendenwerk" ],
-									"CaseSensitive": false,
+									"CaseSensitive": false
 								}
 							]
 						}
 					]
 				}
-			}
-		},
-		{
-			"name": "Online shopping",
-			"Filter": {
-				"Criteria": {
-					"Operator": "Or",
-					"Conditions": [
-						{
-							"Selector": "Name",
-							"Operator": "Contains",
-							"Values": ["AMAZON", "EBAY", "Paypal"]
-						},
-						{
-							"Selector": "IntendedUse",
-							"Operator": "Contains",
-							"Values": ["AMAZON", "EBAY", "Paypal"]
-						}
-					]
-				}
-			}
+			},
+			"Target": 530
 		},
 		{
 			"name": "Food",
@@ -87,31 +165,56 @@
 						{
 							"Selector": "Name",
 							"Operator": "Contains",
-							"Values": ["subway", "another milk", "vegi ", "dean david", "Burreatos",
-										"Hans im Glueck", "Doenastie", "The Healthy Secret", "POP S BAD CANNSTATT"]
+							"Values": [
+								"subway",
+								"another milk",
+								"vegi ",
+								"dean david",
+								"Burreatos",
+								"Hans im Glueck",
+								"Doenastie",
+								"The Healthy Secret",
+								"POP S BAD CANNSTATT",
+								"MINMIN",
+								"CAFE",
+								"RESTAURANT",
+								"ESSZIMMER",
+								"FOOD",
+								"Coffee",
+								"Gastro",
+								"STARBUCKS"
+							]
 						},
 						{
-							"Selector": "IntendedUse",
+							"Selector": "Purpose",
 							"Operator": "Contains",
-							"Values": ["Mensa", "TooGoodToGo"]
+							"Values": [ "Mensa", "TooGoodToGo", "MARCOLADE" ]
 						}
 					]
 				}
-			}
+			},
+			"Target": 50
 		},
 		{
 			"name": "Supplements",
 			"Filter": {
 				"Criteria": {
+					"Operator": "Or",
 					"Conditions": [
 						{
-							"Selector": "IntendedUse",
+							"Selector": "Name",
 							"Operator": "Contains",
-							"Values": ["VIVO LIFE", "SUNDAY"]
+							"Values": [ "Sunday Natural" ]
+						},
+						{
+							"Selector": "Purpose",
+							"Operator": "Contains",
+							"Values": [ "VIVO LIFE", "SUNDAY", "ROCKASPORTS" ]
 						}
 					]
 				}
-			}
+			},
+			"Target": 30
 		},
 		{
 			"name": "Sports",
@@ -119,7 +222,7 @@
 				"Criteria": {
 					"Conditions": [
 						{
-							"Selector": "IntendedUse",
+							"Selector": "Purpose",
 							"Operator": "Contains",
 							"Values": ["Fitness Express"]
 						}
@@ -133,7 +236,7 @@
 				"Criteria": {
 					"Conditions": [
 						{
-							"Selector": "IntendedUse",
+							"Selector": "Purpose",
 							"Operator": "Contains",
 							"Values": ["SPOTIFY"]
 						}
@@ -164,12 +267,12 @@
 						{
 							"Selector": "Name",
 							"Operator": "Contains",
-							"Values": ["DB AUTOMAT", "JET", "AVIA", "OMV", "SHELL", "MINERA KRAFTSTOFFE", "TUEV"]
+							"Values": [ "DB AUTOMAT", "JET", "AVIA", "OMV", "SHELL", "MINERA KRAFTSTOFFE", "TUEV", "VGF FRANKFURT", "TRANSDEV VERTRIEB GMBH" ]
 						},
 						{
-							"Selector": "IntendedUse",
+							"Selector": "Purpose",
 							"Operator": "Contains",
-							"Values": ["KFZ"]
+							"Values": [ "KFZ", "RMVVDL", "SSB", "DBVERTRIEBG" ]
 						}
 					]
 				}

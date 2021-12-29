@@ -2,7 +2,8 @@
 using System.Collections;
 using System.Collections.Generic;
 
-namespace MoneyesParser.Filters
+namespace Moneyes.Core
+    .Filters
 {
     /// <summary>
     /// Provides an evaluable condition filter for objects of type <typeparamref name="T"/>.
@@ -13,27 +14,27 @@ namespace MoneyesParser.Filters
         /// <summary>
         /// The name of the property that is targeted by the condition.
         /// </summary>
-        string Selector { get; }
+        string Selector { get; set; }
 
         /// <summary>
         /// The operator used for this condition.
         /// </summary>
-        ConditionOperator Operator { get; }
+        ConditionOperator Operator { get; set; }
 
         /// <summary>
         /// The values used for the condition.
         /// </summary>
-        IEnumerable Values { get; }
+        IEnumerable Values { get; set; }
 
         /// <summary>
         /// Gets whether the condition is case sensitive for string values.
         /// </summary>
-        bool CaseSensitive { get; }
+        bool CaseSensitive { get; set; }
 
         /// <summary>
         /// Gets whether the condition filter should satisfy all values or any value.
         /// </summary>
-        bool CompareAll { get; }
+        bool CompareAll { get; set; }
     }
 
 }

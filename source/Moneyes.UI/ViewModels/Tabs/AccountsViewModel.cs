@@ -14,7 +14,7 @@ namespace Moneyes.UI.ViewModels
 {
     public class AccountsViewModel : TabViewModelBase
     {
-        private readonly LiveDataService _liveDataService;
+        private readonly ILiveDataService _liveDataService;
         private readonly IBankingService _bankingService;
         private readonly IStatusMessageService _statusMessageService;
         private readonly IDialogService<ImportAccountsViewModel> _importAccountsDialogService;
@@ -43,7 +43,7 @@ namespace Moneyes.UI.ViewModels
         public bool HasBankConnection => _bankingService.HasBankingDetails;
 
         public AccountsViewModel(
-            LiveDataService liveDataService,
+            ILiveDataService liveDataService,
             IBankingService bankingService,
             IStatusMessageService statusMessageService,
             IDialogService<ImportAccountsViewModel> importAccountsDialogService)

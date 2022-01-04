@@ -65,7 +65,7 @@ namespace Moneyes.UI.ViewModels
 
         public event EventHandler<RequestCloseDialogEventArgs> RequestClose;
 
-        public SetupWizardViewModel(LiveDataService liveDataService,
+        public SetupWizardViewModel(ILiveDataService liveDataService,
             IBankingService bankingService, IStatusMessageService statusMessageService)
         {
             Steps = new();

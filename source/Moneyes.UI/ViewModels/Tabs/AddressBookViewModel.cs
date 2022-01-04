@@ -15,7 +15,7 @@ namespace Moneyes.UI.ViewModels
 {
     public class AddressBookViewModel : TabViewModelBase
     {
-        private readonly LiveDataService _liveDataService;
+        private readonly ILiveDataService _liveDataService;
         private readonly IBankingService _bankingService;
         private readonly IStatusMessageService _statusMessageService;
 
@@ -58,7 +58,7 @@ namespace Moneyes.UI.ViewModels
         private Dictionary<string, List<Transaction>> _accountTransactionsMap;
 
         public AddressBookViewModel(
-            LiveDataService liveDataService,
+            ILiveDataService liveDataService,
             IBankingService bankingService,
             IStatusMessageService statusMessageService,
             TransactionRepository transactionRepository)

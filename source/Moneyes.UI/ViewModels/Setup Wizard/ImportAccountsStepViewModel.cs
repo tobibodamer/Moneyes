@@ -10,7 +10,7 @@ namespace Moneyes.UI.ViewModels
 {
     internal class ImportAccountsStepViewModel : ImportAccountsViewModel, IWizardStepViewModel
     {
-        private readonly LiveDataService _liveDataService;
+        private readonly ILiveDataService _liveDataService;
         private readonly IBankingService _bankingService;
 
         public ICommand ImportCommand => TransitionController?.NextStepCommand;
@@ -18,7 +18,7 @@ namespace Moneyes.UI.ViewModels
         public ITransitionController TransitionController { get; set; }
 
         public ImportAccountsStepViewModel(
-            LiveDataService liveDataService, IBankingService bankingService, 
+            ILiveDataService liveDataService, IBankingService bankingService, 
             IStatusMessageService statusMessageService)
             : base(Enumerable.Empty<AccountDetails>())
         {

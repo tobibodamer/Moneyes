@@ -1,0 +1,36 @@
+{BookingDate}{Amount}{IBAN}{BIC}{PartnerIBAN ?? ""}{Index}
+
+CREATE TABLE [IF NOT EXISTS] transactions(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	index INT NOT NULL,
+	name TEXT,
+	amount DECIMAL NOT NULL,
+	altName TEXT,
+	iban TEXT,
+	partnerIban TEXT,
+	bic TEXT,
+	bookingDate DATETIME NOT NULL,
+	valueData DATETIME,
+	purpose TEXT,
+	bookingType TEXT,	
+	UNIQUE(index, amount, bookingDate, iban, partnerIban, bic) ON CONFLICT REPLACE
+);
+
+CREATE TABLE [IF NOT EXISTS] transaction_category_relations(
+	category_id INTEGER NOT NULL,
+	transaction_id INTEGER NOT NULL,
+	PRIMARY KEY(category_id, transaction_id),
+	FOREIGN KEY(category_id) REFERENCES categories(id),
+	FOREIGN KEY(transaction_id) REFERENCES transactions(id)
+);
+
+CREATE TABLE [IF NOT EXISTS] categories(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,	
+	name TEXT NOT NULL,
+	filter TEXT,
+	parent_id INTEGER,
+	target REAL,
+	isExclusive BOOLEAN,	
+	FOREIGN KEY(parent_id) REFERENCES categories(id),
+	UNIQUE(name) ON CONFLICT REPLACE
+);

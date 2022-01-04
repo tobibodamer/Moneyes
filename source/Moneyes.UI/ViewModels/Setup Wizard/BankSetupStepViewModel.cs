@@ -6,7 +6,7 @@ namespace Moneyes.UI.ViewModels
 {
     class BankSetupStepViewModel : BankSetupViewModel, IWizardStepViewModel
     {
-        public BankSetupStepViewModel(LiveDataService liveDataService, IBankingService bankingService)
+        public BankSetupStepViewModel(ILiveDataService liveDataService, IBankingService bankingService)
             : base(liveDataService, bankingService)
         {
             PropertyChanged += (sender, args) =>

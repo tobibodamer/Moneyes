@@ -13,7 +13,7 @@ namespace Moneyes.UI.ViewModels
     class SelectorViewModel : ViewModelBase
     {
         private IBankingService _bankingService;
-        private LiveDataService _liveDataService;
+        private ILiveDataService _liveDataService;
         private SelectorStore _selectorStore;
 
         private ObservableCollection<AccountDetails> _accounts = new();
@@ -75,7 +75,7 @@ namespace Moneyes.UI.ViewModels
         public AsyncCommand FetchOnlineCommand { get; }
 
         public SelectorViewModel(
-            IBankingService bankingService, LiveDataService liveDataService, SelectorStore selectorStore,
+            IBankingService bankingService, ILiveDataService liveDataService, SelectorStore selectorStore,
             IStatusMessageService statusMessageService)
         {
             _bankingService = bankingService;

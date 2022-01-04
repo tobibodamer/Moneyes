@@ -32,6 +32,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Moneyes.BankService\Moneyes.BankService.csproj" />
     <ProjectReference Include="..\Moneyes.Core\Moneyes.Core.csproj" />
     <ProjectReference Include="..\Moneyes.Data\Moneyes.Data.csproj" />
   </ItemGroup>

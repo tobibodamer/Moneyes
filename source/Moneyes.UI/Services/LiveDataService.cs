@@ -11,20 +11,20 @@ using System.Threading.Tasks;
 
 namespace Moneyes.UI
 {
-    public class LiveDataService
+    public class LiveDataService : ILiveDataService
     {
         private readonly IBankingService _bankingService;
 
         private readonly IOnlineBankingServiceFactory _bankingServiceFactory;
         private IOnlineBankingService _onlineBankingService;
-        
+
         private readonly IPasswordPrompt _passwordProvider;
         private readonly IStatusMessageService _statusMessageService;
 
         private readonly ILogger<LiveDataService> _logger;
 
         public event Action<OnlineBankingDetails> BankingInitialized;
-        
+
         public LiveDataService(
             IBankingService bankingService,
             IOnlineBankingServiceFactory bankingServiceFactory,

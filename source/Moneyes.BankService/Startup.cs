@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
@@ -12,6 +13,7 @@ using Microsoft.OpenApi.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Moneyes.BankService
 {
@@ -38,6 +40,33 @@ namespace Moneyes.BankService
                 .AddCookie(x => x.LoginPath = "/login");
             
             services.AddSingleton<OnlineBankingSessionStore>();
+
+            services.AddCors(options =>
+            {
+                options.AddPolicy(name: "MyAllowSpecificOrigins",
+                                  builder =>
+                                  {
+                                      builder
+                                        .AllowAnyHeader()
+                                        .AllowAnyMethod()
+                                        .AllowAnyOrigin();
+                                  });
+            });
+
+            services.ConfigureApplicationCookie(options =>
+            {
+                options.Events.OnRedirectToAccessDenied =
+                    options.Events.OnRedirectToLogin = context =>
+                    {
+                        if (context.Request.Method != "GET")
+                        {
+                            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                            return Task.FromResult<object>(null);
+                        }
+                        context.Response.Redirect(context.RedirectUri);
+                        return Task.FromResult<object>(null);
+                    };
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -51,6 +80,8 @@ namespace Moneyes.BankService
             }
 
             app.UseHttpsRedirection();
+
+            app.UseCors("MyAllowSpecificOrigins");
 
             app.UseRouting();
 

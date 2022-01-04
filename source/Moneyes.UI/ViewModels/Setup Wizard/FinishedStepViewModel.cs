@@ -10,7 +10,7 @@ namespace Moneyes.UI.ViewModels
 {
     internal class FinishedStepViewModel : ViewModelBase, IWizardStepViewModel
     {
-        private readonly LiveDataService _liveDataService;
+        private readonly ILiveDataService _liveDataService;
         private readonly IBankingService _bankingService;
         public ICommand FinishCommand => TransitionController.NextStepCommand;
         public ITransitionController TransitionController { get; set; }
@@ -27,7 +27,7 @@ namespace Moneyes.UI.ViewModels
         }
 
         public FinishedStepViewModel(
-            LiveDataService liveDataService,
+            ILiveDataService liveDataService,
             IBankingService bankingService,
             IStatusMessageService statusMessageService)
         {

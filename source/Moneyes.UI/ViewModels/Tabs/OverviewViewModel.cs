@@ -13,7 +13,7 @@ namespace Moneyes.UI.ViewModels
 {
     partial class OverviewViewModel : TabViewModelBase
     {
-        private LiveDataService _liveDataService;
+        private ILiveDataService _liveDataService;
         private IExpenseIncomeService _expenseIncomeService;
         private readonly TransactionRepository _transactionRepository;
         private readonly IBankingService _bankingService;
@@ -100,7 +100,7 @@ namespace Moneyes.UI.ViewModels
         }
         public ExpenseCategoriesViewModel ExpenseCategories { get; }
         public OverviewViewModel(
-            LiveDataService liveDataService,
+            ILiveDataService liveDataService,
             IExpenseIncomeService expenseIncomeService,
             TransactionRepository transactionRepository,
             IBankingService bankingService,

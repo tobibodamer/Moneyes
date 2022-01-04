@@ -110,7 +110,7 @@ namespace Moneyes.UI
             services.AddTransient<IPasswordPrompt, OnlineBankingPasswordPrompt>();
             services.AddSingleton<IOnlineBankingServiceFactory, OnlineBankingServiceFactory>();
 
-            services.AddScoped<LiveDataService>();
+            services.AddScoped<ILiveDataService, LiveDataServiceREST>();
             services.AddScoped<IExpenseIncomeService, ExpenseIncomServieUsingDb>();
             services.AddScoped<IBankingService, BankingService>();
             //services.AddScoped<ITransactionService, TransactionService>();

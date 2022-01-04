@@ -25,7 +25,7 @@ namespace Moneyes.UI.ViewModels
     }
     class BankSetupViewModel : TabViewModelBase, INotifyDataErrorInfo
     {
-        private readonly LiveDataService _liveDataService;
+        private readonly ILiveDataService _liveDataService;
         private readonly IBankingService _bankingService;
 
         #region UI
@@ -147,7 +147,7 @@ namespace Moneyes.UI.ViewModels
 
         #endregion
 
-        public BankSetupViewModel(LiveDataService liveDataService, IBankingService bankingService)
+        public BankSetupViewModel(ILiveDataService liveDataService, IBankingService bankingService)
         {
             DisplayName = "Settings";
 

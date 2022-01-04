@@ -9,6 +9,7 @@ using Moneyes.LiveData;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Security.Claims;
 using System.Threading.Tasks;
 
@@ -51,7 +52,7 @@ namespace Moneyes.BankService.Controllers
                     new Claim("UserId", service.BankingDetails.UserId),
                     new Claim("BankCode", service.BankingDetails.BankCode.ToString())
             };
-            
+
             //Initialize a new instance of the ClaimsIdentity with the claims and authentication scheme    
             var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
             //Initialize a new instance of the ClaimsPrincipal with ClaimsIdentity    
@@ -61,7 +62,7 @@ namespace Moneyes.BankService.Controllers
             {
                 IsPersistent = true
             });
-            
+
             return Ok();
         }
 
@@ -91,14 +92,21 @@ namespace Moneyes.BankService.Controllers
 
             var result = await service.Accounts();
 
-            if (!result.IsSuccessful)
+            if (result.IsSuccessful)
             {
-                return StatusCode(500);
+                var accounts = result.Data;
+
+                return Ok(accounts);
+            }
+            else if (result.ErrorCode is OnlineBankingErrorCode.InvalidPin
+                or OnlineBankingErrorCode.InvalidUsernameOrPin)
+            {
+                await HttpContext.SignOutAsync();
+
+                return Unauthorized();
             }
 
-            var accounts = result.Data;
-
-            return Ok(accounts);
+            return StatusCode(500);
         }
 
         [Authorize]
@@ -121,18 +129,25 @@ namespace Moneyes.BankService.Controllers
 
             var result = await service.Balance(account);
 
-            if (!result.IsSuccessful)
+            if (result.IsSuccessful)
             {
-                return StatusCode(500);
+                var balance = new BalanceDto()
+                {
+                    Date = result.Data.Date,
+                    Amount = result.Data.Amount
+                };
+
+                return Ok(balance);
+            }
+            else if (result.ErrorCode is OnlineBankingErrorCode.InvalidPin
+                or OnlineBankingErrorCode.InvalidUsernameOrPin)
+            {
+                await HttpContext.SignOutAsync();
+
+                return Unauthorized();
             }
 
-            var balance = new BalanceDto()
-            {
-                Date = result.Data.Date,
-                Amount = result.Data.Amount
-            };
-
-            return Ok(balance);
+            return StatusCode(500);
         }
 
 
@@ -157,41 +172,48 @@ namespace Moneyes.BankService.Controllers
             var result = await service.Transactions(
                 account, getTransactionsDto.StartDate, getTransactionsDto.EndDate);
 
-            if (!result.IsSuccessful)
+            if (result.IsSuccessful)
             {
-                return StatusCode(500);
+                var transactions = result.Data.Transactions
+                    .Select(t => new TransactionDto()
+                    {
+                        AltName = t.AltName,
+                        Amount = t.Amount,
+                        BookingType = t.BookingType,
+                        BIC = t.BIC,
+                        BookingDate = t.BookingDate,
+                        Currency = t.Currency,
+                        IBAN = t.IBAN,
+                        Index = t.Index,
+                        Name = t.Name,
+                        PartnerIBAN = t.PartnerIBAN,
+                        Purpose = t.Purpose,
+                        ValueDate = t.ValueDate
+                    });
+
+                var balances = result.Data.Balances
+                    .Select(b => new BalanceDto()
+                    {
+                        Amount = b.Amount,
+                        Date = b.Date
+                    });
+
+                return Ok(
+                    new TransactionBalanceListDto()
+                    {
+                        Balances = balances,
+                        Transactions = transactions
+                    });
+            }
+            else if (result.ErrorCode is OnlineBankingErrorCode.InvalidPin
+                or OnlineBankingErrorCode.InvalidUsernameOrPin)
+            {
+                await HttpContext.SignOutAsync();
+
+                return Unauthorized();
             }
 
-            var transactions = result.Data.Transactions
-                .Select(t => new TransactionDto()
-                {
-                    AltName = t.AltName,
-                    Amount = t.Amount,
-                    BookingType = t.BookingType,
-                    BIC = t.BIC,
-                    BookingDate = t.BookingDate,
-                    Currency = t.Currency,
-                    IBAN = t.IBAN,
-                    Index = t.Index,
-                    Name = t.Name,
-                    PartnerIBAN = t.PartnerIBAN,
-                    Purpose = t.Purpose,
-                    ValueDate = t.ValueDate
-                });
-
-            var balances = result.Data.Balances
-                .Select(b => new BalanceDto()
-                {
-                    Amount = b.Amount,
-                    Date = b.Date
-                });
-
-            return Ok(
-                new TransactionBalanceListDto()
-                {
-                    Balances = balances,
-                    Transactions = transactions
-                });
+            return StatusCode(500);
         }
     }
 }

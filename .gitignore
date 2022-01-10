@@ -364,4 +364,3 @@ FodyWeavers.xsd
 
 /source/Moneyes.TestProject/Test files/*.CSV
 *.exe
-/source/flutter/moneyes_app

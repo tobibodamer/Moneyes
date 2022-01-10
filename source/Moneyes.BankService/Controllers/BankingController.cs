@@ -177,6 +177,7 @@ namespace Moneyes.BankService.Controllers
                 var transactions = result.Data.Transactions
                     .Select(t => new TransactionDto()
                     {
+                        UID = t.UID,
                         AltName = t.AltName,
                         Amount = t.Amount,
                         BookingType = t.BookingType,

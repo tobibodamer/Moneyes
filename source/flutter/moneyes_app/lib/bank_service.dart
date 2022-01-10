@@ -38,7 +38,7 @@ class BankService {
     }
   }
 
-  final String baseUri = "localhost:44385";
+  final String baseUri = dotenv.maybeGet('SERVER_URI') ?? "localhost:44385";
 
   Map<String, String> _getHeaders() {
     return {

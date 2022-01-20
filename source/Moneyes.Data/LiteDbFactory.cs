@@ -47,12 +47,14 @@ namespace Moneyes.Data
 
             if (password != null)
             {
+                SecureString securePassword = password.ToSecuredString();
+
                 bsonMapper.RegisterType<SecureString>
                 (
                     serialize: str => SymmetricEncryptor.EncryptString(
-                        str.ToUnsecuredString(), password),
+                        str.ToUnsecuredString(), securePassword.ToUnsecuredString()),
                     deserialize: value => value.IsString ? SymmetricEncryptor.DecryptToString(
-                        value.AsString, password).ToSecuredString() : null
+                        value.AsString, securePassword.ToUnsecuredString()).ToSecuredString() : null
                 );
 
                 connectionString.Password = password;

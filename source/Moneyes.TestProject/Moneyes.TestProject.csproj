@@ -2,23 +2,15 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <StartupObject></StartupObject>
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="20210721-7888600-umsatz.CSV" />
     <None Remove="categories.json" />
-    <None Remove="Test files\1year.CSV" />
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="Test files\1year.CSV">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Test files\1month.CSV">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
     <Content Include="categories.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
@@ -41,18 +33,6 @@
     <Reference Include="libfintx.FinTS">
       <HintPath>..\..\..\libfintx\src\libfintx\bin\Release\netstandard2.0\libfintx.FinTS.dll</HintPath>
     </Reference>
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="Test files\20211013-7888600-umsatz.CSV">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Test files\all.CSV">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Test files\seit_umzug.CSV">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
 
 </Project>

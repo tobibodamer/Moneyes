@@ -104,7 +104,8 @@ namespace Moneyes.UI
             services.AddScoped<IBaseRepository<AccountDetails>, AccountRepository>(p => p.GetRequiredService<AccountRepository>());
             services.AddScoped<BalanceRepository>();
             services.AddScoped<IBaseRepository<Balance>, BalanceRepository>(p => p.GetRequiredService<BalanceRepository>());
-            services.AddScoped<IBankConnectionStore, BankConnectionStore>();
+            services.AddScoped<BankDetailsRepository>();
+            services.AddScoped<IBaseRepository<BankDetails>, BankDetailsRepository>(p => p.GetRequiredService<BankDetailsRepository>());
 
             // Services
 

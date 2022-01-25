@@ -5,7 +5,7 @@ namespace Moneyes.Core
     /// <summary>
     /// Represents account details for a bank account.
     /// </summary>
-    public class AccountDetails
+    public class AccountDetails : UniqueEntity
     {
         /// <summary>
         /// The bank account number.

@@ -12,7 +12,7 @@ namespace Moneyes.Core
     /// <summary>
     /// Represents a banking transaction.
     /// </summary>
-    public class Transaction
+    public class Transaction : UniqueEntity
     {
         private readonly Lazy<string> _idLazy;
         private string _id;

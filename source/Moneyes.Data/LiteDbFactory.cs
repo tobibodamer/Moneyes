@@ -26,17 +26,19 @@ namespace Moneyes.Data
             BsonMapper bsonMapper = new();
 
             bsonMapper.Entity<Category>()
-                .Id(c => c.Id, true)
+                .Id(c => c.Id, false)
                 .DbRef(c => c.Parent, "Category");
             bsonMapper.Entity<AccountDetails>()
-                .Id(acc => acc.IBAN, false);
+                .Id(acc => acc.Id, false);
             bsonMapper.Entity<Transaction>()
-                .Id(t => t.UID, false)
-                .DbRef(t => t.Categories, "Category");
-            bsonMapper.Entity<Balance>()     
-                .Id(b => b.UID, false)
+                .Id(t => t.Id, false)
+                .DbRef(t => t.Categories, "Category");                
+            bsonMapper.Entity<Balance>()
+                .Id(b => b.Id, false)
                 .Ignore(b => b.IsNegative)
                 .DbRef(b => b.Account, "AccountDetails");
+            bsonMapper.Entity<BankDetails>()
+                .Id(b => b.Id, false);
             
             ConnectionString connectionString = new(_config.Value.DatabasePath);
 

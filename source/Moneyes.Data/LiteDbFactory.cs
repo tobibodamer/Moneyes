@@ -9,7 +9,7 @@ using Moneyes.Core;
 
 namespace Moneyes.Data
 {
-    public partial class LiteDbFactory
+    public class LiteDbFactory
     {
         private readonly IOptions<LiteDbConfig> _config;
         public LiteDbFactory(IOptions<LiteDbConfig> config)
@@ -25,21 +25,6 @@ namespace Moneyes.Data
         {
             BsonMapper bsonMapper = new();
 
-            bsonMapper.Entity<Category>()
-                .Id(c => c.Id, false)
-                .DbRef(c => c.Parent, "Category");
-            bsonMapper.Entity<AccountDetails>()
-                .Id(acc => acc.Id, false);
-            bsonMapper.Entity<Transaction>()
-                .Id(t => t.Id, false)
-                .DbRef(t => t.Categories, "Category");                
-            bsonMapper.Entity<Balance>()
-                .Id(b => b.Id, false)
-                .Ignore(b => b.IsNegative)
-                .DbRef(b => b.Account, "AccountDetails");
-            bsonMapper.Entity<BankDetails>()
-                .Id(b => b.Id, false);
-            
             ConnectionString connectionString = new(_config.Value.DatabasePath);
 
             if (password == "")
@@ -49,26 +34,31 @@ namespace Moneyes.Data
 
             if (password != null)
             {
-                SecureString securePassword = password.ToSecuredString();
+                if (_config.Value.EncryptSecureStrings)
+                {
+                    SecureString securePassword = password.ToSecuredString();
 
-                bsonMapper.RegisterType<SecureString>
-                (
-                    serialize: str => SymmetricEncryptor.EncryptString(
-                        str.ToUnsecuredString(), securePassword.ToUnsecuredString()),
-                    deserialize: value => value.IsString ? SymmetricEncryptor.DecryptToString(
-                        value.AsString, securePassword.ToUnsecuredString()).ToSecuredString() : null
-                );
-
+                    bsonMapper.RegisterType<SecureString>
+                    (
+                        serialize: str => SymmetricEncryptor.EncryptString(
+                            str.ToUnsecuredString(), securePassword.ToUnsecuredString()),
+                        deserialize: value => value.IsString ? SymmetricEncryptor.DecryptToString(
+                            value.AsString, securePassword.ToUnsecuredString()).ToSecuredString() : null
+                    );
+                }
                 connectionString.Password = password;
             }
             else
             {
-                bsonMapper.RegisterType<SecureString>
+                if (_config.Value.EncryptSecureStrings)
+                {
+                    bsonMapper.RegisterType<SecureString>
                     (
                         serialize: str => EncryptionMethods.EncryptString(str.ToUnsecuredString()),
                         deserialize: value => value.IsString ?
                             EncryptionMethods.DecryptString(value.AsString).ToSecuredString() : null
                     );
+                }
             }
 
             return new LiteDatabase(connectionString, bsonMapper);

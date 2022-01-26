@@ -56,7 +56,7 @@ namespace Moneyes.Core.Filters
         /// <typeparam name="TField">Target member type</typeparam>
         /// <param name="field">The selector expression</param>
         /// <returns></returns>
-        internal static string GetName<TSource, TField>(this Expression<Func<TSource, TField>> field)
+        public static string GetName<TSource, TField>(this Expression<Func<TSource, TField>> field)
         {
             return (field.Body as MemberExpression ??
                 ((UnaryExpression)field.Body).Operand as MemberExpression).Member.Name;
@@ -69,7 +69,7 @@ namespace Moneyes.Core.Filters
         /// <typeparam name="TField">Target member type</typeparam>
         /// <param name="field">The selector expression</param>
         /// <returns></returns>
-        internal static string GetName<TSource, TField>(this Func<TSource, TField> expr)
+        public static string GetName<TSource, TField>(this Func<TSource, TField> expr)
         {
             return GetName<TSource, TField>(field: source => expr(source));
         }

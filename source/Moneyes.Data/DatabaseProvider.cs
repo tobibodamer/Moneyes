@@ -20,13 +20,22 @@ namespace Moneyes.Data
         public bool IsOpen => Database != null;
 
         public DatabaseProvider(
-            Func<SecureString> createMasterPasswordFunc,
-            Func<SecureString> requestMasterPasswordFunc,
             LiteDbConfig dbConfig)
         {
-            _createMasterPasswordFunc = createMasterPasswordFunc;
-            _requestMasterPasswordFunc = requestMasterPasswordFunc;
+            _createMasterPasswordFunc = dbConfig.CreatePassword;
+            _requestMasterPasswordFunc = dbConfig.RequestPassword;
             _dbConfig = dbConfig;
+        }
+
+#nullable enable
+        public virtual SecureString? OnCreatePassword()
+#nullable disable
+        {
+            return _createMasterPasswordFunc();
+        }
+        public virtual SecureString OnRequestPassword()
+        {
+            return _requestMasterPasswordFunc();
         }
 
         public bool TryCreateDatabase()

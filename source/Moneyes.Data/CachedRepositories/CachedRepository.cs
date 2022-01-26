@@ -78,7 +78,6 @@ namespace Moneyes.Data
             IEnumerable<IUniqueConstraint<T>> uniqueConstraints = null)
         {
             ArgumentNullException.ThrowIfNull(databaseProvider);
-            ArgumentNullException.ThrowIfNull(keySelector);
 
             _keySelector = keySelector;
             RepositoryDependencies = repositoryDependencies;
@@ -104,7 +103,7 @@ namespace Moneyes.Data
                 });
             }
 
-            SetupDependencies();
+            //SetupDependencies();
         }
 
         #region Setup
@@ -216,7 +215,7 @@ namespace Moneyes.Data
 
             return Cache.TryAdd(key, entity);
         }
-        private IReadOnlyList<T> GetFromCache()
+        protected IReadOnlyList<T> GetFromCache()
         {
             List<T> entities;
 
@@ -237,7 +236,7 @@ namespace Moneyes.Data
         #endregion
 
         #region Validation
-        protected bool ValidateUniqueConstaintsFor(T entity)
+        protected virtual bool ValidateUniqueConstaintsFor(T entity)
         {
             var existingEntities = GetFromCache();
 
@@ -256,7 +255,7 @@ namespace Moneyes.Data
 
             return false;
         }
-        protected bool ValidateUniqueConstaintsFor(IEnumerable<T> entities)
+        protected virtual bool ValidateUniqueConstaintsFor(IEnumerable<T> entities)
         {
             var existingEntities = GetFromCache();
             var entitiesList = entities.ToList();
@@ -273,7 +272,7 @@ namespace Moneyes.Data
 
             return false;
         }
-        protected bool ValidatePrimaryKey(object key)
+        protected virtual bool ValidatePrimaryKey(object key)
         {
             var existingEntities = GetFromCache();
 

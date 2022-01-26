@@ -7,65 +7,28 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Moneyes.Data
 {
-    public class CachedRepositoryBuilder<T>
+    internal abstract class CachedRepositoryBuilderBase<T, TRepository, TBuilder> 
+        where TRepository : class, ICachedRepository<T>
+        where TBuilder : CachedRepositoryBuilderBase<T, TRepository, TBuilder>
     {
         private readonly IServiceCollection _services;
         private readonly string _name;
         private readonly EntityBuilder<T> _entityBuilder;
+        private readonly CachedRepositoryOptions _options;
+        private readonly LiteDbBuilder _builder;
 
-        internal CachedRepositoryBuilder(LiteDbBuilder builder, BsonMapper bsonMapper,
-            CachedRepositoryOptions options)
+#nullable enable
+        internal Type? FactoryType { get; set; }
+#nullable disable
+
+        internal CachedRepositoryBuilderBase(LiteDbBuilder builder, EntityBuilder<T> entityBuilder,
+            CachedRepositoryOptions options, bool isKeySet = false)
         {
             _services = builder.Services;
             _name = options.CollectionName;
-            _entityBuilder = bsonMapper.Entity<T>();
-        }
-
-        /// <summary>
-        /// Registers a primary key for this repository and the underlying collection.
-        /// </summary>
-        /// <typeparam name="TKey"></typeparam>
-        /// <param name="keySelector"></param>
-        /// <param name="autoId"></param>
-        /// <returns></returns>
-        public CachedRepositoryBuilder<T> HasKey<TKey>(Expression<Func<T, TKey>> keySelector, bool autoId = false)
-            where TKey : struct
-        {
-            // Register the repository with strongly typed primary key
-
-            _services.AddScoped<ICachedRepository<T, TKey>, CachedRepository<T, TKey>>(p =>
-            {
-                // Get all repo dependencies for this collection type and name
-                var repositoryDependencies = p.GetServices<IRepositoryDependency<T>>()
-                    .Where(dep => dep.TargetCollectionName.Equals(_name));
-
-                // Get all unique constraints for this collection type and name
-                var uniqueConstraints = p.GetServices<IUniqueConstraint<T>>()
-                    .Where(c => c.CollectionName.Equals(_name));
-
-                var databaseProvider = p.GetRequiredService<IDatabaseProvider>();
-
-                CachedRepositoryOptions options = new()
-                {
-                    CollectionName = _name
-                };
-
-                return new(databaseProvider, keySelector.Compile(), options, autoId, repositoryDependencies, uniqueConstraints);
-            });
-
-            // Register generic repository without primary key type
-            _services.AddScoped<ICachedRepository<T>>(p =>
-            {
-                var repository = p.GetServices<ICachedRepository<T, TKey>>()
-                                    .First(r => r.CollectionName.Equals(_name));
-
-                return repository;
-            });
-
-            // Configure primary key in entity builder
-            _entityBuilder.Id(keySelector, autoId);
-
-            return this;
+            _options = options;
+            _entityBuilder = entityBuilder;
+            _builder = builder;
         }
 
         /// <summary>
@@ -76,7 +39,7 @@ namespace Moneyes.Data
         /// <param name="propertySelector"></param>
         /// <param name="collection"></param>
         /// <returns></returns>
-        public CachedRepositoryBuilder<T> DependsOnOne<TDep>(Expression<Func<T, TDep>> propertySelector, string collection = null)
+        public TBuilder DependsOnOne<TDep>(Expression<Func<T, TDep>> propertySelector, string collection = null)
         {
             _services.AddScoped<IRepositoryDependency<T>, RepositoryDependency<T, TDep>>(p =>
             {
@@ -85,11 +48,11 @@ namespace Moneyes.Data
                 return new(repositoryProvider, propertySelector,
                     targetCollection: _name, sourceCollection: collection);
             });
-            
+
             // Configure reference in entity builder
             _entityBuilder.DbRef(propertySelector, collection);
 
-            return this;
+            return this as TBuilder;
         }
 
         /// <summary>
@@ -100,7 +63,7 @@ namespace Moneyes.Data
         /// <param name="collectionPropertySelector"></param>
         /// <param name="collection"></param>
         /// <returns></returns>
-        public CachedRepositoryBuilder<T> DependsOnMany<TDep>(Expression<Func<T, IEnumerable<TDep>>> collectionPropertySelector,
+        public TBuilder DependsOnMany<TDep>(Expression<Func<T, IEnumerable<TDep>>> collectionPropertySelector,
             string collection = null)
         {
             _services.AddScoped<IRepositoryDependency<T>, RepositoryDependency<T, TDep>>(p =>
@@ -114,7 +77,7 @@ namespace Moneyes.Data
             // Configure reference in entity builder
             _entityBuilder.DbRef(collectionPropertySelector, collection);
 
-            return this;
+            return this as TBuilder;
         }
 
         /// <summary>
@@ -123,14 +86,132 @@ namespace Moneyes.Data
         /// <typeparam name="K"></typeparam>
         /// <param name="selector"></param>
         /// <returns></returns>
-        public CachedRepositoryBuilder<T> WithUniqueProperty<K>(Expression<Func<T, K>> selector)
+        public TBuilder WithUniqueProperty<K>(Expression<Func<T, K>> selector)
         {
             _services.AddScoped<IUniqueConstraint<T>, UniqueConstraint<T, K>>(p =>
             {
                 return new(selector, _name);
             });
 
+            return this as TBuilder;
+        }
+
+        ///// <summary>
+        ///// Registers a specific repository typed, that is produced by the <see cref="ICachedRepositoryFactory"/>.
+        ///// </summary>
+        ///// <typeparam name="TOther"></typeparam>
+        ///// <returns></returns>
+        //public CachedRepositoryBuilder<T, TOther> As<TOther>() where TOther : class, TRepository
+        //{
+        //    return new CachedRepositoryBuilder<T, TOther>(_builder, _entityBuilder, _options, _isKeySet);
+        //}
+
+        public TBuilder UseFactory<TFactory>() where TFactory : IRepositoryFactory<T>
+        {
+            FactoryType = typeof(TFactory);
+            return this as TBuilder;
+        }
+    }
+    public class CachedRepositoryBuilder<T> : KeyCachedRepositoryBuilder<T>
+    {
+        internal CachedRepositoryBuilder(
+            LiteDbBuilder builder, 
+            EntityBuilder<T> entityBuilder, 
+            CachedRepositoryOptions options)
+            : base(builder, entityBuilder, options)
+        {
+        }
+
+
+        /// <summary>
+        /// Registers a primary key for this repository and the underlying collection.
+        /// </summary>
+        /// <typeparam name="TKey"></typeparam>
+        /// <param name="keySelector"></param>
+        /// <param name="autoId"></param>
+        /// <returns></returns>
+        public virtual KeyCachedRepositoryBuilder<T> HasKey<TKey>(Expression<Func<T, TKey>> keySelector, bool autoId = false)
+            where TKey : struct
+        {
+            // Add default repository factory if no factory registered
+
+            if (!Services.Any(c => typeof(IRepositoryFactory<T, TKey>).IsAssignableFrom(c.ServiceType)))
+            {
+                Services.AddScoped<IRepositoryFactory<T, TKey>, CachedRepositoryFactory<T, TKey>>();
+            }
+
+            // Register the repository with strongly typed primary key
+            Services.AddScoped<ICachedRepository<T, TKey>>(p =>
+            {
+                IRepositoryFactory<T, TKey> repositoryFactory;
+
+                if (FactoryType != null && typeof(IRepositoryFactory<T, TKey>).IsAssignableFrom(FactoryType))
+                {
+                    repositoryFactory = ActivatorUtilities.CreateInstance(p, FactoryType) as IRepositoryFactory<T, TKey>;
+                }
+                else
+                {
+                    repositoryFactory = p.GetRequiredService<IRepositoryFactory<T, TKey>>();
+                }
+
+                CachedRepositoryOptions options = new()
+                {
+                    CollectionName = Name
+                };
+
+                return repositoryFactory.CreateRepository(options, keySelector.Compile(), autoId);
+            });
+
+            // Register generic repository without primary key type
+            Services.AddScoped<ICachedRepository<T>>(p =>
+            {
+                var repository = p.GetServices<ICachedRepository<T, TKey>>()
+                                    .First(r => r.CollectionName.Equals(Name));
+
+                return repository;
+            });
+
+            //if (RepositoryType != null && typeof(ICachedRepository<T, TKey>).IsAssignableFrom(RepositoryType))
+            //{
+            //    // Reigster specific repository type
+            //    Services.AddScoped(RepositoryType, p =>
+            //    {
+            //        var repository = p.GetServices<ICachedRepository<T>>()
+            //                            .First(r => r.CollectionName.Equals(Name));
+
+            //        return repository;
+            //    });
+            //}
+
+            // Configure primary key in entity builder
+            EntityBuilder.Id(keySelector, autoId);
+
             return this;
+        }
+
+        public override CachedRepositoryBuilder<T> DependsOnOne<TDep>(Expression<Func<T, TDep>> propertySelector, string collection = null)
+        {
+            return base.DependsOnOne(propertySelector, collection) as CachedRepositoryBuilder<T>;
+        }
+
+        public override CachedRepositoryBuilder<T> DependsOnMany<TDep>(Expression<Func<T, IEnumerable<TDep>>> collectionPropertySelector, string collection = null)
+        {
+            return base.DependsOnMany(collectionPropertySelector, collection) as CachedRepositoryBuilder<T>;
+        }
+
+        public override CachedRepositoryBuilder<T> WithUniqueProperty<K>(Expression<Func<T, K>> selector)
+        {
+            return base.WithUniqueProperty(selector) as CachedRepositoryBuilder<T>;
+        }
+
+        public override CachedRepositoryBuilder<T> UseFactory<TFactory>()
+        {
+            return base.UseFactory<TFactory>() as CachedRepositoryBuilder<T>;
+        }
+
+        public override CachedRepositoryBuilder<T> As<TOther>()
+        {
+            return base.As<TOther>() as CachedRepositoryBuilder<T>;
         }
     }
 }

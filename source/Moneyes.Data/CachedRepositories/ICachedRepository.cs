@@ -6,7 +6,6 @@ namespace Moneyes.Data
     {
         string CollectionName { get; }
         object GetKey(T entity);
-
         void Update(T entity);
 
         event Action<RepositoryChangedEventArgs<T>> RepositoryChanged;

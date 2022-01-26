@@ -78,6 +78,7 @@ namespace Moneyes.Data
             configureOptions?.Invoke(options);
 
             options.RegisterGenericRepositories();
+            options.RegisterRepositoryProvider();
 
             return builder;
         }

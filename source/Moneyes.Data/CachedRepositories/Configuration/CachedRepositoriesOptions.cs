@@ -25,6 +25,7 @@ namespace Moneyes.Data
         {
             public Type EntityType { get; init; }
             public Type RepositoryType { get; init; }
+            public Action<IServiceCollection> RegisterDefaultFactory { get; init; }
             public Action<IServiceCollection> RegisterGenericRepository { get; init; }
             public CachedRepositoryOptions Options { get; init; }
         }
@@ -37,7 +38,7 @@ namespace Moneyes.Data
         /// <returns>An instance of <see cref="CachedRepositoryBuilder{T}"/> to build the repository.</returns>
         public CachedRepositoryBuilder<T> AddRepository<T>(string collectionName)
         {
-            return AddRepository<T>(options => options.CollectionName = collectionName);
+            return AddRepository<T, ICachedRepository<T>>(collectionName);
         }
 
         /// <summary>
@@ -46,6 +47,30 @@ namespace Moneyes.Data
         /// <typeparam name="T">The entity type.</typeparam>
         /// <returns>An instance of <see cref="CachedRepositoryBuilder{T}"/> to build the repository.</returns>
         public CachedRepositoryBuilder<T> AddRepository<T>(Action<CachedRepositoryOptions> configure = null)
+        {
+            return AddRepository<T, ICachedRepository<T>>(configure);
+        }
+
+
+        /// <summary>
+        /// Adds a custom cached repository for the given entity type.
+        /// </summary>
+        /// <typeparam name="T">The entity type.</typeparam>
+        /// <param name="collectionName">Custom table name.</param>
+        /// <returns>An instance of <see cref="CachedRepositoryBuilder{T}"/> to build the repository.</returns>
+        public CachedRepositoryBuilder<T> AddRepository<T, TRepository>(string collectionName)
+            where TRepository : class, ICachedRepository<T>
+        {
+            return AddRepository<T, TRepository>(options => options.CollectionName = collectionName);
+        }
+
+        /// <summary>
+        /// Adds a custom cached repository for the given entity type.
+        /// </summary>
+        /// <typeparam name="T">The entity type.</typeparam>
+        /// <returns>An instance of <see cref="CachedRepositoryBuilder{T}"/> to build the repository.</returns>
+        public CachedRepositoryBuilder<T> AddRepository<T, TRepository>(Action<CachedRepositoryOptions> configure = null)
+            where TRepository : class, ICachedRepository<T>
         {
             var options = new CachedRepositoryOptions();
 
@@ -65,41 +90,47 @@ namespace Moneyes.Data
                 throw new InvalidOperationException("Collection with the given name already registered.");
             }
 
+            CachedRepositoryBuilder<T> repoBuilder = new(_builder, _bsonMapper.Entity<T>(), options);
+
             // Add repository entry
             _repositoryEntries.Add(new()
             {
                 EntityType = typeof(T),
                 Options = options,
+                RegisterDefaultFactory = (services) =>
+                {
+                    // Add default repository factory if no factory registered
+
+                    if (!services.Any(c => typeof(IRepositoryFactory<T>).IsAssignableFrom(c.ServiceType)))
+                    {
+                        services.AddScoped<IRepositoryFactory<T>, CachedRepositoryFactory<T>>();
+                    }
+                },
                 RegisterGenericRepository = (services) =>
                 {
-                    services.AddScoped<ICachedRepository<T>, CachedRepository<T>>(p =>
+                    services.AddScoped<ICachedRepository<T>>(p =>
                     {
-                        // Get all repo dependencies for this collection type and name
-                        var repositoryDependencies = p.GetServices<IRepositoryDependency<T>>()
-                            .Where(dep => dep.TargetCollectionName.Equals(collectionName));
+                        IRepositoryFactory<T> repositoryFactory;
 
-                        // Get all unique constraints for this collection type and name
-                        var uniqueConstraints = p.GetServices<IUniqueConstraint<T>>()
-                            .Where(c => c.CollectionName.Equals(collectionName));
-
-                        var databaseProvider = p.GetRequiredService<IDatabaseProvider>();
-
-                        CachedRepositoryOptions options = new()
+                        if (repoBuilder.FactoryType != null && typeof(IRepositoryFactory<T>).IsAssignableFrom(repoBuilder.FactoryType))
                         {
-                            CollectionName = collectionName
-                        };
+                            // Use custom repo factory is set and valid
+                            repositoryFactory = ActivatorUtilities.CreateInstance(p, repoBuilder.FactoryType) as IRepositoryFactory<T>;
+                        }
+                        else
+                        {
+                            // Use default registration otherwise
+                            repositoryFactory = p.GetRequiredService<IRepositoryFactory<T>>();
+                        }
 
-                        return new CachedRepository<T>(
-                            databaseProvider,
-                            options, 
-                            repositoryDependencies: repositoryDependencies, 
-                            uniqueConstraints: uniqueConstraints);
+                        return repositoryFactory.CreateRepository(options, autoId: false);
+
                     });
                 },
                 RepositoryType = typeof(ICachedRepository<T>)
             });
 
-            return new(_builder, _bsonMapper, options);
+            return repoBuilder;
         }
 
         /// <summary>
@@ -113,6 +144,17 @@ namespace Moneyes.Data
                 {
                     entry.RegisterGenericRepository(_builder.Services);
                 }
+
+                entry.RegisterDefaultFactory(_builder.Services);
+
+            }
+        }
+
+        internal void RegisterRepositoryProvider()
+        {
+            if (!_builder.Services.Any(c => c.ServiceType == typeof(IRepositoryProvider)))
+            {
+                _builder.Services.AddScoped<IRepositoryProvider, RepositoryProvider>(p => new(p.CreateScope()));
             }
         }
     }

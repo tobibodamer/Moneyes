@@ -14,6 +14,7 @@ namespace Moneyes.Data
         private readonly Func<T, TDep> _dependentPropertySelector;
         private readonly Func<T, IEnumerable<TDep>> _collectionDependentPropertySelector;
 
+        private readonly IRepositoryProvider _repositoryProvider;
         private readonly bool _hasMultipleDependents;
 
         public Type SourceType => typeof(TDep);
@@ -22,12 +23,35 @@ namespace Moneyes.Data
         public string TargetCollectionName { get; }
         public ICachedRepository<TDep> SourceRepository { get; }
 
-        public event Action<NeedsRefresh<T>> RefreshNeeded;
+        public event Action<NeedsRefresh<T>> RefreshNeeded
+        {
+            add
+            {
+                // Get the source repository of this dependency
+                var sourceRepository = GetSourceRepository();
+
+                sourceRepository.EntityAdded += SourceRepository_EntityChanged;
+                sourceRepository.EntityUpdated += SourceRepository_EntityChanged;
+                sourceRepository.EntityDeleted += SourceRepository_EntityChanged;
+
+                RefreshNeededInternal += value;
+            }
+            remove
+            {
+                SourceRepository.EntityAdded -= SourceRepository_EntityChanged;
+                SourceRepository.EntityUpdated -= SourceRepository_EntityChanged;
+                SourceRepository.EntityDeleted -= SourceRepository_EntityChanged;
+
+                RefreshNeededInternal -= value;
+            }
+        }
+
+        private event Action<NeedsRefresh<T>> RefreshNeededInternal;
 
         public RepositoryDependency(IRepositoryProvider repositoryProvider,
             Expression<Func<T, TDep>> propertySelector, 
             string targetCollection, string sourceCollection = null)
-            : this(repositoryProvider, sourceCollection, targetCollection)
+            : this(repositoryProvider, targetCollection, sourceCollection)
         {
             _hasMultipleDependents = false;
             _dependentPropertySelectorExpression = propertySelector;
@@ -46,22 +70,30 @@ namespace Moneyes.Data
         private RepositoryDependency(IRepositoryProvider repositoryProvider,
             string targetCollection, string sourceCollection)
         {
-            // Get the source repository of this dependency
-            SourceRepository = repositoryProvider.GetRepository<TDep>();
-
             SourceCollectionName = sourceCollection ?? typeof(TDep).Name;
             TargetCollectionName = targetCollection;
 
-            SourceRepository.EntityAdded += SourceRepository_EntityChanged;
-            SourceRepository.EntityUpdated += SourceRepository_EntityChanged;
-            SourceRepository.EntityDeleted += SourceRepository_EntityChanged;
+            _repositoryProvider = repositoryProvider;
+
+
+            //// Get the source repository of this dependency
+            //SourceRepository = repositoryProvider.GetRepository<TDep>(SourceCollectionName);
+
+            //SourceRepository.EntityAdded += SourceRepository_EntityChanged;
+            //SourceRepository.EntityUpdated += SourceRepository_EntityChanged;
+            //SourceRepository.EntityDeleted += SourceRepository_EntityChanged;
         }
 
         ~RepositoryDependency()
         {
-            SourceRepository.EntityAdded -= SourceRepository_EntityChanged;
-            SourceRepository.EntityUpdated -= SourceRepository_EntityChanged;
-            SourceRepository.EntityDeleted -= SourceRepository_EntityChanged;
+            //SourceRepository.EntityAdded -= SourceRepository_EntityChanged;
+            //SourceRepository.EntityUpdated -= SourceRepository_EntityChanged;
+            //SourceRepository.EntityDeleted -= SourceRepository_EntityChanged;
+        }
+
+        private ICachedRepository<TDep> GetSourceRepository()
+        {
+            return _repositoryProvider.GetRepository<TDep>();
         }
 
         private void SourceRepository_EntityChanged(TDep entity)
@@ -92,7 +124,7 @@ namespace Moneyes.Data
             }
 
             // Invoke the refresh needed event with the function to check for refresh
-            RefreshNeeded?.Invoke(needsRefresh);
+            RefreshNeededInternal?.Invoke(needsRefresh);
         }
 
         public ILiteCollection<T> Apply(ILiteCollection<T> collection)

@@ -165,6 +165,13 @@ namespace Moneyes.Data
 
 
         #region Cache
+
+        /// <summary>
+        /// A transform method that is applied post query, before updating the cache.
+        /// </summary>
+        /// <param name="entity"></param>
+        /// <returns></returns>
+        protected virtual T PostQueryTransform(T entity) => entity;
         public void RefreshCache()
         {
             _cacheLock.AcquireWriterLock(CacheTimeout);
@@ -173,7 +180,7 @@ namespace Moneyes.Data
 
             try
             {
-                entitiesToUpdate = Collection.FindAll().ToList();
+                entitiesToUpdate = Collection.FindAll().Select(PostQueryTransform).ToList();
             }
             catch
             {
@@ -195,7 +202,7 @@ namespace Moneyes.Data
 
                 Logger.LogInformation("Reloading {count} entities...", keys.Count());
 
-                entitiesToUpdate = Collection.Find(Query.In("_id", keys)).ToList();
+                entitiesToUpdate = Collection.Find(Query.In("_id", keys)).Select(PostQueryTransform).ToList();
 
                 Logger.LogInformation("{count} entities loaded", entitiesToUpdate.Count);
             }
@@ -622,13 +629,13 @@ namespace Moneyes.Data
 
             return false;
         }
-        public virtual int DeleteMany(Func<T, bool> predicate)
+        public virtual int DeleteMany(Expression<Func<T, bool>> predicate)
         {
-            int counter = Collection.DeleteMany(entity => predicate(entity));
+            int counter = Collection.DeleteMany(predicate);
 
             List<T> removedEntities = new();
 
-            foreach (var kvp in Cache.Where(kvp => predicate(kvp.Value)))
+            foreach (var kvp in Cache.Where(kvp => predicate.Compile()(kvp.Value)))
             {
                 object id = kvp.Key;
 

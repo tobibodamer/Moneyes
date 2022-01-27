@@ -1,5 +1,7 @@
 ﻿using LiteDB;
+using Moneyes.Core.Filters;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -26,6 +28,8 @@ namespace Moneyes.Data
 
         public bool HasMultipleDependents => _hasMultipleDependents;
 
+        public string PropertyName { get; }
+
         public RepositoryDependency(IRepositoryProvider repositoryProvider,
             Expression<Func<T, TDep>> propertySelector,
             string targetCollection, string sourceCollection)
@@ -34,6 +38,8 @@ namespace Moneyes.Data
             _hasMultipleDependents = false;
             _dependentPropertySelectorExpression = propertySelector;
             _dependentPropertySelector = propertySelector.Compile();
+
+            PropertyName = FilterExtensions.GetName(propertySelector);
         }
         public RepositoryDependency(IRepositoryProvider repositoryProvider,
             Expression<Func<T, ICollection<TDep>>> collectionPropertySelector,
@@ -43,6 +49,8 @@ namespace Moneyes.Data
             _hasMultipleDependents = true;
             _collectionDependentPropertySelectorExpression = collectionPropertySelector;
             _collectionDependentPropertySelector = collectionPropertySelector.Compile();
+
+            PropertyName = FilterExtensions.GetName(collectionPropertySelector);
         }
 
         private RepositoryDependency(IRepositoryProvider repositoryProvider,
@@ -107,7 +115,7 @@ namespace Moneyes.Data
             }
         }
 
-        public void RemoveDependency(object sourceKeyToDelete, T entity)
+        public void RemoveDependents(T entity, params object[] keys)
         {
             //if (sourceRepository is not ICachedRepository<TDep> sourceRepositoryCasted)
             //{
@@ -124,7 +132,7 @@ namespace Moneyes.Data
                 foreach (var depEntity in depending.ToList())
                 {
                     if (depEntity == null ||
-                        sourceRepository.GetKey(depEntity) != sourceKeyToDelete)
+                        !keys.Contains(sourceRepository.GetKey(depEntity)))
                     {
                         continue;
                     }
@@ -136,7 +144,7 @@ namespace Moneyes.Data
             {
                 var dependentProperty = _dependentPropertySelector(entity);
 
-                if (sourceKeyToDelete.Equals(sourceRepository.GetKey(dependentProperty)))
+                if (dependentProperty == null || !keys.Contains(sourceRepository.GetKey(dependentProperty)))
                 {
                     // Set null
                     SetDependentProperty(entity, default);
@@ -256,6 +264,33 @@ namespace Moneyes.Data
             }
         }
 
+        public IEnumerable GetDependentsOf(T entity)
+        {
+            if (HasMultipleDependents)
+            {
+                var depEntities = _collectionDependentPropertySelector(entity);
 
+                if (depEntities is null)
+                {
+                    yield break;
+                }
+
+                foreach (var depEntity in depEntities)
+                {
+                    yield return depEntity;
+                }
+            }
+            else
+            {
+                var depEntity = _dependentPropertySelector(entity);
+
+                if (depEntity is null)
+                {
+                    yield break;
+                }
+
+                yield return depEntity;
+            }
+        }
     }
 }

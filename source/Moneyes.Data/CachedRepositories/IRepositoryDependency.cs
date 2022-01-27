@@ -1,5 +1,6 @@
 ﻿using LiteDB;
 using System;
+using System.Collections;
 
 namespace Moneyes.Data
 {
@@ -14,6 +15,11 @@ namespace Moneyes.Data
         /// Gets the entity type of the target repository;
         /// </summary>
         Type TargetType { get; }
+
+        /// <summary>
+        /// Gets the property name of the dependent.
+        /// </summary>
+        string PropertyName { get; }
 
         /// <summary>
         /// Gets whether the depending property is a collection
@@ -60,5 +66,9 @@ namespace Moneyes.Data
         /// <param name="entity">The entity to update.</param>
         /// <param name="e"></param>
         void UpdateDependency(T entity, DependencyRefreshHandler.DepedencyChangedEventArgs e);
+
+        void RemoveDependents(T entity, params object[] keys);
+
+        IEnumerable GetDependentsOf(T entity);
     }
 }

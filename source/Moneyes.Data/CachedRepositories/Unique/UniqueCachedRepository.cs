@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
+using LiteDB;
 using Microsoft.Extensions.Logging;
 using Moneyes.Core;
 
@@ -15,7 +17,7 @@ namespace Moneyes.Data
         T? FindById(Guid id, bool includeSoftDeleted = false);
         bool DeleteById(Guid id, bool softDelete = true);
         int DeleteAll(bool softDelete = true);
-        int DeleteMany(Func<T, bool> predicate, bool softDelete = true);
+        int DeleteMany(Expression<Func<T, bool>> predicate, bool softDelete = true);
     }
 
     public class UniqueCachedRepository<T> : CachedRepository<T, Guid>, IUniqueCachedRepository<T>
@@ -32,6 +34,28 @@ namespace Moneyes.Data
             ILogger<UniqueCachedRepository<T>> logger = null)
             : base(databaseProvider, keySelector, options, refreshHandler, autoId, repositoryDependencies, uniqueConstraints, logger)
         {
+        }
+
+        protected override T PostQueryTransform(T entity)
+        {
+            // Dont include soft deleted dependents
+            foreach (var dependency in RepositoryDependencies)
+            {
+                var softDeletedDependents = dependency.GetDependentsOf(entity)
+                    .OfType<UniqueEntity>()
+                    .Where(x => x.IsDeleted)
+                    .Select(x => x.Id as object)
+                    .ToArray();
+
+                if (softDeletedDependents.Length == 0)
+                {
+                    continue;
+                }
+
+                dependency.RemoveDependents(entity, softDeletedDependents);
+            }
+
+            return entity;
         }
 
         public override IEnumerable<T> GetAll()
@@ -61,7 +85,7 @@ namespace Moneyes.Data
             {
                 return null;
             }
-            
+
             return result;
         }
 
@@ -114,21 +138,23 @@ namespace Moneyes.Data
             return base.DeleteAll();
         }
 
-        public override int DeleteMany(Func<T, bool> predicate)
+        public override int DeleteMany(Expression<Func<T, bool>> predicate)
         {
+            var compiledPredicate = predicate.Compile();
+
             var entities = GetAll(includeSoftDeleted: false)
-                .Where(predicate)
+                .Where(compiledPredicate)
                 .ToList();
 
             foreach (var entity in entities)
             {
-                entity.IsDeleted = true;                
+                entity.IsDeleted = true;
             }
 
             return Update(entities);
         }
 
-        public int DeleteMany(Func<T, bool> predicate, bool softDelete = true)
+        public int DeleteMany(Expression<Func<T, bool>> predicate, bool softDelete = true)
         {
             if (softDelete)
             {

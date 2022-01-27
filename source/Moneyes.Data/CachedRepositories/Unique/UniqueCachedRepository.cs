@@ -31,41 +31,27 @@ namespace Moneyes.Data
 
 
         #region Validation
+
+        /// <summary>
+        /// Validate unique constraints for a entity that is not soft deleted.
+        /// </summary>
+        /// <param name="entity"></param>
+        /// <returns></returns>
         protected override bool ValidateUniqueConstaintsFor(T entity)
-        {
-            //var existingEntities = GetFromCache().Where(t => t.);
-
-            //foreach (var constraint in UniqueConstraints)
-            //{
-            //    foreach (var existingEntity in existingEntities)
-            //    {
-            //        if (!constraint.Allows(entity, existingEntity))
-            //        {
-            //            //constraint.PropertyName
-            //            //TODO: Log
-            //            return false;
-            //        }
-            //    }
-            //}
-
-            return false;
+        {            
+            return entity.IsDeleted || base.ValidateUniqueConstaintsFor(entity);
         }
+
+        /// <summary>
+        /// Validate the unique constraints for all entites that are not soft deleted.
+        /// </summary>
+        /// <param name="entities"></param>
+        /// <returns></returns>
         protected override bool ValidateUniqueConstaintsFor(IEnumerable<T> entities)
         {
-            var existingEntities = GetFromCache();
-            var entitiesList = entities.ToList();
+            var notSoftDeletedEntities = entities.Where(e => !e.IsDeleted);
 
-            foreach (var constraint in UniqueConstraints)
-                foreach (var existingEntity in existingEntities)
-                    foreach (var entity in entitiesList)
-                        if (!constraint.Allows(entity, existingEntity))
-                        {
-                            //constraint.PropertyName
-                            //TODO: Log
-                            return false;
-                        }
-
-            return false;
+            return base.ValidateUniqueConstaintsFor(notSoftDeletedEntities);
         }
 
         #endregion

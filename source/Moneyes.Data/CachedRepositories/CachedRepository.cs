@@ -311,18 +311,23 @@ namespace Moneyes.Data
             var existingEntities = GetFromCache();
             var entitiesList = entities.ToList();
 
-            foreach (var constraint in UniqueConstraints)
-                foreach (var existingEntity in existingEntities)
-                    foreach (var entity in entitiesList)
-                        if (!constraint.Allows(entity, existingEntity))
-                        {
-                            //constraint.PropertyName
-                            //TODO: Log
-                            return false;
-                        }
+            // Combine all constraints with all entities with all existing entities
+            var zipped = UniqueConstraints
+                .Zip(entitiesList, existingEntities);
+
+            // Validate every combination
+            foreach (var (constraint, entity, existingEntity) in zipped)
+                if (!constraint.Allows(entity, existingEntity))
+                {
+                    Logger.LogWarning("Unique constraint violation of '{Property}' (Entity ID: {id})",
+                        constraint.PropertyName, GetKey(entity));
+
+                    return false;
+                }
 
             return false;
         }
+
         protected virtual bool ValidatePrimaryKey(object key)
         {
             var existingEntities = GetFromCache();
@@ -331,8 +336,7 @@ namespace Moneyes.Data
             {
                 if (GetKey(existingEntity).Equals(key))
                 {
-                    //constraint.PropertyName
-                    //TODO: Log
+                    Logger.LogWarning("Primary key violation: {key} already exists", key);
                     return false;
                 }
             }

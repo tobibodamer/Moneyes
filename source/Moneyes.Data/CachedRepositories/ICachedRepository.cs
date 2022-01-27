@@ -8,9 +8,8 @@ namespace Moneyes.Data
         string CollectionName { get; }
         object GetKey(T entity);
         void Update(T entity);
-
+        int Update(IEnumerable<T> entities);
         void RefreshCache();
-
         void RefreshCacheFor(IEnumerable<T> entities);
 
         event Action<RepositoryChangedEventArgs<T>> RepositoryChanged;

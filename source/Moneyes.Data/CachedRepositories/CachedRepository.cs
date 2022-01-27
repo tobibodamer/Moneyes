@@ -32,12 +32,12 @@ namespace Moneyes.Data
             _keySelector = keySelector;
         }
 
-        public bool DeleteById(TKey id)
+        public virtual bool DeleteById(TKey id)
         {
             return base.DeleteById(id);
         }
 
-        public T? FindById(TKey id)
+        public virtual T? FindById(TKey id)
         {
             return base.FindById(id);
         }
@@ -254,13 +254,13 @@ namespace Moneyes.Data
             }
         }
 
-        private void AddOrUpdateCache(T entity)
+        protected void AddOrUpdateCache(T entity)
         {
             object key = GetKey(entity);
 
             Cache[key] = entity;
         }
-        private bool AddToCache(T entity)
+        protected bool AddToCache(T entity)
         {
             object key = GetKey(entity);
 
@@ -352,7 +352,7 @@ namespace Moneyes.Data
         }
 
         #region CRUD
-        public T Create(T entity)
+        public virtual T Create(T entity)
         {
             object key;
 
@@ -395,13 +395,13 @@ namespace Moneyes.Data
             return createdEntity;
         }
 
-        public IEnumerable<T> GetAll()
+        public virtual IEnumerable<T> GetAll()
         {
             return GetFromCache();
         }
 
 #nullable enable
-        public T? FindById(object id)
+        public virtual T? FindById(object id)
 #nullable disable
         {
             ArgumentNullException.ThrowIfNull(id);
@@ -428,7 +428,7 @@ namespace Moneyes.Data
             return default;
         }
 
-        public bool Set(T entity)
+        public virtual bool Set(T entity)
         {
             ArgumentNullException.ThrowIfNull(entity);
 
@@ -466,7 +466,7 @@ namespace Moneyes.Data
 
             return inserted;
         }
-        public int Set(IEnumerable<T> entities)
+        public virtual int Set(IEnumerable<T> entities)
         {
             List<T> entitiesToSet = entities.ToList();
 
@@ -505,7 +505,7 @@ namespace Moneyes.Data
             return counter;
         }
 
-        public void Update(T entity)
+        public virtual void Update(T entity)
         {
             object key = GetKey(entity);
 
@@ -553,7 +553,7 @@ namespace Moneyes.Data
             }
         }
 
-        public int Update(IEnumerable<T> entities)
+        public virtual int Update(IEnumerable<T> entities)
         {
             List<T> entitiesList = entities.ToList();
             var keys = entitiesList.Select(GetKey).ToHashSet();
@@ -575,13 +575,13 @@ namespace Moneyes.Data
             return counter;
         }
 
-        public bool Delete(T entity)
+        public virtual bool Delete(T entity)
         {
             object key = GetKey(entity);
 
             return DeleteById(key);
         }
-        public bool DeleteById(object id)
+        public virtual bool DeleteById(object id)
         {
             ArgumentNullException.ThrowIfNull(id);
 
@@ -622,7 +622,7 @@ namespace Moneyes.Data
 
             return false;
         }
-        public int DeleteMany(Func<T, bool> predicate)
+        public virtual int DeleteMany(Func<T, bool> predicate)
         {
             int counter = Collection.DeleteMany(entity => predicate(entity));
 
@@ -644,7 +644,7 @@ namespace Moneyes.Data
 
             return counter;
         }
-        public int DeleteAll()
+        public virtual int DeleteAll()
         {
             int counter;
 
@@ -677,21 +677,30 @@ namespace Moneyes.Data
         #endregion
 
         #region Events
-        protected virtual void OnEntityUpdated(T entity)
+        protected virtual void OnEntityUpdated(T entity, bool notifyDependencyHandler = true)
         {
-            DependencyRefreshHandler.OnChangesMade(this, entity, RepositoryChangedAction.Replace);
+            if (notifyDependencyHandler)
+            {
+                DependencyRefreshHandler.OnChangesMade(this, entity, RepositoryChangedAction.Replace);
+            }
             EntityUpdated?.Invoke(entity);
         }
 
-        protected virtual void OnEntityAdded(T entity)
+        protected virtual void OnEntityAdded(T entity, bool notifyDependencyHandler = true)
         {
-            DependencyRefreshHandler.OnChangesMade(this, entity, RepositoryChangedAction.Add);
+            if (notifyDependencyHandler)
+            {
+                DependencyRefreshHandler.OnChangesMade(this, entity, RepositoryChangedAction.Add);
+            }
             EntityAdded?.Invoke(entity);
         }
 
-        protected virtual void OnEntityDeleted(T entity)
+        protected virtual void OnEntityDeleted(T entity, bool notifyDependencyHandler = true)
         {
-            DependencyRefreshHandler.OnChangesMade(this, entity, RepositoryChangedAction.Remove);
+            if (notifyDependencyHandler)
+            {
+                DependencyRefreshHandler.OnChangesMade(this, entity, RepositoryChangedAction.Remove);
+            }
             EntityDeleted?.Invoke(entity);
         }
 

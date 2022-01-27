@@ -67,8 +67,19 @@ namespace Moneyes.Data
         /// <param name="e"></param>
         void UpdateDependency(T entity, DependencyRefreshHandler.DepedencyChangedEventArgs e);
 
+        /// <summary>
+        /// Removes / nulls all dependent properties of a given <paramref name="entity"/> with the given <paramref name="keys"/>.
+        /// </summary>
+        /// <param name="entity">The entity to update.</param>
+        /// <param name="keys">The keys of the dependents to remove.</param>
         void RemoveDependents(T entity, params object[] keys);
 
+        /// <summary>
+        /// Gets all dependents of a given <paramref name="entity"/>.
+        /// Will contain a single value if this dependency has only one dependent.
+        /// </summary>
+        /// <param name="entity">The target entity.</param>
+        /// <returns>A <see cref="IEnumerable"/> of all dependents.</returns>
         IEnumerable GetDependentsOf(T entity);
     }
 }

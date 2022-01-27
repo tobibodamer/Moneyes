@@ -12,7 +12,8 @@ namespace Moneyes.Data
             return options
                 .AddRepository<T, IUniqueCachedRepository<T>>(configure)
                 .UseFactory<UniqueCachedRepositoryFactory<T>>()
-                .HasKey(x => x.Id);
+                .HasKey(x => x.Id)
+                .As<IUniqueCachedRepository<T>>();
         }
 
         public static KeyCachedRepositoryBuilder<T> AddUniqueRepository<T>(

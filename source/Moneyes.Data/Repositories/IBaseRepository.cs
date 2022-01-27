@@ -10,7 +10,7 @@ namespace Moneyes.Data
         T FindById(object id);
         bool Set(T entity);
         int Set(IEnumerable<T> entities);
-        bool Delete(object id);
+        bool DeleteById(object id);
         int DeleteAll();
         int DeleteMany(Func<T, bool> predicate);
 

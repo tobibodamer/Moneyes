@@ -1,15 +1,16 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using LiteDB;
+using Microsoft.Extensions.Logging;
 
 namespace Moneyes.Data
 {
-    public delegate bool NeedsRefresh<T>(T entity);
     public class CachedRepository<T, TKey> : CachedRepository<T>, ICachedRepository<T, TKey>
         where TKey : struct
     {
@@ -19,19 +20,21 @@ namespace Moneyes.Data
             IDatabaseProvider databaseProvider,
             Func<T, TKey> keySelector,
             CachedRepositoryOptions options,
+            DependencyRefreshHandler refreshHandler,
             bool autoId = false,
             IEnumerable<IRepositoryDependency<T>> repositoryDependencies = null,
-            IEnumerable<IUniqueConstraint<T>> uniqueConstraints = null)
-            : base(databaseProvider, options, null, autoId, repositoryDependencies, uniqueConstraints)
+            IEnumerable<IUniqueConstraint<T>> uniqueConstraints = null,
+            ILogger<CachedRepository<T, TKey>> logger = null)
+            : base(databaseProvider, options, refreshHandler, null, autoId, repositoryDependencies, uniqueConstraints, logger)
         {
             ArgumentNullException.ThrowIfNull(keySelector);
 
             _keySelector = keySelector;
         }
 
-        public bool Delete(TKey id)
+        public bool DeleteById(TKey id)
         {
-            return base.Delete(id);
+            return base.DeleteById(id);
         }
 
         public T? FindById(TKey id)
@@ -61,7 +64,10 @@ namespace Moneyes.Data
         protected IEnumerable<IRepositoryDependency<T>> RepositoryDependencies { get; set; }
         protected IEnumerable<IUniqueConstraint<T>> UniqueConstraints { get; set; }
         protected CachedRepositoryOptions Options { get; }
-        protected ConcurrentDictionary<object, T> Cache { get; } = new();
+        protected DependencyRefreshHandler DependencyRefreshHandler { get; }
+        protected Dictionary<object, T> Cache { get; } = new();
+
+        protected ILogger<CachedRepository<T>> Logger { get; }
 
         public event Action<T> EntityAdded;
         public event Action<T> EntityUpdated;
@@ -72,10 +78,12 @@ namespace Moneyes.Data
         public CachedRepository(
             IDatabaseProvider databaseProvider,
             CachedRepositoryOptions options,
+            DependencyRefreshHandler refreshHandler,
             Func<T, object> keySelector = null,
             bool autoId = false,
             IEnumerable<IRepositoryDependency<T>> repositoryDependencies = null,
-            IEnumerable<IUniqueConstraint<T>> uniqueConstraints = null)
+            IEnumerable<IUniqueConstraint<T>> uniqueConstraints = null,
+            ILogger<CachedRepository<T>> logger = null)
         {
             ArgumentNullException.ThrowIfNull(databaseProvider);
 
@@ -84,26 +92,11 @@ namespace Moneyes.Data
             UniqueConstraints = uniqueConstraints;
             Database = databaseProvider.Database;
             Options = options;
-
+            DependencyRefreshHandler = refreshHandler;
+            Logger = logger;
             _collectionLazy = new Lazy<ILiteCollection<T>>(CreateCollection);
 
-
-            if (options.PreloadCache)
-            {
-                Task.Run(() =>
-                {
-                    try
-                    {
-                        RefreshCache();
-                    }
-                    catch (Exception ex)
-                    {
-                        // Update cache failed
-                    }
-                });
-            }
-
-            //SetupDependencies();
+            SetupDependencies();
         }
 
         #region Setup
@@ -112,43 +105,69 @@ namespace Moneyes.Data
         {
             var collection = Database.GetCollection<T>(Options.CollectionName);
 
+            // Apply includes of dependencies to collection
+            foreach (var dependency in RepositoryDependencies)
+            {
+                collection = dependency.Apply(collection);
+            }
+
             return collection;
         }
+
+        /// <summary>
+        /// Registers callbacks for the <see cref="RepositoryDependencies"/>.
+        /// </summary>
         protected virtual void SetupDependencies()
         {
             foreach (var dependency in RepositoryDependencies)
             {
-                dependency.RefreshNeeded += OnRefreshNeeded;
-                dependency.Apply(Collection);
+                DependencyRefreshHandler.RegisterCallback(dependency, OnDependencyChanged);
             }
         }
 
-        protected virtual void OnRefreshNeeded(NeedsRefresh<T> needsRefresh)
+        /// <summary>
+        /// This method is called when a dependency entity changed.
+        /// </summary>
+        /// <param name="dependency">The associated repository dependency.</param>
+        /// <param name="e">The change args.</param>
+        protected virtual void OnDependencyChanged(IRepositoryDependency<T> dependency, DependencyRefreshHandler.DepedencyChangedEventArgs e)
         {
-            // Get a set of keys for all entities that need a refresh
-            var keysToReload = GetAll().Where(x => needsRefresh(x))
-                  .Select(x => GetKey(x)).ToHashSet();
+            var affectedEntities = GetFromCache()
+                   .Where(x => dependency.NeedsRefresh(e.ChangedKey, x))
+                   .ToList();
 
-            Task.Run(() =>
+            Logger.LogInformation("OnDependencyChanged() called with {@dependency} and {@args}",
+                new { Source = dependency.SourceCollectionName, Target = dependency.TargetCollectionName },
+                new { Key = e.ChangedKey, e.Action });
+            Logger.LogInformation("Affected entities: {@entities}", affectedEntities.Count);
+
+            if (!affectedEntities.Any())
             {
-                try
-                {
-                    // Update cache for these entities
-                    RefreshCacheFor(keysToReload);
-                }
-                catch (Exception ex)
-                {
-                    // Update cache failed
-                }
-            });
+                return;
+            }
+
+            // Replace dependent properties with updated value
+            foreach (var entity in affectedEntities)
+            {
+                dependency.UpdateDependency(entity, e);
+            }
+
+            // NOTE: Cache doesn't need update because references are changed
+
+            // Forward changes to next dependencies
+            foreach (var entity in affectedEntities)
+            {
+                DependencyRefreshHandler.OnChangesMade(this, entity, e.Action);
+            }
         }
+
         #endregion
 
 
         #region Cache
         public void RefreshCache()
         {
-            _cacheLock.AcquireReaderLock(CacheTimeout);
+            _cacheLock.AcquireWriterLock(CacheTimeout);
 
             List<T> entitiesToUpdate;
 
@@ -158,41 +177,73 @@ namespace Moneyes.Data
             }
             catch
             {
-                _cacheLock.ReleaseReaderLock();
+                _cacheLock.ReleaseWriterLock();
                 throw;
             }
 
-
-            RefreshCacheFor(entitiesToUpdate);
+            RefreshCacheForInternal(entitiesToUpdate, true);
         }
-        public void RefreshCacheFor(ISet<object> keys)
+        public void RefreshCacheFor(IEnumerable<T> entities)
         {
-            _cacheLock.AcquireReaderLock(CacheTimeout);
+            _cacheLock.AcquireWriterLock(CacheTimeout);
 
             List<T> entitiesToUpdate;
 
             try
             {
-                entitiesToUpdate = Collection.Query().Where(x => keys.Contains(GetKey(x))).ToList();
+                var keys = entities.Select(GetKey).Select(x => new BsonValue(x));
+
+                Logger.LogInformation("Reloading {count} entities...", keys.Count());
+
+                entitiesToUpdate = Collection.Find(Query.In("_id", keys)).ToList();
+
+                Logger.LogInformation("{count} entities loaded", entitiesToUpdate.Count);
             }
             catch
             {
-                _cacheLock.ReleaseReaderLock();
+                _cacheLock.ReleaseWriterLock();
                 throw;
             }
 
-
-            RefreshCacheFor(entitiesToUpdate);
+            RefreshCacheForInternal(entitiesToUpdate, true);
         }
-        public void RefreshCacheFor(IEnumerable<T> entities)
+
+        private void RefreshCacheForInternal(IEnumerable<T> entities, bool isWriteLockHeld)
         {
-            List<T> entitiesToUpdate = entities.ToList();
-
-            _cacheLock.AcquireWriterLock(CacheTimeout);
-
             try
             {
+                List<T> entitiesToUpdate = entities.ToList();
+
+                Logger.LogInformation("Updating cache for {count} entities", entitiesToUpdate.Count);
+
+                if (!isWriteLockHeld)
+                {
+                    _cacheLock.AcquireWriterLock(CacheTimeout);
+                }
+
                 foreach (T entity in entitiesToUpdate)
+                {
+                    AddOrUpdateCache(entity);
+                }
+
+                Logger.LogInformation("Cache updated.");
+            }
+            finally
+            {
+                _cacheLock.ReleaseWriterLock();
+            }
+        }
+
+        /// <summary>
+        /// Updates the cache with the given entities, while holding a write lock.
+        /// </summary>
+        /// <param name="entities"></param>
+        protected void UpdateCacheLocked(IEnumerable<T> entities)
+        {
+            _cacheLock.AcquireWriterLock(CacheTimeout);
+            try
+            {
+                foreach (var entity in entities)
                 {
                     AddOrUpdateCache(entity);
                 }
@@ -207,7 +258,7 @@ namespace Moneyes.Data
         {
             object key = GetKey(entity);
 
-            _ = Cache.AddOrUpdate(key, key => entity, (key, oldValue) => entity);
+            Cache[key] = entity;
         }
         private bool AddToCache(T entity)
         {
@@ -498,13 +549,35 @@ namespace Moneyes.Data
             }
         }
 
+        public int Update(IEnumerable<T> entities)
+        {
+            List<T> entitiesList = entities.ToList();
+            var keys = entitiesList.Select(GetKey).ToHashSet();
+
+            var entitiesToUpdate = entitiesList.Where(e => keys.Contains(GetKey(e))).ToList();
+
+            //TODO: Validate Unique Constraints
+
+            int counter = Collection.Update(entitiesList);
+
+            foreach (T entity in entitiesToUpdate)
+            {
+                OnEntityUpdated(entity);
+            }
+
+            OnRepositoryChanged(RepositoryChangedAction.Replace,
+                replacedItems: entitiesToUpdate);
+
+            return counter;
+        }
+
         public bool Delete(T entity)
         {
             object key = GetKey(entity);
 
-            return Delete(key);
+            return DeleteById(key);
         }
-        public bool Delete(object id)
+        public bool DeleteById(object id)
         {
             ArgumentNullException.ThrowIfNull(id);
 
@@ -528,7 +601,7 @@ namespace Moneyes.Data
                 try
                 {
                     // Remove deleted entity from cache
-                    _ = Cache.TryRemove(id, out deletedEntity);
+                    _ = Cache.Remove(id, out deletedEntity);
                 }
                 finally
                 {
@@ -555,7 +628,7 @@ namespace Moneyes.Data
             {
                 object id = kvp.Key;
 
-                if (Cache.TryRemove(id, out var entity))
+                if (Cache.Remove(id, out var entity))
                 {
                     removedEntities.Add(entity);
                     OnEntityDeleted(entity);
@@ -602,16 +675,19 @@ namespace Moneyes.Data
         #region Events
         protected virtual void OnEntityUpdated(T entity)
         {
+            DependencyRefreshHandler.OnChangesMade(this, entity, RepositoryChangedAction.Replace);
             EntityUpdated?.Invoke(entity);
         }
 
         protected virtual void OnEntityAdded(T entity)
         {
+            DependencyRefreshHandler.OnChangesMade(this, entity, RepositoryChangedAction.Add);
             EntityAdded?.Invoke(entity);
         }
 
         protected virtual void OnEntityDeleted(T entity)
         {
+            DependencyRefreshHandler.OnChangesMade(this, entity, RepositoryChangedAction.Remove);
             EntityDeleted?.Invoke(entity);
         }
 
@@ -621,12 +697,14 @@ namespace Moneyes.Data
             IReadOnlyList<T> replacedItems = null,
             IReadOnlyList<T> removedItems = null)
         {
-            RepositoryChanged?.Invoke(new(actions)
+            var args = new RepositoryChangedEventArgs<T>(actions)
             {
                 AddedItems = addedItems,
                 ReplacedItems = replacedItems,
                 RemovedItems = removedItems
-            });
+            };
+
+            RepositoryChanged?.Invoke(args);
         }
 
         #endregion

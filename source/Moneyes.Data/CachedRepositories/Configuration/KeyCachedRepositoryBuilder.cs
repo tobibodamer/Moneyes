@@ -9,12 +9,11 @@ namespace Moneyes.Data
 {
     public class KeyCachedRepositoryBuilder<T>
     {
-        protected readonly CachedRepositoryBuilder<T> _baseBuilder;
-        protected readonly IServiceCollection Services;
-        protected readonly string Name;
-        protected readonly EntityBuilder<T> EntityBuilder;
-        protected readonly CachedRepositoryOptions Options;
-        protected readonly LiteDbBuilder DbBuilder;
+        protected IServiceCollection Services { get; }
+        protected string Name { get; }
+        protected EntityBuilder<T> EntityBuilder { get; set; }
+        protected CachedRepositoryOptions Options { get; }
+        protected LiteDbBuilder DbBuilder { get; }
 
 #nullable enable
         internal Type? FactoryType { get; set; }
@@ -40,14 +39,25 @@ namespace Moneyes.Data
         /// <param name="collection"></param>
         /// <returns></returns>
         public virtual KeyCachedRepositoryBuilder<T> DependsOnOne<TDep>(Expression<Func<T, TDep>> propertySelector, string collection = null)
+             where TDep : class
         {
+            collection ??= typeof(TDep).Name;
+
             Services.AddScoped<IRepositoryDependency<T>, RepositoryDependency<T, TDep>>(p =>
             {
                 var repositoryProvider = p.GetRequiredService<IRepositoryProvider>();
+                var dependencyRefreshHandler = p.GetRequiredService<DependencyRefreshHandler>();
 
-                return new(repositoryProvider, propertySelector,
+                return new RepositoryDependency<T, TDep>(
+                    repositoryProvider, propertySelector,
                     targetCollection: Name, sourceCollection: collection);
             });
+
+            // Add DependencyRefreshHandler if not yet registered
+            if (!Services.Any(x => x.ServiceType == typeof(DependencyRefreshHandler)))
+            {
+                Services.AddScoped<DependencyRefreshHandler>();
+            }
 
             // Configure reference in entity builder
             EntityBuilder.DbRef(propertySelector, collection);
@@ -63,16 +73,26 @@ namespace Moneyes.Data
         /// <param name="collectionPropertySelector"></param>
         /// <param name="collection"></param>
         /// <returns></returns>
-        public virtual KeyCachedRepositoryBuilder<T> DependsOnMany<TDep>(Expression<Func<T, IEnumerable<TDep>>> collectionPropertySelector,
-            string collection = null)
+        public virtual KeyCachedRepositoryBuilder<T> DependsOnMany<TDep>(Expression<Func<T, ICollection<TDep>>> collectionPropertySelector,
+            string collection = null) where TDep : class
         {
+            collection ??= typeof(TDep).Name;
+
             Services.AddScoped<IRepositoryDependency<T>, RepositoryDependency<T, TDep>>(p =>
             {
                 var repositoryProvider = p.GetRequiredService<IRepositoryProvider>();
+                var dependencyRefreshHandler = p.GetRequiredService<DependencyRefreshHandler>();
 
-                return new(repositoryProvider, collectionPropertySelector,
+                return new RepositoryDependency<T, TDep>(
+                    repositoryProvider, collectionPropertySelector,
                     targetCollection: Name, sourceCollection: collection);
             });
+
+            // Add DependencyRefreshHandler if not yet registered
+            if (!Services.Any(x => x.ServiceType == typeof(DependencyRefreshHandler)))
+            {
+                Services.AddScoped<DependencyRefreshHandler>();
+            }
 
             // Configure reference in entity builder
             EntityBuilder.DbRef(collectionPropertySelector, collection);
@@ -120,6 +140,11 @@ namespace Moneyes.Data
             return this;
         }
 
+        /// <summary>
+        /// Specifies a factory to use for creating cached repository instances.
+        /// </summary>
+        /// <typeparam name="TFactory">The factory type.</typeparam>
+        /// <returns></returns>
         public virtual KeyCachedRepositoryBuilder<T> UseFactory<TFactory>() where TFactory : IRepositoryFactory<T>
         {
             FactoryType = typeof(TFactory);

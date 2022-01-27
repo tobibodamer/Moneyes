@@ -33,11 +33,12 @@ namespace Moneyes.Data
             var repositoryDependencies = GetRepositoryDependencies(collectionName);
             var uniqueConstraints = GetUniqueConstraints(collectionName);
             var databaseProvider = ServiceProvider.GetRequiredService<IDatabaseProvider>();
-
+            var refreshHandler = ServiceProvider.GetRequiredService<DependencyRefreshHandler>();
 
             return new CachedRepository<T>(
                 databaseProvider,
                 options,
+                refreshHandler,
                 repositoryDependencies: repositoryDependencies,
                 uniqueConstraints: uniqueConstraints);
         }
@@ -57,8 +58,16 @@ namespace Moneyes.Data
             var repositoryDependencies = GetRepositoryDependencies(collectionName);
             var uniqueConstraints = GetUniqueConstraints(collectionName);
             var databaseProvider = ServiceProvider.GetRequiredService<IDatabaseProvider>();
+            var dependencyRefreshHandler = ServiceProvider.GetService<DependencyRefreshHandler>();
 
-            return new CachedRepository<T, TKey>(databaseProvider, keySelector, options, autoId, repositoryDependencies, uniqueConstraints);
+            return new CachedRepository<T, TKey>(
+                databaseProvider, 
+                keySelector, 
+                options, 
+                dependencyRefreshHandler, 
+                autoId, 
+                repositoryDependencies, 
+                uniqueConstraints);
         }
     }
 }

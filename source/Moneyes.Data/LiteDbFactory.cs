@@ -23,7 +23,7 @@ namespace Moneyes.Data
 
         public ILiteDatabase Create(string password = null)
         {
-            BsonMapper bsonMapper = new();
+            BsonMapper bsonMapper = _config.Value.BsonMapper ?? new();
 
             ConnectionString connectionString = new(_config.Value.DatabasePath);
 
@@ -37,7 +37,7 @@ namespace Moneyes.Data
                 if (_config.Value.EncryptSecureStrings)
                 {
                     SecureString securePassword = password.ToSecuredString();
-
+                    
                     bsonMapper.RegisterType<SecureString>
                     (
                         serialize: str => SymmetricEncryptor.EncryptString(

@@ -74,7 +74,7 @@ namespace Moneyes.Data
             //}
         }
 
-        public virtual bool Delete(object id)
+        public virtual bool DeleteById(object id)
         {
             if (Collection.Delete(new BsonValue(id)))
             {

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace Moneyes.Data
 {
@@ -7,6 +8,10 @@ namespace Moneyes.Data
         string CollectionName { get; }
         object GetKey(T entity);
         void Update(T entity);
+
+        void RefreshCache();
+
+        void RefreshCacheFor(IEnumerable<T> entities);
 
         event Action<RepositoryChangedEventArgs<T>> RepositoryChanged;
     }
@@ -17,7 +22,8 @@ namespace Moneyes.Data
         T? FindById(TKey id);
 #nullable disable
 
-        bool Delete(TKey id);
+        bool Delete(T entity);
+        bool DeleteById(TKey id);
 
         new TKey GetKey(T entity);
     }

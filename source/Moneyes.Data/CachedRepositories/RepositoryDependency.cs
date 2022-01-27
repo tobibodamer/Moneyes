@@ -7,50 +7,28 @@ using System.Linq.Expressions;
 namespace Moneyes.Data
 {
     internal class RepositoryDependency<T, TDep> : IRepositoryDependency<T>
+        where TDep : class
     {
         private readonly Expression<Func<T, TDep>> _dependentPropertySelectorExpression;
-        private readonly Expression<Func<T, IEnumerable<TDep>>> _collectionDependentPropertySelectorExpression;
+        private readonly Expression<Func<T, ICollection<TDep>>> _collectionDependentPropertySelectorExpression;
 
         private readonly Func<T, TDep> _dependentPropertySelector;
-        private readonly Func<T, IEnumerable<TDep>> _collectionDependentPropertySelector;
+        private readonly Func<T, ICollection<TDep>> _collectionDependentPropertySelector;
 
         private readonly IRepositoryProvider _repositoryProvider;
         private readonly bool _hasMultipleDependents;
 
         public Type SourceType => typeof(TDep);
-        public bool HasMultipleDependents => _hasMultipleDependents;
+        public Type TargetType => typeof(T);
+
         public string SourceCollectionName { get; }
         public string TargetCollectionName { get; }
-        public ICachedRepository<TDep> SourceRepository { get; }
 
-        public event Action<NeedsRefresh<T>> RefreshNeeded
-        {
-            add
-            {
-                // Get the source repository of this dependency
-                var sourceRepository = GetSourceRepository();
-
-                sourceRepository.EntityAdded += SourceRepository_EntityChanged;
-                sourceRepository.EntityUpdated += SourceRepository_EntityChanged;
-                sourceRepository.EntityDeleted += SourceRepository_EntityChanged;
-
-                RefreshNeededInternal += value;
-            }
-            remove
-            {
-                SourceRepository.EntityAdded -= SourceRepository_EntityChanged;
-                SourceRepository.EntityUpdated -= SourceRepository_EntityChanged;
-                SourceRepository.EntityDeleted -= SourceRepository_EntityChanged;
-
-                RefreshNeededInternal -= value;
-            }
-        }
-
-        private event Action<NeedsRefresh<T>> RefreshNeededInternal;
+        public bool HasMultipleDependents => _hasMultipleDependents;
 
         public RepositoryDependency(IRepositoryProvider repositoryProvider,
-            Expression<Func<T, TDep>> propertySelector, 
-            string targetCollection, string sourceCollection = null)
+            Expression<Func<T, TDep>> propertySelector,
+            string targetCollection, string sourceCollection)
             : this(repositoryProvider, targetCollection, sourceCollection)
         {
             _hasMultipleDependents = false;
@@ -58,9 +36,9 @@ namespace Moneyes.Data
             _dependentPropertySelector = propertySelector.Compile();
         }
         public RepositoryDependency(IRepositoryProvider repositoryProvider,
-            Expression<Func<T, IEnumerable<TDep>>> collectionPropertySelector,
-            string targetCollection, string sourceCollection = null)
-            : this(repositoryProvider, sourceCollection, targetCollection)
+            Expression<Func<T, ICollection<TDep>>> collectionPropertySelector,
+            string targetCollection, string sourceCollection)
+            : this(repositoryProvider, targetCollection, sourceCollection)
         {
             _hasMultipleDependents = true;
             _collectionDependentPropertySelectorExpression = collectionPropertySelector;
@@ -70,61 +48,200 @@ namespace Moneyes.Data
         private RepositoryDependency(IRepositoryProvider repositoryProvider,
             string targetCollection, string sourceCollection)
         {
-            SourceCollectionName = sourceCollection ?? typeof(TDep).Name;
+            SourceCollectionName = sourceCollection;
             TargetCollectionName = targetCollection;
 
             _repositoryProvider = repositoryProvider;
-
-
-            //// Get the source repository of this dependency
-            //SourceRepository = repositoryProvider.GetRepository<TDep>(SourceCollectionName);
-
-            //SourceRepository.EntityAdded += SourceRepository_EntityChanged;
-            //SourceRepository.EntityUpdated += SourceRepository_EntityChanged;
-            //SourceRepository.EntityDeleted += SourceRepository_EntityChanged;
         }
 
-        ~RepositoryDependency()
+        public bool NeedsRefresh(object changedSourceKey, T entityToCheck)
         {
-            //SourceRepository.EntityAdded -= SourceRepository_EntityChanged;
-            //SourceRepository.EntityUpdated -= SourceRepository_EntityChanged;
-            //SourceRepository.EntityDeleted -= SourceRepository_EntityChanged;
-        }
+            ArgumentNullException.ThrowIfNull(changedSourceKey);
+            ArgumentNullException.ThrowIfNull(entityToCheck);
 
-        private ICachedRepository<TDep> GetSourceRepository()
-        {
-            return _repositoryProvider.GetRepository<TDep>();
-        }
+            var sourceRepository = _repositoryProvider.GetRepository<TDep>(SourceCollectionName);
 
-        private void SourceRepository_EntityChanged(TDep entity)
-        {
-            // Gets the key of the entity that changed in the source repo
-            var changedSourceKey = SourceRepository.GetKey(entity);
-
-            // Define the function that checks entities if they need a refresh
-            bool needsRefresh(T x)
+            if (_hasMultipleDependents)
             {
-                if (_hasMultipleDependents)
-                {
-                    // Depending collection -> Get the keys of all depending entities in the target repository
-                    var dependingTargetKeys = _collectionDependentPropertySelector(x)
-                        .Select(SourceRepository.GetKey);
+                // Depending collection -> Get the keys of all depending entities in the target repository
+                var dependingTargetKeys = _collectionDependentPropertySelector(entityToCheck)
+                    .Where(p => p != null)
+                    .Select(sourceRepository.GetKey);
 
-                    // Check if the changed key is in the depending keys
-                    return dependingTargetKeys.Contains(changedSourceKey);
+                // Check if the changed key is in the depending keys
+                return dependingTargetKeys.Contains(changedSourceKey);
+            }
+            else
+            {
+                var dependentProperty = _dependentPropertySelector(entityToCheck);
+
+                if (dependentProperty == null)
+                {
+                    return false;
                 }
-                else
-                {
-                    // Single dependent -> Get the key of this dependent
-                    var dependingTargetKey = SourceRepository.GetKey(_dependentPropertySelector(x));
 
-                    // Check if the key matches the changed key and the entity needs a refresh
-                    return changedSourceKey.Equals(dependingTargetKey);
+                // Single dependent -> Get the key of this dependent
+                var dependingTargetKey = sourceRepository.GetKey(dependentProperty);
+
+                // Check if the key matches the changed key and the entity needs a refresh
+                return changedSourceKey.Equals(dependingTargetKey);
+            }
+        }
+
+        private void SetDependentProperty(T targetEntity, TDep value)
+        {
+            if (!HasMultipleDependents)
+            {
+                ParameterExpression valueParameterExpression = Expression.Parameter(typeof(object));
+                Expression targetExpression = _dependentPropertySelectorExpression.Body;
+
+                var newValue = Expression.Parameter(_dependentPropertySelectorExpression.Body.Type);
+                var assign = Expression.Lambda<Action<T, TDep>>
+                            (
+                                Expression.Assign(targetExpression, Expression.Convert(valueParameterExpression, targetExpression.Type)),
+                                _dependentPropertySelectorExpression.Parameters.Single(),
+                                valueParameterExpression
+                            );
+
+                assign.Compile().Invoke(targetEntity, value);
+            }
+        }
+
+        public void RemoveDependency(object sourceKeyToDelete, T entity)
+        {
+            //if (sourceRepository is not ICachedRepository<TDep> sourceRepositoryCasted)
+            //{
+            //    throw new ArgumentException("Invalid source repository type.", nameof(sourceRepository));
+            //}
+
+            var sourceRepository = _repositoryProvider.GetRepository<TDep>(SourceCollectionName);
+
+            if (_hasMultipleDependents)
+            {
+                // Depending collection -> Get the keys of all depending entities in the target repository
+                var depending = _collectionDependentPropertySelector(entity);
+
+                foreach (var depEntity in depending.ToList())
+                {
+                    if (depEntity == null ||
+                        sourceRepository.GetKey(depEntity) != sourceKeyToDelete)
+                    {
+                        continue;
+                    }
+
+                    depending.Remove(depEntity);
                 }
             }
+            else
+            {
+                var dependentProperty = _dependentPropertySelector(entity);
 
-            // Invoke the refresh needed event with the function to check for refresh
-            RefreshNeededInternal?.Invoke(needsRefresh);
+                if (sourceKeyToDelete.Equals(sourceRepository.GetKey(dependentProperty)))
+                {
+                    // Set null
+                    SetDependentProperty(entity, default);
+                }
+            }
+        }
+
+        public void ReplaceDependency(object sourceKeyToReplace, T entity, object newValue)
+        {
+            if (newValue is not TDep updateValue)
+            {
+                throw new ArgumentException(nameof(newValue));
+            }
+
+            var sourceRepository = _repositoryProvider.GetRepository<TDep>(SourceCollectionName);
+
+            if (_hasMultipleDependents)
+            {
+                // Depending collection -> Get the keys of all depending entities in the target repository
+                var depending = _collectionDependentPropertySelector(entity);
+
+                foreach (var depEntity in depending.ToList())
+                {
+                    if (depEntity == null ||
+                        !sourceRepository.GetKey(depEntity).Equals(sourceKeyToReplace))
+                    {
+                        continue;
+                    }
+
+                    depending.Remove(depEntity);
+                    depending.Add(updateValue);
+                }
+            }
+            else
+            {
+                var dependentProperty = _dependentPropertySelector(entity);
+
+                if (sourceKeyToReplace.Equals(sourceRepository.GetKey(dependentProperty)))
+                {
+                    // Set null
+                    SetDependentProperty(entity, updateValue);
+                }
+            }
+        }
+
+        public void UpdateDependency(T entity, DependencyRefreshHandler.DepedencyChangedEventArgs e)
+        {
+            if (e.Action != RepositoryChangedAction.Remove && e.NewValue is not TDep)
+            {
+                throw new ArgumentException("New value must be of source entity type.", nameof(e));
+            }
+
+            TDep newValue = (TDep)e.NewValue;
+
+            var sourceRepository = _repositoryProvider.GetRepository<TDep>(SourceCollectionName);
+
+            if (_hasMultipleDependents)
+            {
+                // Depending collection -> Get the keys of all depending entities in the target repository
+                var depending = _collectionDependentPropertySelector(entity);
+
+                foreach (var depEntity in depending.ToList())
+                {
+                    // Match key
+                    if (depEntity == null ||
+                        !sourceRepository.GetKey(depEntity).Equals(e.ChangedKey))
+                    {
+                        continue;
+                    }
+
+                    // Update collection
+
+                    if (e.Action is RepositoryChangedAction.Remove or RepositoryChangedAction.Replace)
+                    {
+                        depending.Remove(depEntity);
+                    }
+
+                    if (e.Action is not RepositoryChangedAction.Remove)
+                    {
+                        depending.Add(newValue);
+                    }
+                }
+            }
+            else
+            {
+                var depEntity = _dependentPropertySelector(entity);
+
+                // Match key
+                if (depEntity == null ||
+                    !sourceRepository.GetKey(depEntity).Equals(e.ChangedKey))
+                {
+                    return;
+                }
+
+                // Update value
+
+                if (e.Action is RepositoryChangedAction.Add or RepositoryChangedAction.Replace)
+                {
+                    SetDependentProperty(entity, newValue);
+                }
+                else if (e.Action is RepositoryChangedAction.Remove)
+                {
+                    SetDependentProperty(entity, null);
+                }
+            }
         }
 
         public ILiteCollection<T> Apply(ILiteCollection<T> collection)
@@ -138,5 +255,7 @@ namespace Moneyes.Data
                 return collection.Include(_dependentPropertySelectorExpression);
             }
         }
+
+
     }
 }

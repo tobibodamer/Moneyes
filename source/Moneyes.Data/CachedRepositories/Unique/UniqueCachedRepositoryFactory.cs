@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Moneyes.Core;
+using Microsoft.Extensions.Logging;
 
 namespace Moneyes.Data
 {
@@ -22,9 +23,11 @@ namespace Moneyes.Data
             var repositoryDependencies = GetRepositoryDependencies(collectionName);
             var uniqueConstraints = GetUniqueConstraints(collectionName);
             var databaseProvider = ServiceProvider.GetRequiredService<IDatabaseProvider>();
+            var refreshHandler = ServiceProvider.GetService<DependencyRefreshHandler>();
+            var logger = ServiceProvider.GetService<ILogger<UniqueCachedRepository<T>>>();
 
             return new UniqueCachedRepository<T>(
-                databaseProvider, options, keySelector, autoId, repositoryDependencies, uniqueConstraints);
+                databaseProvider, keySelector, options, refreshHandler, autoId, repositoryDependencies, uniqueConstraints, logger);
         }
 
         public override ICachedRepository<T> CreateRepository(CachedRepositoryOptions options, bool autoId)
@@ -34,8 +37,10 @@ namespace Moneyes.Data
             var repositoryDependencies = GetRepositoryDependencies(collectionName);
             var uniqueConstraints = GetUniqueConstraints(collectionName);
             var databaseProvider = ServiceProvider.GetRequiredService<IDatabaseProvider>();
+            var refreshHandler = ServiceProvider.GetService<DependencyRefreshHandler>();
+            var logger = ServiceProvider.GetService<ILogger<UniqueCachedRepository<T>>>();
 
-            return new UniqueCachedRepository<T>(databaseProvider, options, null, autoId, repositoryDependencies, uniqueConstraints);
+            return new UniqueCachedRepository<T>(databaseProvider, x => x.Id, options, refreshHandler, autoId, repositoryDependencies, uniqueConstraints, logger);
         }
     }
 }

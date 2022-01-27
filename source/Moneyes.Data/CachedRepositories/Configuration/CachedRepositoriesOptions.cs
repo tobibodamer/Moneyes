@@ -154,7 +154,7 @@ namespace Moneyes.Data
         {
             if (!_builder.Services.Any(c => c.ServiceType == typeof(IRepositoryProvider)))
             {
-                _builder.Services.AddScoped<IRepositoryProvider, RepositoryProvider>(p => new(p.CreateScope()));
+                _builder.Services.AddScoped<IRepositoryProvider, RepositoryProvider>(p => new(p));
             }
         }
     }

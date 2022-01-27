@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Moneyes.Core;
 
 namespace Moneyes.Data
@@ -16,19 +17,18 @@ namespace Moneyes.Data
         where T : UniqueEntity
     {
         public UniqueCachedRepository(
-            IDatabaseProvider databaseProvider,
-            CachedRepositoryOptions options,
-            Func<T, Guid> keySelector = null,
-            bool autoId = false,
-            IEnumerable<IRepositoryDependency<T>> repositoryDependencies = null,
-            IEnumerable<IUniqueConstraint<T>> uniqueConstraints = null)
-            : base(databaseProvider, keySelector, options, autoId, repositoryDependencies, uniqueConstraints)
+            IDatabaseProvider databaseProvider, 
+            Func<T, Guid> keySelector, 
+            CachedRepositoryOptions options, 
+            DependencyRefreshHandler refreshHandler, 
+            bool autoId = false, 
+            IEnumerable<IRepositoryDependency<T>> repositoryDependencies = null, 
+            IEnumerable<IUniqueConstraint<T>> uniqueConstraints = null,
+            ILogger<UniqueCachedRepository<T>> logger = null) 
+            : base(databaseProvider, keySelector, options, refreshHandler, autoId, repositoryDependencies, uniqueConstraints, logger)
         {
-            if (!typeof(UniqueEntity).IsAssignableFrom(typeof(T)))
-            {
-                throw new InvalidOperationException($"Entity type must be a {nameof(UniqueEntity)}");
-            }
         }
+
 
         #region Validation
         protected override bool ValidateUniqueConstaintsFor(T entity)

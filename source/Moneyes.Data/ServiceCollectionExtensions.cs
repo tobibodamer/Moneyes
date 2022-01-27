@@ -1,4 +1,5 @@
 ﻿using System;
+using LiteDB;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Moneyes.Data
@@ -6,7 +7,7 @@ namespace Moneyes.Data
     public static class ServiceCollectionExtensions
     {
         /// <summary>
-        /// Adds LiteDB services with the default <see cref="DatabaseProvider"/>.
+        /// Adds LiteDB services with the default <see cref="LiteDatabaseProvider"/>.
         /// </summary>
         /// <param name="services"></param>
         /// <param name="databasePath">The path to the database file.</param>
@@ -17,28 +18,28 @@ namespace Moneyes.Data
         }
 
         /// <summary>
-        /// Adds LiteDB services with the default <see cref="DatabaseProvider"/>.
+        /// Adds LiteDB services with the default <see cref="LiteDatabaseProvider"/>.
         /// </summary>
         /// <param name="services"></param>
         /// <param name="configure"></param>
         /// <returns></returns>
         public static LiteDbBuilder AddLiteDb(this IServiceCollection services, Action<LiteDbConfig> configure)
         {
-            return AddLiteDb<DatabaseProvider>(services, configure);
+            return AddLiteDb<LiteDatabaseProvider>(services, configure);
         }
 
         /// <summary>
-        /// Adds LiteDB services with a custom <see cref="DatabaseProvider"/>.
+        /// Adds LiteDB services with a custom <see cref="LiteDatabaseProvider"/>.
         /// </summary>
         /// <typeparam name="TProvider"></typeparam>
         /// <param name="services"></param>
         /// <param name="configure"></param>
         /// <returns></returns>
         public static LiteDbBuilder AddLiteDb<TProvider>(this IServiceCollection services, Action<LiteDbConfig> configure)
-            where TProvider : DatabaseProvider
+            where TProvider : LiteDatabaseProvider
         {
             // Add database provider
-            services.AddScoped<IDatabaseProvider, TProvider>();
+            services.AddScoped<IDatabaseProvider<ILiteDatabase>, TProvider>();
 
             LiteDbBuilder builder = new(services);
 

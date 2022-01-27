@@ -16,6 +16,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Security;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Markup;
@@ -28,7 +29,7 @@ namespace Moneyes.UI
     /// </summary>
     public partial class App : Application
     {
-        private IDatabaseProvider _dbProvider;
+        private IDatabaseProvider<ILiteDatabase> _dbProvider;
 
         private static void InitializeCultures()
         {
@@ -46,18 +47,14 @@ namespace Moneyes.UI
             IDSelectors.Register<Balance>(b => b.UID);
         }
 
-        private static LiteDbConfig CreateDbConfiguration()
+        private static string InitDatabasePath()
         {
             string userHome = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
             string dataDir = Path.Combine(userHome, ".moneyes");
+
             Directory.CreateDirectory(dataDir);
 
-            LiteDbConfig databaseConfig = new()
-            {
-                DatabasePath = Path.Combine(dataDir, "database.db")
-            };
-
-            return databaseConfig;
+            return Path.Combine(dataDir, "database.db");
         }
 
         private static void SetupLogging()
@@ -73,6 +70,27 @@ namespace Moneyes.UI
                 .MinimumLevel.Debug()
                 .CreateLogger();
         }
+
+        class UIDatabaseProvider : LiteDatabaseProvider
+        {
+            private readonly MasterPasswordProvider _masterPasswordProvider;
+            public UIDatabaseProvider(LiteDbConfig dbConfig, MasterPasswordProvider masterPasswordProvider)
+                : base(dbConfig)
+            {
+                _masterPasswordProvider = masterPasswordProvider;
+            }
+
+            public override SecureString OnCreatePassword()
+            {
+                return _masterPasswordProvider.CreateMasterPassword();
+            }
+
+            public override SecureString OnRequestPassword()
+            {
+                return _masterPasswordProvider.RequestMasterPassword();
+            }
+        }
+
         protected override async void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
@@ -91,21 +109,39 @@ namespace Moneyes.UI
             IServiceCollection services = new ServiceCollection();
 
             // Database
-            services.AddSingleton<LiteDbConfig>(CreateDbConfiguration());
-            services.AddSingleton<IDatabaseProvider, DatabaseProvider>(CreateDatabaseProvider);
+            services.AddLiteDb<UIDatabaseProvider>(config => config.DatabasePath = InitDatabasePath())
+                .AddCachedRepositories(options =>
+                {
+                    options.AddUniqueRepository<Transaction>(x => x.PreloadCache = true)
+                        .DependsOnMany(t => t.Categories)
+                        .WithUniqueProperty(t => t.UID);                        
+
+                    options.AddUniqueRepository<Category>(x => x.PreloadCache = true)
+                        .DependsOnOne(c => c.Parent)
+                        .WithUniqueProperty(c => c.Name);                        
+
+                    options.AddUniqueRepository<AccountDetails>(x => x.PreloadCache = true)
+                        .WithUniqueProperty(a => a.IBAN);                       
+
+                    options.AddUniqueRepository<Balance>(x => x.PreloadCache = true)
+                        .DependsOnOne(b => b.Account);
+
+                    options.AddUniqueRepository<BankDetails>(x => x.PreloadCache = true)
+                        .WithUniqueProperty(b => b.BankCode);
+                });
 
 
             // Repositories
-            services.AddScoped<CategoryRepository>();
-            services.AddScoped<IBaseRepository<Category>, CategoryRepository>(p => p.GetRequiredService<CategoryRepository>());
-            services.AddScoped<TransactionRepository>();
-            services.AddScoped<IBaseRepository<Transaction>, TransactionRepository>(p => p.GetRequiredService<TransactionRepository>());
-            services.AddScoped<AccountRepository>();
-            services.AddScoped<IBaseRepository<AccountDetails>, AccountRepository>(p => p.GetRequiredService<AccountRepository>());
-            services.AddScoped<BalanceRepository>();
-            services.AddScoped<IBaseRepository<Balance>, BalanceRepository>(p => p.GetRequiredService<BalanceRepository>());
-            services.AddScoped<BankDetailsRepository>();
-            services.AddScoped<IBaseRepository<BankDetails>, BankDetailsRepository>(p => p.GetRequiredService<BankDetailsRepository>());
+            //services.AddScoped<CategoryRepository>();
+            //services.AddScoped<IBaseRepository<Category>, CategoryRepository>(p => p.GetRequiredService<CategoryRepository>());
+            //services.AddScoped<TransactionRepository>();
+            //services.AddScoped<IBaseRepository<Transaction>, TransactionRepository>(p => p.GetRequiredService<TransactionRepository>());
+            //services.AddScoped<AccountRepository>();
+            //services.AddScoped<IBaseRepository<AccountDetails>, AccountRepository>(p => p.GetRequiredService<AccountRepository>());
+            //services.AddScoped<BalanceRepository>();
+            //services.AddScoped<IBaseRepository<Balance>, BalanceRepository>(p => p.GetRequiredService<BalanceRepository>());
+            //services.AddScoped<BankDetailsRepository>();
+            //services.AddScoped<IBaseRepository<BankDetails>, BankDetailsRepository>(p => p.GetRequiredService<BankDetailsRepository>());
 
             // Services
 
@@ -115,7 +151,7 @@ namespace Moneyes.UI
             services.AddScoped<LiveDataService>();
             services.AddScoped<IExpenseIncomeService, ExpenseIncomServieUsingDb>();
             services.AddScoped<IBankingService, BankingService>();
-            //services.AddScoped<ITransactionService, TransactionService>();
+            services.AddScoped<TransactionService>();
             services.AddScoped<ICategoryService, CategoryService>();
 
             // UI services
@@ -160,7 +196,7 @@ namespace Moneyes.UI
             IServiceProvider serviceProvider = services.BuildServiceProvider();
 
             // Open / create database
-            _dbProvider = serviceProvider.GetRequiredService<IDatabaseProvider>();
+            _dbProvider = serviceProvider.GetRequiredService<IDatabaseProvider<ILiteDatabase>>();
 
             if (!_dbProvider.IsDatabaseCreated)
             {
@@ -179,17 +215,16 @@ namespace Moneyes.UI
 
             ApplyMigrations(_dbProvider.Database, serviceProvider.GetRequiredService<Microsoft.Extensions.Logging.ILogger<ILiteDatabase>>());
 
-            var categoryRepo = serviceProvider.GetService<CategoryRepository>();
-            var transactionRepo = serviceProvider.GetService<TransactionRepository>();
-            var balanceRepo = serviceProvider.GetService<BalanceRepository>();
-            var accountRepo = serviceProvider.GetService<AccountRepository>();
-
-            // Preload caches
-            categoryRepo.UpdateCache();
-            transactionRepo.UpdateCache();
-            balanceRepo.UpdateCache();
-            accountRepo.UpdateCache();
-
+            var categoryRepo = serviceProvider.GetService<IUniqueCachedRepository<Category>>();
+            categoryRepo.RenewCache();
+            var transactionRepo = serviceProvider.GetService<IUniqueCachedRepository<Transaction>>();
+            transactionRepo.RenewCache();
+            var balanceRepo = serviceProvider.GetService<IUniqueCachedRepository<Balance>>();
+            balanceRepo.RenewCache();
+            var accountRepo = serviceProvider.GetService<IUniqueCachedRepository<AccountDetails>>();
+            accountRepo.RenewCache();
+            var bankDetailRepo = serviceProvider.GetService<IUniqueCachedRepository<BankDetails>>();
+            bankDetailRepo.RenewCache();
 
             //UpdateUIDs(transactionRepo);
 
@@ -357,6 +392,8 @@ namespace Moneyes.UI
 
                 database.UserVersion = 1;
 
+                database.Checkpoint();
+
                 logger.LogInformation("Migrated to version 1");
             }
         }
@@ -365,7 +402,7 @@ namespace Moneyes.UI
         /// Regenerate the UIDs of all transactions an save the changes.
         /// </summary>
         /// <param name="transactionRepository"></param>
-        private static void UpdateUIDs(TransactionRepository transactionRepository)
+        private static void UpdateUIDs(IUniqueCachedRepository<Transaction> transactionRepository)
         {
             List<Transaction> transactions = transactionRepository.GetAll().ToList();
 
@@ -376,7 +413,7 @@ namespace Moneyes.UI
 
                 if (oldUID != t.UID)
                 {
-                    if (transactionRepository.Delete(oldUID))
+                    if (transactionRepository.DeleteById(oldUID))
                     {
                         transactionRepository.Set(t);
                     }
@@ -411,11 +448,11 @@ namespace Moneyes.UI
                 {
                     if (keepOld?.Invoke(existingTransaction) ?? true)
                     {
-                        _ = transactionRepository.Delete(IDSelectors.Resolve(transaction));
+                        _ = transactionRepository.DeleteById(IDSelectors.Resolve(transaction));
                     }
                     else
                     {
-                        _ = transactionRepository.Delete(IDSelectors.Resolve(existingTransaction));
+                        _ = transactionRepository.DeleteById(IDSelectors.Resolve(existingTransaction));
                     }
 
                     continue;
@@ -492,20 +529,23 @@ namespace Moneyes.UI
         {
             var restorePath = Path.Combine(userHome, @".moneyes_kaputt\database.db");
 
-            var restoreConfig = new LiteDbConfig() { DatabasePath = restorePath };
+            var oldDbProvider = new LiteDatabaseProvider(new LiteDbConfig()
+            {
+                DatabasePath = restorePath,
+                CreatePassword = () => string.Empty.ToSecuredString(),
+                RequestPassword = () => string.Empty.ToSecuredString(),
 
-            var oldDbProvider = new DatabaseProvider(() => string.Empty.ToSecuredString(), () => string.Empty.ToSecuredString(),
-                                    restoreConfig);
+            });
 
             oldDbProvider.TryOpenDatabase();
 
-            var oldCategoryRepo = new CategoryRepository(oldDbProvider);
-            var oldTransactionRepo = new TransactionRepository(oldDbProvider);
-            var oldBalanceRepo = new BalanceRepository(oldDbProvider);
+            //var oldCategoryRepo = new CategoryRepository(oldDbProvider);
+            //var oldTransactionRepo = new TransactionRepository(oldDbProvider);
+            //var oldBalanceRepo = new BalanceRepository(oldDbProvider);
 
-            var oldCategories = oldCategoryRepo.GetAll().ToList();
-            var oldTransactions = oldTransactionRepo.GetAll().ToList();
-            var oldBalances = oldBalanceRepo.GetAll().ToList();
+            //var oldCategories = oldCategoryRepo.GetAll().ToList();
+            //var oldTransactions = oldTransactionRepo.GetAll().ToList();
+            //var oldBalances = oldBalanceRepo.GetAll().ToList();
         }
 
         private MasterPasswordProvider CreateMasterPasswordProvider(IServiceProvider p)
@@ -514,17 +554,6 @@ namespace Moneyes.UI
                        p.GetRequiredService<IDialogService<GetMasterPasswordDialogViewModel>>(),
                        p.GetRequiredService<InitMasterPasswordDialogViewModel>,
                        p.GetRequiredService<GetMasterPasswordDialogViewModel>);
-        }
-
-        private DatabaseProvider CreateDatabaseProvider(IServiceProvider p)
-        {
-            var masterPasswordProvider = p.GetRequiredService<MasterPasswordProvider>();
-            var dbConfig = p.GetRequiredService<LiteDbConfig>();
-
-            return new(
-                masterPasswordProvider.CreateMasterPassword,
-                masterPasswordProvider.RequestMasterPassword,
-                dbConfig);
         }
 
         private void RegisterGlobalExceptionHandling(Action<Exception, string> log)

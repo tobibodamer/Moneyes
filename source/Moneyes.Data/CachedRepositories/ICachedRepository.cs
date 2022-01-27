@@ -3,18 +3,47 @@ using System.Collections.Generic;
 
 namespace Moneyes.Data
 {
+    /// <summary>
+    /// Provides methods for a repository with built in cache and entities of type <typeparamref name="T"/>.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
     public interface ICachedRepository<T> : IBaseRepository<T>
     {
+        /// <summary>
+        /// Gets the name of the underlying table.
+        /// </summary>
         string CollectionName { get; }
-        object GetKey(T entity);
-        void Update(T entity);
-        int Update(IEnumerable<T> entities);
-        void RefreshCache();
-        void RefreshCacheFor(IEnumerable<T> entities);
 
+        /// <summary>
+        /// Gets the primary key of the given <paramref name="entity"/>.
+        /// </summary>
+        /// <param name="entity"></param>
+        /// <returns></returns>
+        object GetKey(T entity);
+
+        /// <summary>
+        /// Renews the cache completely.
+        /// </summary>
+        void RenewCache();
+
+        /// <summary>
+        /// Renews the cache for multiple <paramref name="entities"/>.
+        /// </summary>
+        /// <param name="entities"></param>
+        void RenewCacheFor(IEnumerable<T> entities);
+
+        /// <summary>
+        /// Raised when the repository changed.
+        /// </summary>
         event Action<RepositoryChangedEventArgs<T>> RepositoryChanged;
     }
 
+    /// <summary>
+    /// Represents a repository with built in cache, entities of type <typeparamref name="T"/> 
+    /// and strongly typed primary key of type <typeparamref name="TKey"/>.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <typeparam name="TKey"></typeparam>
     public interface ICachedRepository<T, TKey> : ICachedRepository<T> where TKey : struct
     {
 #nullable enable

@@ -14,7 +14,7 @@ namespace Moneyes.UI.ViewModels
 {
     internal class TransactionsViewModel : ViewModelBase
     {
-        private readonly TransactionRepository _transactionRepository;
+        private readonly TransactionService _transactionService;
 
         private ObservableCollection<Transaction> _transactions = new();
         public ObservableCollection<Transaction> Transactions
@@ -43,9 +43,9 @@ namespace Moneyes.UI.ViewModels
 
         public ICommand RemoveFromCategory { get; set; }
 
-        public TransactionsViewModel(TransactionRepository transactionRepository)
+        public TransactionsViewModel(TransactionService transactionService)
         {
-            _transactionRepository = transactionRepository;
+            _transactionService = transactionService;
         }
         private CancellationTokenSource _updateCTS = new();
         public async Task UpdateTransactions(TransactionFilter filter, params Category[] categories)
@@ -68,7 +68,7 @@ namespace Moneyes.UI.ViewModels
                 List<Transaction> transactions =
                     await Task.Run(() =>
                     {
-                        return _transactionRepository.All(
+                        return _transactionService.All(
                             filter: filter,
                             categories: categories)
                         .ToList();

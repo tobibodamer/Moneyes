@@ -24,7 +24,7 @@ namespace Moneyes.Data
         where T : UniqueEntity
     {
         public UniqueCachedRepository(
-            IDatabaseProvider databaseProvider,
+            IDatabaseProvider<ILiteDatabase> databaseProvider,
             Func<T, Guid> keySelector,
             CachedRepositoryOptions options,
             DependencyRefreshHandler refreshHandler,

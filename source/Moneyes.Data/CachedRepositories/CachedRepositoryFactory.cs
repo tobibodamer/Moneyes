@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using LiteDB;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Moneyes.Data
@@ -32,7 +33,7 @@ namespace Moneyes.Data
 
             var repositoryDependencies = GetRepositoryDependencies(collectionName);
             var uniqueConstraints = GetUniqueConstraints(collectionName);
-            var databaseProvider = ServiceProvider.GetRequiredService<IDatabaseProvider>();
+            var databaseProvider = ServiceProvider.GetRequiredService<IDatabaseProvider<ILiteDatabase>>();
             var refreshHandler = ServiceProvider.GetRequiredService<DependencyRefreshHandler>();
 
             return new CachedRepository<T>(
@@ -57,7 +58,7 @@ namespace Moneyes.Data
 
             var repositoryDependencies = GetRepositoryDependencies(collectionName);
             var uniqueConstraints = GetUniqueConstraints(collectionName);
-            var databaseProvider = ServiceProvider.GetRequiredService<IDatabaseProvider>();
+            var databaseProvider = ServiceProvider.GetRequiredService<IDatabaseProvider<ILiteDatabase>>();
             var dependencyRefreshHandler = ServiceProvider.GetService<DependencyRefreshHandler>();
 
             return new CachedRepository<T, TKey>(

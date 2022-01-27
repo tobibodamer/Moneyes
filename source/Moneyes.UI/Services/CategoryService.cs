@@ -9,19 +9,19 @@ namespace Moneyes.UI
 {
     public class CategoryService : ICategoryService
     {
-        private readonly TransactionRepository _transactionRepository;
-        private readonly CategoryRepository _categoryRepo;
+        private readonly TransactionService _transactionService;
+        private readonly IUniqueCachedRepository<Category> _categoryRepo;
 
-        public CategoryService(TransactionRepository transactionRepo,
-            CategoryRepository categoryRepo)
+        public CategoryService(TransactionService transactionService,
+            IUniqueCachedRepository<Category> categoryRepo)
         {
-            _transactionRepository = transactionRepo;
+            _transactionService = transactionService;
             _categoryRepo = categoryRepo;
         }
 
         public Category GetCategoryByName(string name)
         {
-            return _categoryRepo.FindByName(name);
+            return _categoryRepo.GetAll().FirstOrDefault(c => c.Name.Equals(name));
         }
 
         public IEnumerable<Category> GetCategories(CategoryTypes includeCategories = CategoryTypes.All)
@@ -71,7 +71,7 @@ namespace Moneyes.UI
 
             if (assignMethod is not AssignMethod.Simple or AssignMethod.Reset)
             {
-                oldTransaction = _transactionRepository.FindById(transaction.UID);
+                oldTransaction = _transactionService.GetByUID(transaction.UID);
             }
 
             // Assign categories
@@ -95,7 +95,7 @@ namespace Moneyes.UI
                 {
                     if (updateDatabase)
                     {
-                        _transactionRepository.Set(transaction);
+                        _transactionService.ImportTransaction(transaction);
                     }
 
                     return;
@@ -119,7 +119,7 @@ namespace Moneyes.UI
 
             if (updateDatabase)
             {
-                _transactionRepository.Set(transaction);
+                _transactionService.ImportTransaction(transaction);
             }
         }
 
@@ -133,7 +133,7 @@ namespace Moneyes.UI
 
             if (assignMethod is not AssignMethod.Simple or AssignMethod.Reset)
             {
-                oldTransactions = _transactionRepository.All()
+                oldTransactions = _transactionService.All()
                     .ToDictionary(t => t.UID, t => t);
             }
 
@@ -186,7 +186,7 @@ namespace Moneyes.UI
             if (updateDatabase)
             {
                 // Store
-                _transactionRepository.Set(transactionsToUpdate);
+                _transactionService.ImportTransactions(transactionsToUpdate);
             }
         }
 
@@ -194,7 +194,7 @@ namespace Moneyes.UI
         {
             if (assignMethod is AssignMethod.KeepPrevious) { return; }
 
-            IEnumerable<Transaction> transactions = _transactionRepository.All();
+            IEnumerable<Transaction> transactions = _transactionService.All();
 
             AssignCategories(transactions, assignMethod, true);
         }
@@ -202,7 +202,7 @@ namespace Moneyes.UI
         public int AssignCategory(Category category, AssignMethod assignMethod = AssignMethod.KeepPrevious)
         {
             // Get transactions
-            var transactions = _transactionRepository.All().ToList();
+            var transactions = _transactionService.All().ToList();
             var transactionsToUpdate = new List<Transaction>();
 
             if (category.Filter == null) { return 0; }
@@ -229,7 +229,7 @@ namespace Moneyes.UI
             }
 
             // Store
-            _ = _transactionRepository.Set(transactionsToUpdate);
+            _ = _transactionService.ImportTransactions(transactionsToUpdate);
 
             return transactionsToUpdate.Count;
         }
@@ -246,14 +246,17 @@ namespace Moneyes.UI
 
         public bool DeleteCategory(Category category)
         {
-            if (_categoryRepo.Delete(category.Id))
+            if (_categoryRepo.Delete(category))
             {
-                var transactions = _transactionRepository.GetByCategory(category).ToList();
+                var transactions = _transactionService.GetByCategory(category).ToList();
 
                 foreach (var transaction in transactions)
                 {
                     transaction.Categories.RemoveAll(c => c.Idquals(category));
                 }
+
+                //TODO: 
+                //_transactionService.UpdateTransactions(transactions);
 
                 var directSubCategories = GetCategories()
                     .Where(c => c.Parent?.Idquals(category) ?? false);
@@ -294,7 +297,7 @@ namespace Moneyes.UI
             }
 
             // Update transaction in repo
-            _transactionRepository.Set(transaction);
+            _transactionService.ImportTransaction(transaction);
 
             return true;
         }
@@ -312,7 +315,7 @@ namespace Moneyes.UI
 
             if (transaction.Categories.Remove(category))
             {
-                _transactionRepository.Set(transaction);
+                _transactionService.ImportTransaction(transaction);
 
                 return true;
             }

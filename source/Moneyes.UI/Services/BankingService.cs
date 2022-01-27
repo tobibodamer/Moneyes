@@ -9,27 +9,27 @@ namespace Moneyes.UI
 {
     public class BankingService : IBankingService
     {
-        private readonly BankDetailsRepository _bankConnectionStore;
-        private readonly AccountRepository _accountRepository;
-        private readonly BalanceRepository _balanceRepository;
-        private readonly TransactionRepository _transactionRepository;
+        private readonly ICachedRepository<BankDetails> _bankDetailsRepository;
+        private readonly ICachedRepository<AccountDetails> _accountRepository;
+        private readonly ICachedRepository<Balance> _balanceRepository;
+        private readonly IUniqueCachedRepository<Transaction> _transactionRepository;
         private readonly ICategoryService _categoryService;
 
         public BankingService(
-            BankDetailsRepository bankConnectionStore,
-            AccountRepository accountRepository,
-            BalanceRepository balanceRepository,
-            TransactionRepository transactionRepository,
+            ICachedRepository<BankDetails> bankDetailsRepository,
+            ICachedRepository<AccountDetails> accountRepository,
+            ICachedRepository<Balance> balanceRepository,
+            IUniqueCachedRepository<Transaction> transactionRepository,
             ICategoryService categoryService)
         {
-            _bankConnectionStore = bankConnectionStore;
+            _bankDetailsRepository = bankDetailsRepository;
             _accountRepository = accountRepository;
             _balanceRepository = balanceRepository;
             _transactionRepository = transactionRepository;
             _categoryService = categoryService;
         }
 
-        public bool HasBankingDetails => _bankConnectionStore.GetAll().Any();
+        public bool HasBankingDetails => _bankDetailsRepository.GetAll().Any();
 
         public void UpdateBankingDetails(Action<OnlineBankingDetails> update)
         {
@@ -47,7 +47,7 @@ namespace Moneyes.UI
             get
             {
 
-                var bankDetails = _bankConnectionStore.GetAll().FirstOrDefault();
+                var bankDetails = _bankDetailsRepository.GetAll().FirstOrDefault();
 
                 return new()
                 {
@@ -68,7 +68,7 @@ namespace Moneyes.UI
                     Pin = value.Pin
                 };
 
-                _bankConnectionStore.Set(bankDetails);
+                _bankDetailsRepository.Set(bankDetails);
             }
         }
 
@@ -81,7 +81,7 @@ namespace Moneyes.UI
                 return Enumerable.Empty<AccountDetails>();
             }
 
-            return _accountRepository.GetByBankCode(BankingDetails.BankCode.ToString());
+            return _accountRepository.GetAll().Where(acc => acc.BankCode.Equals(BankingDetails.BankCode.ToString()));
         }
 
         public int ImportAccounts(IEnumerable<AccountDetails> accounts)
@@ -108,16 +108,46 @@ namespace Moneyes.UI
             {
                 foreach (var acc in GetAccounts())
                 {
-                    return _balanceRepository.GetByDate(date, acc);
+                    return GetBalanceByDate(date, acc);
                 }
 
                 return null;
             }
             else
             {
-                return _balanceRepository.GetByDate(date, account);
+                return GetBalanceByDate(date, account);
             }
         }
+
+        /// <summary>
+        /// Gets the balance that is closed to the given <paramref name="date"/>.
+        /// </summary>
+        /// <param name="date"></param>
+        /// <returns></returns>
+        public Balance GetBalanceByDate(DateTime date, AccountDetails account)
+        {
+            return _balanceRepository.GetAll()
+                .Where(b => b.Account.Id.Equals(account.Id))
+                .Where(b => b.Date <= date)
+                .OrderByDescending(b => b.Date)
+                .FirstOrDefault();
+        }
+
+        //public Balance GetBalanceByDate(DateTime date, string bankCode)
+        //{
+        //    ArgumentNullException.ThrowIfNull(bankCode);
+
+        //    var grouped = _balanceRepository.GetAll()
+        //        .Where(b => b.Account != null && 
+        //                    (b.Account.BankCode?.Equals(bankCode) ?? false))
+        //        .Where(b => b.Date <= date)
+        //        .OrderByDescending(b => b.Date)
+        //        .GroupBy(b => b.Account);
+
+        //    var minDate = grouped.Min(g => g.Select(b => b.Date).FirstOrDefault());
+
+        //    return minDate;
+        //}
 
         public int ImportTransactions(IEnumerable<Transaction> transactions, AssignMethod categoryAssignMethod)
         {

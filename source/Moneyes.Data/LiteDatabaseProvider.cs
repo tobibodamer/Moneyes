@@ -6,7 +6,7 @@ using Moneyes.Core;
 
 namespace Moneyes.Data
 {
-    public class DatabaseProvider : IDatabaseProvider
+    public class LiteDatabaseProvider : IDatabaseProvider<ILiteDatabase>
     {
         private Func<SecureString?> _createMasterPasswordFunc;
         private Func<SecureString> _requestMasterPasswordFunc;
@@ -19,7 +19,7 @@ namespace Moneyes.Data
         public bool IsDatabaseCreated => File.Exists(_dbConfig.DatabasePath);
         public bool IsOpen => Database != null;
 
-        public DatabaseProvider(
+        public LiteDatabaseProvider(
             LiteDbConfig dbConfig)
         {
             _createMasterPasswordFunc = dbConfig.CreatePassword;

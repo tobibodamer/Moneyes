@@ -105,7 +105,7 @@ namespace Moneyes.UI.ViewModels
             foreach (var category in categoriesWithParent)
             {
                 var parent = category.Parent;
-                var parentCategoryViewModel = flatCategories.FirstOrDefault(c => c.Category.Idquals(parent));
+                var parentCategoryViewModel = flatCategories.FirstOrDefault(c => c.Category.Id == parent.Id);
 
                 parentCategoryViewModel.SubCatgeories.Add(category);
             }

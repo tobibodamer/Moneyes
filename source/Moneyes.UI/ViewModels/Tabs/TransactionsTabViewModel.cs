@@ -92,10 +92,11 @@ namespace Moneyes.UI.ViewModels
 
         #endregion
         public TransactionsTabViewModel(
-            TransactionRepository transactionRepository,
-            CategoryRepository categoryRepository,
-            IBankingService bankingService,
+            ICachedRepository<Transaction> transactionRepository,
+            TransactionService transactionService,
             ICategoryService categoryService,
+            ICachedRepository<Category> categoryRepository,
+            IBankingService bankingService,
             IStatusMessageService statusMessageService,
             ExpenseCategoriesViewModel expenseCategoriesViewModel,
             SelectorViewModel selectorViewModel)
@@ -165,7 +166,7 @@ namespace Moneyes.UI.ViewModels
             //    }
             //};
 
-            TransactionsViewModel = new(transactionRepository)
+            TransactionsViewModel = new(transactionService)
             {
                 RemoveFromCategory = new CollectionRelayCommand<Transaction>(transactions =>
                 {

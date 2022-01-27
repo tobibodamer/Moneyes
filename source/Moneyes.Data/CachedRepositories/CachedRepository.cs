@@ -17,7 +17,7 @@ namespace Moneyes.Data
         private readonly Func<T, TKey> _keySelector;
 
         public CachedRepository(
-            IDatabaseProvider databaseProvider,
+            IDatabaseProvider<ILiteDatabase> databaseProvider,
             Func<T, TKey> keySelector,
             CachedRepositoryOptions options,
             DependencyRefreshHandler refreshHandler,
@@ -76,7 +76,7 @@ namespace Moneyes.Data
 
         private const int CacheTimeout = 2000;
         public CachedRepository(
-            IDatabaseProvider databaseProvider,
+            IDatabaseProvider<ILiteDatabase> databaseProvider,
             CachedRepositoryOptions options,
             DependencyRefreshHandler refreshHandler,
             Func<T, object> keySelector = null,
@@ -172,7 +172,7 @@ namespace Moneyes.Data
         /// <param name="entity"></param>
         /// <returns></returns>
         protected virtual T PostQueryTransform(T entity) => entity;
-        public void RefreshCache()
+        public void RenewCache()
         {
             _cacheLock.AcquireWriterLock(CacheTimeout);
 
@@ -190,7 +190,7 @@ namespace Moneyes.Data
 
             RefreshCacheForInternal(entitiesToUpdate, true);
         }
-        public void RefreshCacheFor(IEnumerable<T> entities)
+        public void RenewCacheFor(IEnumerable<T> entities)
         {
             _cacheLock.AcquireWriterLock(CacheTimeout);
 

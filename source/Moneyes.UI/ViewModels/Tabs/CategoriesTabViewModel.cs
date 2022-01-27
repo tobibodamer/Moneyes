@@ -45,8 +45,8 @@ namespace Moneyes.UI.ViewModels
 
         #endregion
         public CategoriesTabViewModel(
-            TransactionRepository transactionRepository,
-            CategoryRepository categoryRepository,
+            IUniqueCachedRepository<Transaction> transactionRepository,
+            ICachedRepository<Category> categoryRepository,
             IBankingService bankingService,
             ICategoryService categoryService,
             IStatusMessageService statusMessageService,

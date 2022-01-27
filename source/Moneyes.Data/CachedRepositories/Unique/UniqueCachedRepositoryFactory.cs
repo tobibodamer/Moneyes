@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Moneyes.Core;
 using Microsoft.Extensions.Logging;
+using LiteDB;
 
 namespace Moneyes.Data
 {
@@ -22,7 +23,7 @@ namespace Moneyes.Data
 
             var repositoryDependencies = GetRepositoryDependencies(collectionName);
             var uniqueConstraints = GetUniqueConstraints(collectionName);
-            var databaseProvider = ServiceProvider.GetRequiredService<IDatabaseProvider>();
+            var databaseProvider = ServiceProvider.GetRequiredService<IDatabaseProvider<ILiteDatabase>>();
             var refreshHandler = ServiceProvider.GetService<DependencyRefreshHandler>();
             var logger = ServiceProvider.GetService<ILogger<UniqueCachedRepository<T>>>();
 
@@ -36,7 +37,7 @@ namespace Moneyes.Data
 
             var repositoryDependencies = GetRepositoryDependencies(collectionName);
             var uniqueConstraints = GetUniqueConstraints(collectionName);
-            var databaseProvider = ServiceProvider.GetRequiredService<IDatabaseProvider>();
+            var databaseProvider = ServiceProvider.GetRequiredService<IDatabaseProvider<ILiteDatabase>>();
             var refreshHandler = ServiceProvider.GetService<DependencyRefreshHandler>();
             var logger = ServiceProvider.GetService<ILogger<UniqueCachedRepository<T>>>();
 

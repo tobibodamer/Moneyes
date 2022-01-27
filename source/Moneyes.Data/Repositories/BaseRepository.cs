@@ -62,19 +62,8 @@ namespace Moneyes.Data
 
         public virtual int Set(IEnumerable<T> entities)
         {
-            int count = 0;
-
             return Collection.Upsert(entities);
-
-            //foreach (T entity in entities)
-            //{
-            //    if (Set(entity))
-            //    {
-            //        count++;
-            //    }
-            //}
         }
-
         public virtual bool DeleteById(object id)
         {
             if (Collection.Delete(new BsonValue(id)))
@@ -109,6 +98,16 @@ namespace Moneyes.Data
         public int DeleteAll()
         {
             return Collection.DeleteAll();
+        }
+
+        public void Update(T entity)
+        {
+            Collection.Update(entity);
+        }
+
+        public int Update(IEnumerable<T> entities)
+        {
+            return Collection.Update(entities);
         }
     }
 }

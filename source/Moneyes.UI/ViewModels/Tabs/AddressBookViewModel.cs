@@ -61,7 +61,7 @@ namespace Moneyes.UI.ViewModels
             LiveDataService liveDataService,
             IBankingService bankingService,
             IStatusMessageService statusMessageService,
-            TransactionRepository transactionRepository)
+            IUniqueCachedRepository<Transaction> transactionRepository)
         {
             DisplayName = "Account Book";
 

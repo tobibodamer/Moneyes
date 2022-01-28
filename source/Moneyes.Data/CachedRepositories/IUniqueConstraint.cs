@@ -13,11 +13,23 @@
         string PropertyName { get; }
 
         /// <summary>
+        /// Gets the conflic resolution action that should be used when this constraint is violated.
+        /// </summary>
+        ConflictResolution ConflictResolution { get; }
+
+        /// <summary>
         /// Checks if this constraint is violated.
         /// </summary>
         /// <param name="a"></param>
         /// <param name="b"></param>
         /// <returns></returns>
         bool Allows(T a, T b);
+
+        /// <summary>
+        /// Gets the value of the property this constraint applies to.
+        /// </summary>
+        /// <param name="entity"></param>
+        /// <returns></returns>
+        object GetPropertyValue(T entity);
     }
 }

@@ -43,6 +43,7 @@ namespace Moneyes.Core.Filters
     public class ConditionFilter<T, TValue> : IConditionFilter<T>
     {
         private string _selectorName;
+        private Expression<Func<T, TValue>> _selectorExpr;
         private Func<T, TValue> _selector;
         public string Selector
         {
@@ -58,8 +59,8 @@ namespace Moneyes.Core.Filters
                 var lambdaExpression = Expression
                     .Lambda<Func<T, TValue>>(propExpression, parameterExpression);
 
+                _selectorExpr = lambdaExpression;
                 _selector = lambdaExpression.Compile();
-
                 _selectorName = value;
             }
         }
@@ -124,9 +125,9 @@ namespace Moneyes.Core.Filters
         /// Sets the selector expression.
         /// </summary>
         /// <param name="selector"></param>
-        public void SetSelector(Func<T, TValue> selector)
+        public void SetSelector(Expression<Func<T, TValue>> selector)
         {
-            _selector = selector;
+            _selectorExpr = selector;
             _selectorName = selector.GetName();
         }
     }

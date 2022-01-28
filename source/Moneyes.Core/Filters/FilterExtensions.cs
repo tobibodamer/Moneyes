@@ -69,10 +69,10 @@ namespace Moneyes.Core.Filters
         /// <typeparam name="TField">Target member type</typeparam>
         /// <param name="field">The selector expression</param>
         /// <returns></returns>
-        public static string GetName<TSource, TField>(this Func<TSource, TField> expr)
-        {
-            return GetName<TSource, TField>(field: source => expr(source));
-        }
+        //public static string GetName<TSource, TField>(this Func<TSource, TField> expr)
+        //{
+        //    return GetName<TSource, TField>(field: source => expr(source));
+        //}
     }
 
 }

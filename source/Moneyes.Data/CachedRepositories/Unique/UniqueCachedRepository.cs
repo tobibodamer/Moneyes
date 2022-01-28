@@ -225,23 +225,26 @@ namespace Moneyes.Data
         /// <summary>
         /// Validate unique constraints for a entity that is not soft deleted.
         /// </summary>
-        /// <param name="entity"></param>
-        /// <returns></returns>
-        protected override bool ValidateUniqueConstaintsFor(T entity)
+        protected override IReadOnlyList<ConstraintViolation> ValidateUniqueConstaintsFor(
+            T entity, IEnumerable<T> existingEntities = null)
         {
-            return entity.IsDeleted || base.ValidateUniqueConstaintsFor(entity);
+            if (entity.IsDeleted)
+            {
+                return new List<ConstraintViolation>();
+            }
+
+            return base.ValidateUniqueConstaintsFor(entity, existingEntities);
         }
 
         /// <summary>
         /// Validate the unique constraints for all entites that are not soft deleted.
         /// </summary>
-        /// <param name="entities"></param>
-        /// <returns></returns>
-        protected override bool ValidateUniqueConstaintsFor(IEnumerable<T> entities)
+        protected override IReadOnlyList<ConstraintViolation> ValidateUniqueConstaintsFor(
+            IEnumerable<T> entities, IEnumerable<T> existingEntities = null, bool validateInItself = true)
         {
             var notSoftDeletedEntities = entities.Where(e => !e.IsDeleted);
 
-            return base.ValidateUniqueConstaintsFor(notSoftDeletedEntities);
+            return base.ValidateUniqueConstaintsFor(notSoftDeletedEntities, existingEntities, validateInItself);
         }
 
         #endregion

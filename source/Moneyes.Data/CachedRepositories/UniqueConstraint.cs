@@ -15,16 +15,28 @@ namespace Moneyes.Data
 
         public IEqualityComparer<K> EqualityComparer { get; set; } = EqualityComparer<K>.Default;
 
-        public UniqueConstraint(Expression<Func<T, K>> selector, string collectionName)
+        public ConflictResolution ConflictResolution { get; }
+
+        public UniqueConstraint(Expression<Func<T, K>> selector, string collectionName, 
+            ConflictResolution conflictResolution = default)
         {
             Selector = selector.Compile();
             CollectionName = collectionName;
             PropertyName = FilterExtensions.GetName(selector);
+            ConflictResolution = conflictResolution;
         }
 
         public bool Allows(T a, T b)
         {
-            return EqualityComparer.Equals(Selector(a), Selector(b));
+            var _a = Selector(a);
+            var _b = Selector(b);
+
+            return !EqualityComparer.Equals(_a, _b);
+        }
+
+        public object GetPropertyValue(T entity)
+        {
+            return Selector(entity);
         }
     }
 }

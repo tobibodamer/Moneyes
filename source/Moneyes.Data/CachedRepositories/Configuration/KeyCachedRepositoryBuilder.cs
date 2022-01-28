@@ -106,11 +106,12 @@ namespace Moneyes.Data
         /// <typeparam name="K"></typeparam>
         /// <param name="selector"></param>
         /// <returns></returns>
-        public virtual KeyCachedRepositoryBuilder<T> WithUniqueProperty<K>(Expression<Func<T, K>> selector)
+        public virtual KeyCachedRepositoryBuilder<T> WithUniqueProperty<K>(Expression<Func<T, K>> selector,
+            ConflictResolution onConflict = default)
         {
             Services.AddScoped<IUniqueConstraint<T>, UniqueConstraint<T, K>>(p =>
             {
-                return new(selector, Name);
+                return new(selector, Name, onConflict);
             });
 
             return this;

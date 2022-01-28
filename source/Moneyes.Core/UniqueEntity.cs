@@ -10,7 +10,7 @@ namespace Moneyes.Core
         /// <summary>
         /// A unique identifier for this entity.
         /// </summary>
-        public Guid Id { get; init; }
+        public Guid Id { get; init; } = Guid.NewGuid();
 
         /// <summary>
         /// The date and time of creation.

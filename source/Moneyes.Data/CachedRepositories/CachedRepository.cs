@@ -133,6 +133,12 @@ namespace Moneyes.Data
         /// <param name="e">The change args.</param>
         protected virtual void OnDependencyChanged(IRepositoryDependency<T> dependency, DependencyRefreshHandler.DepedencyChangedEventArgs e)
         {
+            if (e.Action is RepositoryChangedAction.Add)
+            {
+                // If entity was added, dont do anything, because entity is not yet present in this repository.
+                return;
+            }
+
             var affectedEntities = GetFromCache()
                    .Where(x => dependency.NeedsRefresh(e.ChangedKey, x))
                    .ToList();
@@ -502,7 +508,7 @@ namespace Moneyes.Data
 
             _cacheLock.AcquireWriterLock(CacheTimeout);
 
-            T? createdEntity = default;
+            T createdEntity = default;
 
             try
             {

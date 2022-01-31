@@ -163,48 +163,6 @@ namespace Moneyes.Data
 
             return base.DeleteMany(predicate);
         }
-
-        public override void Update(T entity)
-        {
-            entity.UpdatedAt = DateTime.UtcNow;
-
-            base.Update(entity);
-        }
-
-        public override int Update(IEnumerable<T> entities)
-        {
-            foreach (var entity in entities)
-            {
-                entity.UpdatedAt = DateTime.UtcNow;
-            }
-
-            return base.Update(entities);
-        }
-
-        public override bool Set(T entity)
-        {
-            if (!Cache.ContainsKey(GetKey(entity)))
-            {
-                //entity.CreatedAt = DateTime.UtcNow;
-            }
-            else
-            {
-                entity.UpdatedAt = DateTime.UtcNow;
-            }
-
-            return base.Set(entity);
-        }
-
-        public override int Set(IEnumerable<T> entities)
-        {
-            foreach (var entity in entities)
-            {
-                entity.UpdatedAt = DateTime.UtcNow;
-            }
-
-            return base.Set(entities);
-        }
-
         protected override void OnEntityUpdated(T entity, bool notifyDependencyHandler)
         {
             if (entity.IsDeleted == true)

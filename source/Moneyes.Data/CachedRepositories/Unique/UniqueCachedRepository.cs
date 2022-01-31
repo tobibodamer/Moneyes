@@ -222,29 +222,27 @@ namespace Moneyes.Data
 
         #region Validation
 
-        /// <summary>
-        /// Validate unique constraints for a entity that is not soft deleted.
-        /// </summary>
-        protected override IReadOnlyList<ConstraintViolation> ValidateUniqueConstaintsFor(
-            T entity, IEnumerable<T> existingEntities = null)
+        protected override Func<T, bool> CreateUniqueConstraintValidator(
+            IEnumerable<T> existingEntities, 
+            IEnumerable<IUniqueConstraint<T>> uniqueConstraints, 
+            Func<ConstraintViolation, (bool continueValidation, bool ignore)> onViolation)
         {
-            if (entity.IsDeleted)
+            var validateAgainstSoftDeleted = base.CreateUniqueConstraintValidator(
+                existingEntities.Where(e => e.IsDeleted), uniqueConstraints, onViolation);
+
+            var validateAgainstNotDeleted = base.CreateUniqueConstraintValidator(
+                existingEntities.Where(e => !e.IsDeleted), uniqueConstraints, onViolation);
+
+            return (entity) =>
             {
-                return new List<ConstraintViolation>();
-            }
+                // return the specific validation function, based on if the entity is deleted
+                if (entity.IsDeleted)
+                {
+                    return validateAgainstSoftDeleted(entity);
+                }
 
-            return base.ValidateUniqueConstaintsFor(entity, existingEntities);
-        }
-
-        /// <summary>
-        /// Validate the unique constraints for all entites that are not soft deleted.
-        /// </summary>
-        protected override IReadOnlyList<ConstraintViolation> ValidateUniqueConstaintsFor(
-            IEnumerable<T> entities, IEnumerable<T> existingEntities = null, bool validateInItself = true)
-        {
-            var notSoftDeletedEntities = entities.Where(e => !e.IsDeleted);
-
-            return base.ValidateUniqueConstaintsFor(notSoftDeletedEntities, existingEntities, validateInItself);
+                return validateAgainstNotDeleted(entity);
+            };
         }
 
         #endregion

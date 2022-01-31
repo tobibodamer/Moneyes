@@ -31,6 +31,8 @@ namespace Moneyes.Data
         /// </summary>
         /// <param name="entities"></param>
         void RenewCacheFor(IEnumerable<T> entities);
+        bool Set(T entity, Func<CachedRepository<T>.ConstraintViolation, ConflictResolutionAction> onConflict);
+        int Set(IEnumerable<T> entities, Func<CachedRepository<T>.ConstraintViolation, ConflictResolutionAction> onConflict);
 
         /// <summary>
         /// Raised when the repository changed.
@@ -44,7 +46,8 @@ namespace Moneyes.Data
     /// </summary>
     /// <typeparam name="T"></typeparam>
     /// <typeparam name="TKey"></typeparam>
-    public interface ICachedRepository<T, TKey> : ICachedRepository<T> where TKey : struct
+    public interface ICachedRepository<T, TKey> : ICachedRepository<T> 
+        where TKey : struct
     {
 #nullable enable
         T? FindById(TKey id);

@@ -105,6 +105,7 @@ namespace Moneyes.Data
         /// </summary>
         /// <typeparam name="K"></typeparam>
         /// <param name="selector"></param>
+        /// <param name="onConflict">The default conflict resolution action, when the unique constraint is violated.</param>
         /// <returns></returns>
         public virtual KeyCachedRepositoryBuilder<T> WithUniqueProperty<K>(Expression<Func<T, K>> selector,
             ConflictResolution onConflict = default)

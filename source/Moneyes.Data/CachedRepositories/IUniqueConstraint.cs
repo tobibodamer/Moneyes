@@ -13,7 +13,7 @@
         string PropertyName { get; }
 
         /// <summary>
-        /// Gets the conflic resolution action that should be used when this constraint is violated.
+        /// Gets the default conflic resolution action that should be used when this constraint is violated.
         /// </summary>
         ConflictResolution ConflictResolution { get; }
 

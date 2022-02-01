@@ -185,7 +185,7 @@ namespace Moneyes.UI
             services.AddTransient<ITabViewModel, OverviewViewModel>();
             services.AddTransient<ITabViewModel, TransactionsTabViewModel>();
             services.AddTransient<ITabViewModel, CategoriesTabViewModel>();
-            services.AddTransient<ITabViewModel, AddressBookViewModel>();
+            //services.AddTransient<ITabViewModel, AddressBookViewModel>();
             services.AddTransient<ITabViewModel, AccountsViewModel>();
             services.AddTransient<ITabViewModel, BankSetupViewModel>();
 
@@ -223,7 +223,7 @@ namespace Moneyes.UI
                 }
             }
 
-            ApplyMigrations(_dbProvider.Database, serviceProvider.GetRequiredService<Microsoft.Extensions.Logging.ILogger<ILiteDatabase>>());
+            ApplyMigrations(_dbProvider.Database, serviceProvider.GetRequiredService<ILogger<ILiteDatabase>>());
 
             var categoryRepo = serviceProvider.GetService<IUniqueCachedRepository<CategoryDbo>>();
             categoryRepo.RenewCache();
@@ -235,7 +235,6 @@ namespace Moneyes.UI
             accountRepo.RenewCache();
             var bankDetailRepo = serviceProvider.GetService<IUniqueCachedRepository<BankDbo>>();
             bankDetailRepo.RenewCache();
-            var d = balanceRepo.GetAll().Where(b => b.Account.Bank == null).ToList();
 
 
             // Seed transactions:

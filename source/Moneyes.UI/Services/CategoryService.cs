@@ -17,11 +17,12 @@ namespace Moneyes.UI
 
         public CategoryService(ITransactionService transactionService,
             IUniqueCachedRepository<CategoryDbo> categoryRepo,
-            ICategoryFactory categoryFactory)
+            ICategoryFactory categoryFactory, IUniqueCachedRepository<TransactionDbo> transactionRepo)
         {
             _transactionService = transactionService;
             _categoryRepo = categoryRepo;
             _categoryFactory = categoryFactory;
+            _transactionRepo = transactionRepo;
         }
 
         public Category GetCategoryByName(string name)
@@ -300,13 +301,15 @@ namespace Moneyes.UI
                 return AddCategory(category);
             }
 
-            return _categoryRepo.Update(category.Id, (existing) =>
+            _categoryRepo.Update(category.Id, (existing) =>
             {
                 return category.ToDbo(
                     createdAt: existing.CreatedAt,
                     updatedAt: DateTime.Now,
                     isDeleted: existing.IsDeleted);
             });
+
+            return false;
         }
 
         public bool DeleteCategory(Category category, bool deleteSubCategories = true)
@@ -361,7 +364,7 @@ namespace Moneyes.UI
                 throw new ArgumentNullException(nameof(targetCategory));
             }
 
-            if (!transaction.Categories.Any(c => c.Id.Equals(currentCategory.Id)))
+            if (currentCategory.IsReal && !transaction.Categories.Any(c => c.Id.Equals(currentCategory.Id)))
             {
                 throw new ArgumentException
                     (
@@ -385,7 +388,7 @@ namespace Moneyes.UI
                 throw new ArgumentNullException(nameof(category));
             }
 
-            if (!transaction.Categories.Any(c => c.Id.Equals(category.Id)))
+            if (category.IsReal && !transaction.Categories.Any(c => c.Id.Equals(category.Id)))
             {
                 throw new ArgumentException
                     (
@@ -418,8 +421,11 @@ namespace Moneyes.UI
                 {
                     int removeIndex = transaction.Categories.IndexOfFirst(c => c.Id.Equals(currentCategory.Id));
 
-                    // Remove from current category if set
-                    transaction.Categories.RemoveAt(removeIndex);
+                    if (removeIndex > -1)
+                    {
+                        // Remove from current category if set
+                        transaction.Categories.RemoveAt(removeIndex);
+                    }
                 }
 
                 if (targetCategory != null)

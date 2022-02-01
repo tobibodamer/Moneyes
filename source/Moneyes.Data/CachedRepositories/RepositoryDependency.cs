@@ -3,6 +3,7 @@ using Moneyes.Core.Filters;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 
@@ -20,6 +21,8 @@ namespace Moneyes.Data
         private readonly IRepositoryProvider _repositoryProvider;
         private readonly bool _hasMultipleDependents;
 
+        private readonly Lazy<IEnumerable<IRepositoryDependency<TDep>>> _transitiveDepsLazy;
+
         public Type SourceType => typeof(TDep);
         public Type TargetType => typeof(T);
 
@@ -30,10 +33,18 @@ namespace Moneyes.Data
 
         public string PropertyName { get; }
 
-        public RepositoryDependency(IRepositoryProvider repositoryProvider,
+        /// <summary>
+        /// Gets the direct transitive dependencies of the source repository.
+        /// </summary>
+        public IEnumerable<IRepositoryDependency<TDep>> TransitiveDependencies => _transitiveDepsLazy.Value;
+
+        public RepositoryDependency(
+            IRepositoryProvider repositoryProvider,
             Expression<Func<T, TDep>> propertySelector,
-            string targetCollection, string sourceCollection)
-            : this(repositoryProvider, targetCollection, sourceCollection)
+            string targetCollection, 
+            string sourceCollection,
+            Func<IEnumerable<IRepositoryDependency<TDep>>> getTransitiveDependencies)
+            : this(repositoryProvider, targetCollection, sourceCollection, getTransitiveDependencies)
         {
             _hasMultipleDependents = false;
             _dependentPropertySelectorExpression = propertySelector;
@@ -41,10 +52,13 @@ namespace Moneyes.Data
 
             PropertyName = FilterExtensions.GetName(propertySelector);
         }
-        public RepositoryDependency(IRepositoryProvider repositoryProvider,
+        public RepositoryDependency(
+            IRepositoryProvider repositoryProvider,
             Expression<Func<T, ICollection<TDep>>> collectionPropertySelector,
-            string targetCollection, string sourceCollection)
-            : this(repositoryProvider, targetCollection, sourceCollection)
+            string targetCollection, 
+            string sourceCollection,
+            Func<IEnumerable<IRepositoryDependency<TDep>>> getTransitiveDependencies)
+            : this(repositoryProvider, targetCollection, sourceCollection, getTransitiveDependencies)
         {
             _hasMultipleDependents = true;
             _collectionDependentPropertySelectorExpression = collectionPropertySelector;
@@ -54,12 +68,14 @@ namespace Moneyes.Data
         }
 
         private RepositoryDependency(IRepositoryProvider repositoryProvider,
-            string targetCollection, string sourceCollection)
+            string targetCollection, string sourceCollection,
+            Func<IEnumerable<IRepositoryDependency<TDep>>> getTransitiveDependencies)
         {
             SourceCollectionName = sourceCollection;
             TargetCollectionName = targetCollection;
 
             _repositoryProvider = repositoryProvider;
+            _transitiveDepsLazy = new(getTransitiveDependencies);
         }
 
         public bool NeedsRefresh(object changedSourceKey, T entityToCheck)
@@ -156,7 +172,7 @@ namespace Moneyes.Data
         {
             if (newValue is not TDep updateValue)
             {
-                throw new ArgumentException(nameof(newValue));
+                throw new ArgumentException(null, nameof(newValue));
             }
 
             var sourceRepository = _repositoryProvider.GetRepository<TDep>(SourceCollectionName);

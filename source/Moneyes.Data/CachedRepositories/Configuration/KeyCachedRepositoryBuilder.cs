@@ -48,9 +48,23 @@ namespace Moneyes.Data
                 var repositoryProvider = p.GetRequiredService<IRepositoryProvider>();
                 var dependencyRefreshHandler = p.GetRequiredService<DependencyRefreshHandler>();
 
+                var getCascadingDependencies = () =>
+                {
+                    if (collection.Equals(Name) && typeof(T).Equals(typeof(TDep)))
+                    {
+                        return Enumerable.Empty<IRepositoryDependency<TDep>>();
+                    }
+
+                    return p.GetServices<IRepositoryDependency<TDep>>()
+                        .Where(d => d.TargetCollectionName.Equals(collection));
+                };
+
                 return new RepositoryDependency<T, TDep>(
-                    repositoryProvider, propertySelector,
-                    targetCollection: Name, sourceCollection: collection);
+                    repositoryProvider,
+                    propertySelector,
+                    targetCollection: Name,
+                    sourceCollection: collection,
+                    getCascadingDependencies);
             });
 
             // Add DependencyRefreshHandler if not yet registered
@@ -83,9 +97,23 @@ namespace Moneyes.Data
                 var repositoryProvider = p.GetRequiredService<IRepositoryProvider>();
                 var dependencyRefreshHandler = p.GetRequiredService<DependencyRefreshHandler>();
 
+                var getCascadingDependencies = () =>
+                {
+                    if (collection.Equals(Name) && typeof(T).Equals(typeof(TDep)))
+                    {
+                        return Enumerable.Empty<IRepositoryDependency<TDep>>();
+                    }
+
+                    return p.GetServices<IRepositoryDependency<TDep>>()
+                        .Where(d => d.SourceCollectionName.Equals(collection));
+                };
+
                 return new RepositoryDependency<T, TDep>(
-                    repositoryProvider, collectionPropertySelector,
-                    targetCollection: Name, sourceCollection: collection);
+                    repositoryProvider,
+                    collectionPropertySelector,
+                    targetCollection: Name,
+                    sourceCollection: collection,
+                    getCascadingDependencies);
             });
 
             // Add DependencyRefreshHandler if not yet registered

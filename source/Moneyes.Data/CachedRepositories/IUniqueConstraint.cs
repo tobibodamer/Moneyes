@@ -23,7 +23,7 @@
         /// <param name="a"></param>
         /// <param name="b"></param>
         /// <returns></returns>
-        bool Allows(T a, T b);
+        bool IsViolated(T a, T b);
 
         /// <summary>
         /// Gets the value of the property this constraint applies to.

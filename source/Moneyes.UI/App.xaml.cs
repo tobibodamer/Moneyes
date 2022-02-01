@@ -1,5 +1,6 @@
 ﻿using LiteDB;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moneyes.Core;
 using Moneyes.Core.Parsing;
@@ -103,7 +104,8 @@ namespace Moneyes.UI
             services.AddScoped<IBaseRepository<AccountDetails>, AccountRepository>(p => p.GetRequiredService<AccountRepository>());
             services.AddScoped<BalanceRepository>();
             services.AddScoped<IBaseRepository<Balance>, BalanceRepository>(p => p.GetRequiredService<BalanceRepository>());
-            services.AddScoped<IBankConnectionStore, BankConnectionStore>();
+            services.AddScoped<BankDetailsRepository>();
+            services.AddScoped<IBaseRepository<BankDetails>, BankDetailsRepository>(p => p.GetRequiredService<BankDetailsRepository>());
 
             // Services
 
@@ -175,52 +177,32 @@ namespace Moneyes.UI
                 }
             }
 
+            ApplyMigrations(_dbProvider.Database, serviceProvider.GetRequiredService<Microsoft.Extensions.Logging.ILogger<ILiteDatabase>>());
 
             var categoryRepo = serviceProvider.GetService<CategoryRepository>();
             var transactionRepo = serviceProvider.GetService<TransactionRepository>();
             var balanceRepo = serviceProvider.GetService<BalanceRepository>();
+            var accountRepo = serviceProvider.GetService<AccountRepository>();
 
             // Preload caches
             categoryRepo.UpdateCache();
             transactionRepo.UpdateCache();
-
-            UpdateUIDs(transactionRepo);
-
-            RemoveDuplicates(
-                transactionRepo,
-                t => t.BookingDate.ToString() + t.BookingType + t.Name + t.Amount + t.Index + t.Purpose,
-                t => t.PartnerIBAN != null, (t1, t2) => t1.PartnerIBAN == null ^ t2.PartnerIBAN == null);
-
-            RemoveDuplicates(
-                transactionRepo,
-                t => t.BookingDate.ToString() + t.BookingType + t.Name + t.Amount + t.Index + t.PartnerIBAN,
-                t => t.Purpose != null, (t1, t2) => t1.Purpose == null ^ t2.Purpose == null);
-
-            //List<Transaction> csv = CsvParser.FromMT940CSV("viele.csv").ToList();
+            balanceRepo.UpdateCache();
+            accountRepo.UpdateCache();
 
 
-            //var categoryService = serviceProvider.GetService<ICategoryService>();
-            //categoryService.AssignCategories(csv, updateDatabase: true);
-            //transactionRepo.Set(csv);
+            //UpdateUIDs(transactionRepo);
 
-            //var categoryStore = new CategoryDatabase("categories.json");
+            //RemoveDuplicates(
+            //    transactionRepo,
+            //    t => t.BookingDate.ToString() + t.BookingType + t.Name + t.Amount + t.Index + t.Purpose,
+            //    t => t.PartnerIBAN != null, (t1, t2) => t1.PartnerIBAN == null ^ t2.PartnerIBAN == null);
 
-            //foreach (var c in await categoryStore.GetAll())
-            //{
-            //    if (categoryRepo.FindByName(c.Name) == null)
-            //    {
-            //        categoryRepo.Set(c);
-            //    }
-            //}
+            //RemoveDuplicates(
+            //    transactionRepo,
+            //    t => t.BookingDate.ToString() + t.BookingType + t.Name + t.Amount + t.Index + t.PartnerIBAN,
+            //    t => t.Purpose != null, (t1, t2) => t1.Purpose == null ^ t2.Purpose == null);
 
-            //var balances = balanceRepo.GetAll().ToList();
-
-            //var noDuplicates = RemoveDuplicates(balances, b => b.UID,
-            //    (existing, duplicate) => existing.Amount > duplicate.Amount ? existing : duplicate);
-
-            //_ = balanceRepo.DeleteAll();
-
-            //balanceRepo.Set(noDuplicates);
 
             MainWindowViewModel mainWindowViewModel = serviceProvider.GetRequiredService<MainWindowViewModel>();
 
@@ -231,6 +213,152 @@ namespace Moneyes.UI
             {
                 Environment.Exit(0);
             };
+        }
+
+        private static void ApplyMigrations(ILiteDatabase database, Microsoft.Extensions.Logging.ILogger<ILiteDatabase> logger)
+        {
+            if (database.UserVersion == 0)
+            {
+                logger.LogInformation("Database version is 0. Migrating to version 1...");
+
+
+                logger.LogInformation("Migrating Categories...");
+
+                var categories = database.GetCollection("Category");
+                var categoryDocuments = categories.FindAll().ToList();
+                var categoryIdGuidMap = new Dictionary<int, Guid>();
+
+                foreach (var document in categoryDocuments)
+                {
+                    categories.Delete(document["_id"]);
+                    var guid = Guid.NewGuid();
+                    categoryIdGuidMap.Add(document["_id"].AsInt32, guid);
+                    document["_id"] = new BsonValue(guid);
+                    document["CreatedAt"] = new BsonValue(DateTime.MinValue);
+                    document["UpdatedAt"] = DateTime.UtcNow;
+                    document["IsDeleted"] = false;
+                }
+
+                foreach (var document in categoryDocuments)
+                {
+                    if (!document.ContainsKey("Parent"))
+                    {
+                        continue;
+                    }
+
+                    var oldId = document["Parent"].AsDocument["$id"];
+                    document["Parent"]["$id"] = categoryIdGuidMap[oldId];
+                }
+
+                categories.Insert(categoryDocuments);
+
+                logger.LogInformation("Migrating Transactions...");
+
+                var transactions = database.GetCollection("Transaction");
+                var transactionDocuments = transactions.FindAll().ToList();
+
+
+                foreach (var document in transactionDocuments)
+                {
+                    transactions.Delete(document["_id"]);
+                    document["UID"] = new BsonValue(document["_id"].AsString);
+                    document["_id"] = new BsonValue(Guid.NewGuid());
+                    document["CreatedAt"] = new BsonValue(DateTime.MinValue);
+                    document["UpdatedAt"] = DateTime.UtcNow;
+                    document["IsDeleted"] = false;
+                }
+
+                foreach (var document in transactionDocuments)
+                {
+                    if (!document.ContainsKey("Categories"))
+                    {
+                        continue;
+                    }
+
+                    foreach (var refDoc in document["Categories"].AsArray)
+                    {
+                        refDoc["$id"] = categoryIdGuidMap[refDoc["$id"].AsInt32];
+                    }
+                }
+
+                transactions.Insert(transactionDocuments);
+
+                logger.LogInformation("Migrating Accounts...");
+
+                var accounts = database.GetCollection("AccountDetails");
+                var accountDocuments = accounts.FindAll().ToList();
+                var accountIbanGuidMap = new Dictionary<string, Guid>();
+
+                foreach (var document in accountDocuments)
+                {
+                    accounts.Delete(document["_id"]);
+                    document["IBAN"] = new BsonValue(document["_id"].AsString);
+                    var guid = Guid.NewGuid();
+                    accountIbanGuidMap[document["_id"].AsString] = guid;
+                    document["_id"] = new BsonValue(guid);
+                    document["CreatedAt"] = new BsonValue(DateTime.MinValue);
+                    document["UpdatedAt"] = DateTime.UtcNow;
+                    document["IsDeleted"] = false;
+                    accounts.Insert(document);
+                }
+
+                logger.LogInformation("Migrating Balances...");
+
+                var balances = database.GetCollection("Balance");
+                var balanceDocuments = balances.FindAll().ToList();
+
+                foreach (var document in balanceDocuments)
+                {
+                    balances.Delete(document["_id"]);
+                    document["_id"] = new BsonValue(Guid.NewGuid());
+                    document["CreatedAt"] = new BsonValue(DateTime.MinValue);
+                    document["UpdatedAt"] = DateTime.UtcNow;
+                    document["IsDeleted"] = false;
+                }
+
+                foreach (var document in balanceDocuments.ToList())
+                {
+                    if (!document.ContainsKey("Account"))
+                    {
+                        continue;
+                    }
+
+                    var oldId = document["Account"].AsDocument["$id"];
+
+                    if (!accountIbanGuidMap.ContainsKey(oldId))
+                    {
+                        balanceDocuments.Remove(document);
+                        continue;
+                    }
+
+                    document["Account"]["$id"] = accountIbanGuidMap[oldId];
+                }
+
+                balances.Insert(balanceDocuments);
+
+                logger.LogInformation("Migrating online banking connections...");
+
+                var bankingDetails = database.GetCollection("OnlineBankingDetails");
+                var bankingDetailsDocuments = bankingDetails.FindAll().ToList();
+
+                foreach (var document in bankingDetailsDocuments)
+                {
+                    bankingDetails.Delete(document["_id"]);
+                    document["_id"] = new BsonValue(Guid.NewGuid());
+                    document["CreatedAt"] = new BsonValue(DateTime.MinValue);
+                    document["UpdatedAt"] = DateTime.UtcNow;
+                    document["IsDeleted"] = false;
+                    bankingDetails.Insert(document);
+                }
+
+                database.RenameCollection("OnlineBankingDetails", "BankDetails");
+
+                logger.LogInformation("Migration successful");
+
+                database.UserVersion = 1;
+
+                logger.LogInformation("Migrated to version 1");
+            }
         }
 
         /// <summary>

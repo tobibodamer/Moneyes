@@ -9,14 +9,14 @@ namespace Moneyes.UI
 {
     public class BankingService : IBankingService
     {
-        private readonly IBankConnectionStore _bankConnectionStore;
+        private readonly BankDetailsRepository _bankConnectionStore;
         private readonly AccountRepository _accountRepository;
         private readonly BalanceRepository _balanceRepository;
         private readonly TransactionRepository _transactionRepository;
         private readonly ICategoryService _categoryService;
 
         public BankingService(
-            IBankConnectionStore bankConnectionStore,
+            BankDetailsRepository bankConnectionStore,
             AccountRepository accountRepository,
             BalanceRepository balanceRepository,
             TransactionRepository transactionRepository,
@@ -29,19 +29,47 @@ namespace Moneyes.UI
             _categoryService = categoryService;
         }
 
-        public bool HasBankingDetails => _bankConnectionStore.HasBankingDetails;
+        public bool HasBankingDetails => _bankConnectionStore.GetAll().Any();
 
         public void UpdateBankingDetails(Action<OnlineBankingDetails> update)
         {
-            update(BankingDetails);
+            var onlineBankinDetails = BankingDetails;
 
-            _bankConnectionStore.SetBankingDetails(BankingDetails);
+            update(onlineBankinDetails);
+
+            // This copy stuff is all temorary. TODO: replace everything with BankDetails
+
+            BankingDetails = onlineBankinDetails;
         }
 
         public OnlineBankingDetails BankingDetails
         {
-            get => _bankConnectionStore.GetBankingDetails();
-            set => _bankConnectionStore.SetBankingDetails(value);
+            get
+            {
+
+                var bankDetails = _bankConnectionStore.GetAll().FirstOrDefault();
+
+                return new()
+                {
+                    UserId = bankDetails.UserId,
+                    Server = bankDetails.Server,
+                    BankCode = bankDetails.BankCode,
+                    Pin = bankDetails.Pin
+                };
+            }
+            set
+            {
+                BankDetails bankDetails = new()
+                {
+                    Id = new Guid("5be1438e-c03c-47c3-a798-051d36deb338"),
+                    UserId = value.UserId,
+                    Server = value.Server,
+                    BankCode = value.BankCode,
+                    Pin = value.Pin
+                };
+
+                _bankConnectionStore.Set(bankDetails);
+            }
         }
 
         public event Action NewAccountsImported;

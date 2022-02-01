@@ -45,14 +45,14 @@ namespace Moneyes.UI.ViewModels
 
         public ICommand LoadedCommand { get; }
 
-        public MainWindowViewModel(IEnumerable<ITabViewModel> tabs, IBankConnectionStore bankingConfigStore,
+        public MainWindowViewModel(IEnumerable<ITabViewModel> tabs, IBankingService bankingService,
             IStatusMessageService statusMessageService, SetupWizardViewModel setupWizardViewModel)
         {
             Tabs = new(tabs);
 
             LoadedCommand = new RelayCommand(() =>
             {
-                if (!bankingConfigStore.HasBankingDetails)
+                if (!bankingService.HasBankingDetails)
                 {
                     SetupWizard = setupWizardViewModel;
                 }

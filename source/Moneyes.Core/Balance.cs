@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Moneyes.Core
 {
-    public class Balance
+    public class Balance : UniqueEntity
     {
         public AccountDetails Account { get; init; }
         public DateTime Date { get; init; }

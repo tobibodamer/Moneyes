@@ -11,22 +11,21 @@ namespace Moneyes.Core
     /// <summary>
     /// Represents a category for transactions.
     /// </summary>
-    public class Category
+    public class Category : UniqueEntity
     {
+        public static readonly Guid NoCategoryId = new("38093a27-b7e4-4222-a7f7-9ca72c98544c");
+
+        public static readonly Guid AllCategoryId = new("b52174ea-5869-4cbc-99f5-e48a274f9866");
+
         /// <summary>
         /// Gets a category indicating no category has been assoiated with a transaction.
         /// </summary>
-        public static readonly Category NoCategory = new() { Name = "No category", IsExlusive = true, Id = -1 };
+        public static readonly Category NoCategory = new() { Name = "No category", IsExlusive = true, Id = NoCategoryId };
 
         /// <summary>
         /// Gets a category all transactions belong to.
         /// </summary>
-        public static readonly Category AllCategory = new() { Name = "All", IsExlusive = true, Id = -2 };
-
-        /// <summary>
-        /// Unique identifier, for equally named categories.
-        /// </summary>
-        public int Id { get; set; }
+        public static readonly Category AllCategory = new() { Name = "All", IsExlusive = true, Id = AllCategoryId };
 
         /// <summary>
         /// Name of the category.

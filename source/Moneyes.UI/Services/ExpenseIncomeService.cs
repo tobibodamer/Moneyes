@@ -11,11 +11,11 @@ namespace Moneyes.UI
 {
     partial class ExpenseIncomServieUsingDb : IExpenseIncomeService
     {
-        private readonly TransactionService _transactionService;
+        private readonly ITransactionService _transactionService;
         private readonly ICategoryService _categoryService;
 
         public ExpenseIncomServieUsingDb(
-            TransactionService transactionervice,
+            ITransactionService transactionervice,
             ICategoryService categoryService)
         {
             _transactionService = transactionervice ?? throw new ArgumentNullException(nameof(transactionervice));

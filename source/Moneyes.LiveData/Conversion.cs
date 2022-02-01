@@ -2,6 +2,7 @@
 using libfintx.FinTS.Swift;
 using libfintx.FinTS;
 using System.Diagnostics;
+using System;
 
 namespace Moneyes.LiveData
 {
@@ -27,7 +28,7 @@ namespace Moneyes.LiveData
                 purpose = swiftTransaction.Description;
             }
 
-            return new()
+            return new(id: Guid.NewGuid())
             {
                 Index = index,
                 Purpose = purpose,

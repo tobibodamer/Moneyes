@@ -60,8 +60,7 @@ namespace Moneyes.UI.ViewModels
         public AddressBookViewModel(
             LiveDataService liveDataService,
             IBankingService bankingService,
-            IStatusMessageService statusMessageService,
-            IUniqueCachedRepository<Transaction> transactionRepository)
+            IStatusMessageService statusMessageService)
         {
             DisplayName = "Account Book";
 
@@ -70,15 +69,15 @@ namespace Moneyes.UI.ViewModels
             _statusMessageService = statusMessageService;
 
 
-            var groupedTransactions = transactionRepository
-                .GetAll()
-                .ToList()
-                .GroupBy(t => t.Name)
-                .OrderBy(g => g.Key);
+            //var groupedTransactions = transactionRepository
+            //    .GetAll()
+            //    .ToList()
+            //    .GroupBy(t => t.Name)
+            //    .OrderBy(g => g.Key);
 
-            _accountTransactionsMap = groupedTransactions.ToDictionary(g => g.Key ?? "", g => g.ToList());
+            //_accountTransactionsMap = groupedTransactions.ToDictionary(g => g.Key ?? "", g => g.ToList());
 
-            Accounts = new(groupedTransactions.Select(g => g.Key));
+            //Accounts = new(groupedTransactions.Select(g => g.Key));
         }
 
         public override void OnSelect()

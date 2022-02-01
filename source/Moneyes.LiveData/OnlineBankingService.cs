@@ -36,7 +36,7 @@ namespace Moneyes.LiveData
             if (account != null)
             {
                 _fintsClient.ConnectionDetails.Account = account.Number;
-                _fintsClient.ConnectionDetails.Bic = account.BIC;
+                //_fintsClient.ConnectionDetails.Bic = account.BIC;
                 _fintsClient.ConnectionDetails.Iban = account.IBAN;
             }
 
@@ -118,7 +118,7 @@ namespace Moneyes.LiveData
 
         }
 
-        public async Task<BankingResult<IEnumerable<AccountDetails>>> Accounts()
+        public async Task<BankingResult<IEnumerable<AccountDetails>>> Accounts(BankDetails bank)
         {
             ValidateBankingDetails();
 
@@ -139,12 +139,9 @@ namespace Moneyes.LiveData
 
             return BankingResult.Successful(result.Data.Select(accInfo =>
             {
-                return new AccountDetails
+                return new AccountDetails(id: Guid.NewGuid(), number: accInfo.AccountNumber, bankDetails: bank)
                 {
-                    BankCode = accInfo.AccountBankCode,
-                    BIC = accInfo.AccountBic,
                     IBAN = accInfo.AccountIban,
-                    Number = accInfo.AccountNumber,
                     OwnerName = accInfo.AccountOwner,
                     Type = accInfo.AccountType
                 };
@@ -195,7 +192,7 @@ namespace Moneyes.LiveData
 
                 IEnumerable<Balance> balances = result.Data
                     .Where(stmt => !stmt.Pending)
-                    .Select(stmt => new Balance
+                    .Select(stmt => new Balance(id: Guid.NewGuid())
                     {
                         Account = account,
                         Amount = stmt.EndBalance,
@@ -249,7 +246,7 @@ namespace Moneyes.LiveData
 
             ValidateBankingDetails();
 
-            _logger?.LogInformation("Fetching balance for account {Account ({AccNumber})}...",
+            _logger?.LogInformation("Fetching balance for account {Account} ({AccNumber})}...",
                 account.Type,
                 account.Number);
 
@@ -270,7 +267,7 @@ namespace Moneyes.LiveData
 
             _logger?.LogInformation("Fetching balance was successful.");
 
-            return new Balance()
+            return new Balance(id: Guid.NewGuid())
             {
                 Account = account,
                 Date = DateTime.Now,

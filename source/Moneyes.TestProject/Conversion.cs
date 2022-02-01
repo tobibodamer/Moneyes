@@ -1,5 +1,6 @@
 ﻿using Moneyes.Core;
 using libfintx.FinTS.Swift;
+using System;
 
 namespace Test
 {
@@ -7,7 +8,7 @@ namespace Test
     {
         public static Transaction FromLiveTransaction(SwiftTransaction swiftTransaction)
         {
-            return new()
+            return new(id: Guid.NewGuid())
             {
                 Purpose = swiftTransaction.SVWZ,
                 Amount = swiftTransaction.Amount,

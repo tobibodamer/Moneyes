@@ -6,20 +6,16 @@ using System.Threading.Tasks;
 
 namespace Moneyes.Core
 {
-    public class Balance : UniqueEntity
+    public class Balance
     {
+        public Guid Id { get; init; }
         public AccountDetails Account { get; init; }
         public DateTime Date { get; init; }
         public decimal Amount { get; init; }
         public string Currency { get; init; }
         public bool IsNegative => Amount < 0;
-        public string UID => _uidLazy.Value;
 
-        private Lazy<string> _uidLazy;
-        public Balance()
-        {
-            _uidLazy = new Lazy<string>(() => Account.IBAN + Date.ToString("u"));
-        }
+        public Balance(Guid id) => Id = id;
         public override bool Equals(object obj)
         {
             return obj is Balance balance &&

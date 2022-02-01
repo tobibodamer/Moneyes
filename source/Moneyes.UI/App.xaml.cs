@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moneyes.Core;
+using Moneyes.Core.Filters;
 using Moneyes.Core.Parsing;
 using Moneyes.Data;
 using Moneyes.LiveData;
@@ -41,10 +42,9 @@ namespace Moneyes.UI
 
         private static void RegisterIdSelectors()
         {
-            IDSelectors.Register<Category>(c => c.Id);
-            IDSelectors.Register<AccountDetails>(acc => acc.IBAN);
-            IDSelectors.Register<Transaction>(t => t.UID);
-            IDSelectors.Register<Balance>(b => b.UID);
+            //IDSelectors.Register<Category>(c => c.Id);
+            //IDSelectors.Register<AccountDetails>(acc => acc.IBAN);
+            //IDSelectors.Register<Transaction>(t => t.UID);
         }
 
         private static string InitDatabasePath()
@@ -112,21 +112,23 @@ namespace Moneyes.UI
             services.AddLiteDb<UIDatabaseProvider>(config => config.DatabasePath = InitDatabasePath())
                 .AddCachedRepositories(options =>
                 {
-                    options.AddUniqueRepository<Transaction>(x => x.PreloadCache = true)
-                        .DependsOnMany(t => t.Categories)
-                        .WithUniqueProperty(t => t.UID);                        
+                    options.AddUniqueRepository<TransactionDbo>("Transaction")
+                        .DependsOnMany(t => t.Categories, "Category")
+                        .WithUniqueProperty(t => t.UID, onConflict: ConflictResolution.Replace);
 
-                    options.AddUniqueRepository<Category>(x => x.PreloadCache = true)
-                        .DependsOnOne(c => c.Parent)
-                        .WithUniqueProperty(c => c.Name);                        
+                    options.AddUniqueRepository<CategoryDbo>("Category")
+                        .DependsOnOne(c => c.Parent, "Category")
+                        .WithUniqueProperty(c => c.Name);
 
-                    options.AddUniqueRepository<AccountDetails>(x => x.PreloadCache = true)
-                        .WithUniqueProperty(a => a.IBAN);                       
+                    options.AddUniqueRepository<AccountDbo>("Accounts")
+                        .DependsOnOne(a => a.Bank, "BankDetails")
+                        .WithUniqueProperty(a => a.IBAN);
 
-                    options.AddUniqueRepository<Balance>(x => x.PreloadCache = true)
-                        .DependsOnOne(b => b.Account);
+                    options.AddUniqueRepository<BalanceDbo>("Balance")
+                        .DependsOnOne(b => b.Account, "Accounts")
+                        .WithUniqueProperty(b => new { b.Date, b.Account.Id });
 
-                    options.AddUniqueRepository<BankDetails>(x => x.PreloadCache = true)
+                    options.AddUniqueRepository<BankDbo>("BankDetails")
                         .WithUniqueProperty(b => b.BankCode);
                 });
 
@@ -143,6 +145,14 @@ namespace Moneyes.UI
             //services.AddScoped<BankDetailsRepository>();
             //services.AddScoped<IBaseRepository<BankDetails>, BankDetailsRepository>(p => p.GetRequiredService<BankDetailsRepository>());
 
+            // Factories
+            services.AddTransient<ICategoryFactory, CategoryFactory>();
+            services.AddTransient<ITransactionFactory, TransactionFactory>();
+            services.AddTransient<IFilterFactory, FilterFactory>();
+            services.AddTransient<IAccountFactory, AccountFactory>();
+            services.AddTransient<IBalanceFactory, BalanceFactory>();
+            services.AddTransient<IBankDetailsFactory, BankDetailsFactory>();
+
             // Services
 
             services.AddTransient<IPasswordPrompt, OnlineBankingPasswordPrompt>();
@@ -151,7 +161,7 @@ namespace Moneyes.UI
             services.AddScoped<LiveDataService>();
             services.AddScoped<IExpenseIncomeService, ExpenseIncomServieUsingDb>();
             services.AddScoped<IBankingService, BankingService>();
-            services.AddScoped<TransactionService>();
+            services.AddScoped<ITransactionService, TransactionService>();
             services.AddScoped<ICategoryService, CategoryService>();
 
             // UI services
@@ -215,16 +225,47 @@ namespace Moneyes.UI
 
             ApplyMigrations(_dbProvider.Database, serviceProvider.GetRequiredService<Microsoft.Extensions.Logging.ILogger<ILiteDatabase>>());
 
-            var categoryRepo = serviceProvider.GetService<IUniqueCachedRepository<Category>>();
+            var categoryRepo = serviceProvider.GetService<IUniqueCachedRepository<CategoryDbo>>();
             categoryRepo.RenewCache();
-            var transactionRepo = serviceProvider.GetService<IUniqueCachedRepository<Transaction>>();
+            var transactionRepo = serviceProvider.GetService<IUniqueCachedRepository<TransactionDbo>>();
             transactionRepo.RenewCache();
-            var balanceRepo = serviceProvider.GetService<IUniqueCachedRepository<Balance>>();
+            var balanceRepo = serviceProvider.GetService<IUniqueCachedRepository<BalanceDbo>>();
             balanceRepo.RenewCache();
-            var accountRepo = serviceProvider.GetService<IUniqueCachedRepository<AccountDetails>>();
+            var accountRepo = serviceProvider.GetService<IUniqueCachedRepository<AccountDbo>>();
             accountRepo.RenewCache();
-            var bankDetailRepo = serviceProvider.GetService<IUniqueCachedRepository<BankDetails>>();
+            var bankDetailRepo = serviceProvider.GetService<IUniqueCachedRepository<BankDbo>>();
             bankDetailRepo.RenewCache();
+            var d = balanceRepo.GetAll().Where(b => b.Account.Bank == null).ToList();
+
+
+            // Seed transactions:
+
+            //var categories = categoryRepo.GetAll().ToList();
+            //var toAdd = new List<TransactionDbo>();
+            //for (int i = 0; i < 30000; i++)
+            //{
+            //    TransactionDbo t = new()
+            //    {
+            //        AltName = Random(10),
+            //        BookingDate = new DateTime(2022, rnd.Next(1, 12), rnd.Next(1, 28)),
+            //        Amount = rnd.Next(-3000, 3000) / 10.0m,
+            //        IBAN = accountRepo.GetAll().First().IBAN,
+            //        PartnerIBAN = Enumerable.Repeat(0, 20).Select(i => rnd.Next(0, 9)).ToString(),
+            //        Currency = "EUR",
+            //        Name = Random(12) + " " + Random(12),
+            //        Id = Guid.NewGuid(),
+            //        Purpose = Random(30),
+            //        BIC = Random(12),
+            //        BookingType = Random(10),
+            //        UID = Guid.NewGuid().ToString(),
+            //        Categories = Enumerable.Repeat(0, rnd.Next(3)).Select(i => categories[rnd.Next(categories.Count - 1)]).ToList()
+            //    };
+            //    toAdd.Add(t);
+            //}
+
+            //transactionRepo.Set(toAdd);
+
+
 
             //UpdateUIDs(transactionRepo);
 
@@ -250,7 +291,14 @@ namespace Moneyes.UI
             };
         }
 
-        private static void ApplyMigrations(ILiteDatabase database, Microsoft.Extensions.Logging.ILogger<ILiteDatabase> logger)
+        private static Random rnd = new();
+        private static string Random(int length)
+        {
+            string alphabet = "ABCDEFGHIJKGLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890";
+            return new string(Enumerable.Repeat(0, length).Select(i => alphabet[rnd.Next(0, alphabet.Length)]).ToArray());
+        }
+
+        private static void ApplyMigrations(ILiteDatabase database, ILogger<ILiteDatabase> logger)
         {
             if (database.UserVersion == 0)
             {
@@ -269,7 +317,7 @@ namespace Moneyes.UI
                     var guid = Guid.NewGuid();
                     categoryIdGuidMap.Add(document["_id"].AsInt32, guid);
                     document["_id"] = new BsonValue(guid);
-                    document["CreatedAt"] = new BsonValue(DateTime.MinValue);
+                    document["CreatedAt"] = DateTime.UtcNow;
                     document["UpdatedAt"] = DateTime.UtcNow;
                     document["IsDeleted"] = false;
                 }
@@ -298,7 +346,7 @@ namespace Moneyes.UI
                     transactions.Delete(document["_id"]);
                     document["UID"] = new BsonValue(document["_id"].AsString);
                     document["_id"] = new BsonValue(Guid.NewGuid());
-                    document["CreatedAt"] = new BsonValue(DateTime.MinValue);
+                    document["CreatedAt"] = DateTime.UtcNow;
                     document["UpdatedAt"] = DateTime.UtcNow;
                     document["IsDeleted"] = false;
                 }
@@ -331,7 +379,7 @@ namespace Moneyes.UI
                     var guid = Guid.NewGuid();
                     accountIbanGuidMap[document["_id"].AsString] = guid;
                     document["_id"] = new BsonValue(guid);
-                    document["CreatedAt"] = new BsonValue(DateTime.MinValue);
+                    document["CreatedAt"] = DateTime.UtcNow;
                     document["UpdatedAt"] = DateTime.UtcNow;
                     document["IsDeleted"] = false;
                     accounts.Insert(document);
@@ -346,7 +394,7 @@ namespace Moneyes.UI
                 {
                     balances.Delete(document["_id"]);
                     document["_id"] = new BsonValue(Guid.NewGuid());
-                    document["CreatedAt"] = new BsonValue(DateTime.MinValue);
+                    document["CreatedAt"] = DateTime.UtcNow;
                     document["UpdatedAt"] = DateTime.UtcNow;
                     document["IsDeleted"] = false;
                 }
@@ -380,7 +428,7 @@ namespace Moneyes.UI
                 {
                     bankingDetails.Delete(document["_id"]);
                     document["_id"] = new BsonValue(Guid.NewGuid());
-                    document["CreatedAt"] = new BsonValue(DateTime.MinValue);
+                    document["CreatedAt"] = DateTime.UtcNow;
                     document["UpdatedAt"] = DateTime.UtcNow;
                     document["IsDeleted"] = false;
                     bankingDetails.Insert(document);
@@ -396,30 +444,114 @@ namespace Moneyes.UI
 
                 logger.LogInformation("Migrated to version 1");
             }
+            if (database.UserVersion == 1)
+            {
+                logger.LogInformation("Database version is 1. Migrating to version 2...");
+
+
+                logger.LogInformation("Migrating Accounts...");
+
+                var banks = database.GetCollection("BankDetails");
+                var bankDocuments = banks.FindAll().ToList();
+
+                var accounts = database.GetCollection("AccountDetails");
+                var accountDocuments = accounts.FindAll().ToList();
+
+                foreach (var document in accountDocuments)
+                {
+                    accounts.Delete(document["_id"]);
+
+                    string bankCode = document["BankCode"];
+                    var bank = bankDocuments.FirstOrDefault(d => d["BankCode"].AsInt32.ToString().Equals(bankCode));
+
+                    if (bank != null)
+                    {
+                        var bankId = bank["_id"];
+                        document["Bank"] = new BsonDocument { ["$id"] = bankId, ["$ref"] = "BankDetails" };
+                    }
+
+                    document.Remove("BankCode");
+
+                    document["UpdatedAt"] = DateTime.UtcNow;
+
+                    accounts.Insert(document);
+
+                }
+
+                database.RenameCollection("AccountDetails", "Accounts");
+
+
+                logger.LogInformation("Migrating Categories...");
+
+                var categories = database.GetCollection("Category");
+                var categoryDocuments = categories.FindAll().ToList();
+
+                foreach (var document in categoryDocuments)
+                {
+                    categories.Delete(document["_id"]);
+
+                    var filter = BsonMapper.Global.Deserialize<TransactionFilter>(document["Filter"]);
+
+                    if (filter == null)
+                    {
+                        continue;
+                    }
+
+                    var newFilterDocument = BsonMapper.Global.ToDocument(filter.ToDto());
+
+                    document["Filter"] = newFilterDocument;
+                }
+
+                categories.Insert(categoryDocuments);
+
+
+                logger.LogInformation("Migrating Balances...");
+
+                var balances = database.GetCollection("Balance");
+                var balanceDocuments = balances.FindAll().ToList();
+
+                foreach (var document in balanceDocuments)
+                {
+                    balances.Delete(document["_id"]);
+                    document["Account"]["$ref"] = new BsonValue("Accounts");                    
+                }                
+
+                balances.Insert(balanceDocuments);
+
+
+                logger.LogInformation("Migration successful");
+
+                database.UserVersion = 2;
+
+                database.Checkpoint();
+
+                logger.LogInformation("Migrated to version 2");
+
+            }
         }
 
         /// <summary>
         /// Regenerate the UIDs of all transactions an save the changes.
         /// </summary>
         /// <param name="transactionRepository"></param>
-        private static void UpdateUIDs(IUniqueCachedRepository<Transaction> transactionRepository)
-        {
-            List<Transaction> transactions = transactionRepository.GetAll().ToList();
+        //private static void UpdateUIDs(IUniqueCachedRepository<TransactionDbo> transactionRepository)
+        //{
+        //    List<TransactionDbo> transactions = transactionRepository.GetAll().ToList();
 
-            foreach (Transaction t in transactions)
-            {
-                string oldUID = t.UID;
-                t.RegenerateUID();
+        //    foreach (TransactionDbo t in transactions)
+        //    {
+        //        string oldUID = t.UID;
+        //        t.RegenerateUID();
 
-                if (oldUID != t.UID)
-                {
-                    if (transactionRepository.DeleteById(oldUID))
-                    {
-                        transactionRepository.Set(t);
-                    }
-                }
-            }
-        }
+        //        if (oldUID != t.UID)
+        //        {
+        //            if (transactionRepository.DeleteById(oldUID))
+        //            {
+        //                transactionRepository.Set(t);
+        //            }
+        //        }
+        //    }
+        //}
 
         /// <summary>
         /// Removes duplicate transaction entries that equal by a selector but have different UIDs from the repository.
@@ -429,40 +561,40 @@ namespace Moneyes.UI
         /// <param name="uniqueDuplicateIdentifier">The selector used to identify transactions.</param>
         /// <param name="keepOld">An expression used to determine whether to keep the existing transaction.</param>
         /// <param name="delete">An expression used to determine whether this duplicate should be ignored.</param>
-        private static void RemoveDuplicates<T, TSelector>(IBaseRepository<T> transactionRepository,
-            Func<T, TSelector> uniqueDuplicateIdentifier,
-            Func<T, bool> keepOld = null,
-            Func<T, T, bool> delete = null)
-        {
-            List<T> transactions = transactionRepository.GetAll().ToList();
+        //private static void RemoveDuplicates<T, TSelector>(IBaseRepository<T> transactionRepository,
+        //            Func<T, TSelector> uniqueDuplicateIdentifier,
+        //            Func<T, bool> keepOld = null,
+        //            Func<T, T, bool> delete = null)
+        //{
+        //    List<T> transactions = transactionRepository.GetAll().ToList();
 
-            Dictionary<TSelector, T> done = new();
+        //    Dictionary<TSelector, T> done = new();
 
-            // Remove duplicates, use duplicate with predicate
-            foreach (T transaction in transactions)
-            {
-                _ = done.TryGetValue(uniqueDuplicateIdentifier(transaction), out T existingTransaction);
+        //    // Remove duplicates, use duplicate with predicate
+        //    foreach (T transaction in transactions)
+        //    {
+        //        _ = done.TryGetValue(uniqueDuplicateIdentifier(transaction), out T existingTransaction);
 
-                if (done.ContainsKey(uniqueDuplicateIdentifier(transaction))
-                    && (delete?.Invoke(transaction, existingTransaction) ?? true))
-                {
-                    if (keepOld?.Invoke(existingTransaction) ?? true)
-                    {
-                        _ = transactionRepository.DeleteById(IDSelectors.Resolve(transaction));
-                    }
-                    else
-                    {
-                        _ = transactionRepository.DeleteById(IDSelectors.Resolve(existingTransaction));
-                    }
+        //        if (done.ContainsKey(uniqueDuplicateIdentifier(transaction))
+        //            && (delete?.Invoke(transaction, existingTransaction) ?? true))
+        //        {
+        //            if (keepOld?.Invoke(existingTransaction) ?? true)
+        //            {
+        //                _ = transactionRepository.DeleteById(IDSelectors.Resolve(transaction));
+        //            }
+        //            else
+        //            {
+        //                _ = transactionRepository.DeleteById(IDSelectors.Resolve(existingTransaction));
+        //            }
 
-                    continue;
-                }
-                else
-                {
-                    done[uniqueDuplicateIdentifier(transaction)] = transaction;
-                }
-            }
-        }
+        //            continue;
+        //        }
+        //        else
+        //        {
+        //            done[uniqueDuplicateIdentifier(transaction)] = transaction;
+        //        }
+        //    }
+        //}
 
         private static IEnumerable<T> RemoveDuplicates<T, TSelector>(IEnumerable<T> entities,
             Func<T, TSelector> selector,

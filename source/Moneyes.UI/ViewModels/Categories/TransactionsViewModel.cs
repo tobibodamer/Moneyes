@@ -14,7 +14,7 @@ namespace Moneyes.UI.ViewModels
 {
     internal class TransactionsViewModel : ViewModelBase
     {
-        private readonly TransactionService _transactionService;
+        private readonly ITransactionService _transactionService;
 
         private ObservableCollection<Transaction> _transactions = new();
         public ObservableCollection<Transaction> Transactions
@@ -43,7 +43,7 @@ namespace Moneyes.UI.ViewModels
 
         public ICommand RemoveFromCategory { get; set; }
 
-        public TransactionsViewModel(TransactionService transactionService)
+        public TransactionsViewModel(ITransactionService transactionService)
         {
             _transactionService = transactionService;
         }
@@ -81,7 +81,7 @@ namespace Moneyes.UI.ViewModels
 
                 Transactions.DynamicUpdate(
                        transactions,
-                       (t1, t2) => t1.Idquals(t2),
+                       (t1, t2) => t1.Id.Equals(t2.Id),
                        new TransactionSortComparer(),
                        true);
             }

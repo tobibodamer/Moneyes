@@ -9,24 +9,34 @@ namespace Moneyes.UI
 {
     public class BankingService : IBankingService
     {
-        private readonly ICachedRepository<BankDetails> _bankDetailsRepository;
-        private readonly ICachedRepository<AccountDetails> _accountRepository;
-        private readonly ICachedRepository<Balance> _balanceRepository;
-        private readonly IUniqueCachedRepository<Transaction> _transactionRepository;
+        private readonly ICachedRepository<BankDbo> _bankDetailsRepository;
+        private readonly ICachedRepository<AccountDbo> _accountRepository;
+        private readonly ICachedRepository<BalanceDbo> _balanceRepository;
+        private readonly ITransactionService _transactionService;
         private readonly ICategoryService _categoryService;
 
+        private readonly IAccountFactory _accountFactory;
+        private readonly IBalanceFactory _balanceFactory;
+        private readonly IBankDetailsFactory _bankDetailsFactory;
+
         public BankingService(
-            ICachedRepository<BankDetails> bankDetailsRepository,
-            ICachedRepository<AccountDetails> accountRepository,
-            ICachedRepository<Balance> balanceRepository,
-            IUniqueCachedRepository<Transaction> transactionRepository,
-            ICategoryService categoryService)
+            ICachedRepository<BankDbo> bankDetailsRepository,
+            ICachedRepository<AccountDbo> accountRepository,
+            ICachedRepository<BalanceDbo> balanceRepository,
+            ITransactionService transactionService,
+            ICategoryService categoryService,
+            IAccountFactory accountFactory,
+            IBalanceFactory balanceFactory,
+            IBankDetailsFactory bankDetailsFactory)
         {
             _bankDetailsRepository = bankDetailsRepository;
             _accountRepository = accountRepository;
             _balanceRepository = balanceRepository;
-            _transactionRepository = transactionRepository;
+            _transactionService = transactionService;
             _categoryService = categoryService;
+            _accountFactory = accountFactory;
+            _balanceFactory = balanceFactory;
+            _bankDetailsFactory = bankDetailsFactory;
         }
 
         public bool HasBankingDetails => _bankDetailsRepository.GetAll().Any();
@@ -46,33 +56,59 @@ namespace Moneyes.UI
         {
             get
             {
-
-                var bankDetails = _bankDetailsRepository.GetAll().FirstOrDefault();
+                if (BankDetails == null)
+                {
+                    return null;
+                }
 
                 return new()
                 {
-                    UserId = bankDetails.UserId,
-                    Server = bankDetails.Server,
-                    BankCode = bankDetails.BankCode,
-                    Pin = bankDetails.Pin
+                    UserId = BankDetails.UserId,
+                    Server = BankDetails.Server,
+                    BankCode = BankDetails.BankCode,
+                    Pin = BankDetails.Pin
                 };
             }
             set
             {
-                BankDetails bankDetails = new()
+                BankDetails bankDetails = new(BankDetails?.Id ?? Guid.NewGuid(), value.BankCode)
                 {
-                    Id = new Guid("5be1438e-c03c-47c3-a798-051d36deb338"),
                     UserId = value.UserId,
                     Server = value.Server,
                     BankCode = value.BankCode,
-                    Pin = value.Pin
+                    Pin = value.Pin,
                 };
 
-                _bankDetailsRepository.Set(bankDetails);
+                BankDetails = bankDetails;
+            }
+        }
+
+        private BankDetails BankDetails
+        {
+            get
+            {
+                var dbo = _bankDetailsRepository.GetAll().FirstOrDefault();
+                if (dbo == null)
+                {
+                    return null;
+                }
+
+                return _bankDetailsFactory.CreateFromDbo(dbo);
+            }
+            set
+            {
+                _bankDetailsRepository.Set(value.ToDbo());
             }
         }
 
         public event Action NewAccountsImported;
+
+        public IEnumerable<BankDetails> GetBankEntries()
+        {
+            return _bankDetailsRepository.GetAll()
+                .Select(b => _bankDetailsFactory.CreateFromDbo(b))
+                .ToList();
+        }
 
         public IEnumerable<AccountDetails> GetAccounts()
         {
@@ -81,22 +117,53 @@ namespace Moneyes.UI
                 return Enumerable.Empty<AccountDetails>();
             }
 
-            return _accountRepository.GetAll().Where(acc => acc.BankCode.Equals(BankingDetails.BankCode.ToString()));
+            return _accountRepository.GetAll()
+                .Where(acc => acc.Bank.Id.Equals(BankDetails.Id))
+                .Select(a => _accountFactory.CreateFromDbo(a))
+                .ToList();
         }
 
         public int ImportAccounts(IEnumerable<AccountDetails> accounts)
         {
-            int numAccountsAdded = _accountRepository.Set(accounts);
+            var dbos = accounts.Select(b =>
+            {
+                if (!_accountRepository.Contains(b.Id))
+                {
+                    return b.ToDbo(createdAt: DateTime.Now, updatedAt: DateTime.Now);
+                }
+                else
+                {
+                    return b.ToDbo(updatedAt: DateTime.Now);
+                }
+            }).ToList();
 
-            //foreach (var account in accounts)
-            //{
-            //    if (_accountRepository.Set(account))
-            //    {
-            //        numAccountsAdded++;
-            //    }
-            //}
+            int numAccountsAdded = _accountRepository.Set(dbos, onConflict: v =>
+            {
+                if (AccountDbo.ContentEquals(v.ExistingEntity, v.NewEntity))
+                {
+                    return ConflictResolutionAction.Ignore();
+                }
 
-            NewAccountsImported?.Invoke();
+                var updateAccount = new AccountDbo()
+                {
+                    Id = v.ExistingEntity.Id,
+                    CreatedAt = v.ExistingEntity.CreatedAt,
+                    UpdatedAt = DateTime.Now,
+                    IsDeleted = v.NewEntity.IsDeleted,
+                    IBAN = v.NewEntity.IBAN,
+                    Number = v.NewEntity.Number,
+                    OwnerName = v.NewEntity.OwnerName,
+                    Type = v.NewEntity.Type,
+                    Bank = v.NewEntity.Bank
+                };
+
+                return ConflictResolutionAction.Update(updateAccount);
+            });
+
+            if (numAccountsAdded > 0)
+            {
+                NewAccountsImported?.Invoke();
+            }
 
             return numAccountsAdded;
         }
@@ -126,11 +193,18 @@ namespace Moneyes.UI
         /// <returns></returns>
         public Balance GetBalanceByDate(DateTime date, AccountDetails account)
         {
-            return _balanceRepository.GetAll()
+            var dbo = _balanceRepository.GetAll()
                 .Where(b => b.Account.Id.Equals(account.Id))
                 .Where(b => b.Date <= date)
                 .OrderByDescending(b => b.Date)
                 .FirstOrDefault();
+
+            if (dbo == null)
+            {
+                return null;
+            }
+
+            return _balanceFactory.CreateFromDbo(dbo);
         }
 
         //public Balance GetBalanceByDate(DateTime date, string bankCode)
@@ -155,12 +229,41 @@ namespace Moneyes.UI
             _categoryService.AssignCategories(transactions, assignMethod: categoryAssignMethod, updateDatabase: false);
 
             // Store
-            return _transactionRepository.Set(transactions);
+            return _transactionService.ImportTransactions(transactions);
         }
 
         public int ImportBalances(IEnumerable<Balance> balances)
         {
-            return _balanceRepository.Set(balances);
+            var dbos = balances.Select(b =>
+            {
+                if (!_balanceRepository.Contains(b.Id))
+                {
+                    return b.ToDbo(createdAt: DateTime.Now, updatedAt: DateTime.Now);
+                }
+                else
+                {
+                    return b.ToDbo(updatedAt: DateTime.Now);
+                }
+            }).ToList();
+
+            return _balanceRepository.Set(dbos, onConflict: v =>
+            {
+                if (BalanceDbo.ContentEquals(v.ExistingEntity, v.NewEntity))
+                {
+                    return ConflictResolutionAction.Ignore();
+                }
+
+                var update = new BalanceDbo()
+                {
+                    Id = v.ExistingEntity.Id,
+                    CreatedAt = v.ExistingEntity.CreatedAt,
+                    UpdatedAt = v.NewEntity.UpdatedAt,
+                    IsDeleted = v.NewEntity.IsDeleted,
+                    Date = v.NewEntity.Date
+                };
+
+                return ConflictResolutionAction.Update(update);
+            });
         }
     }
 }

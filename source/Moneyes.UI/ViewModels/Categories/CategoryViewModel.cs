@@ -77,9 +77,8 @@ namespace Moneyes.UI.ViewModels
                     filter = null;
                 }
 
-                return new Category
+                return new Category(_category?.Id ?? default)
                 {
-                    Id = _category?.Id ?? default,
                     Name = Name,
                     Parent = Parent,
                     Target = Target ?? 0,
@@ -133,7 +132,7 @@ namespace Moneyes.UI.ViewModels
                     .GetCategoryByName(Name);
 
                 return (!string.IsNullOrEmpty(Name) && existingCategory is null) ||
-                    (IsCreated && existingCategory.Idquals(Category));
+                    (IsCreated && existingCategory.Id.Equals(Category.Id));
             }
         }
 
@@ -283,7 +282,7 @@ namespace Moneyes.UI.ViewModels
 
             if (existingCategory != null)
             {
-                if (IsCreated && existingCategory.Idquals(Category))
+                if (IsCreated && existingCategory.Id.Equals(Category.Id))
                 {
                     // Update existing
                 }

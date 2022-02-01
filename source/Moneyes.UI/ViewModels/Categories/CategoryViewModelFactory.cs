@@ -36,7 +36,7 @@ namespace Moneyes.UI.ViewModels
             where TCategoryViewModel : CategoryViewModel
         {
             List<Category> possibleParents = _categoryService.GetCategories(CategoryTypes.Real)
-                .Where(c => !c.Idquals(category)).ToList();
+                .Where(c => !c.Id.Equals(category.Id)).ToList();
 
             bool canAssign(Transaction transaction)
             {
@@ -109,7 +109,7 @@ namespace Moneyes.UI.ViewModels
                 {
                     _statusMessageService.ShowMessage($"Category '{category.Name}' deleted");
                 }
-            }, () => !category.Idquals(Category.AllCategory) && !category.Idquals(Category.NoCategory));
+            }, () => !category.IsAllCategory() && !category.IsNoCategory());
 
             categoryViewModel.MoveToCategory = new RelayCommand<Transaction>(transaction =>
             {
@@ -145,7 +145,7 @@ namespace Moneyes.UI.ViewModels
 
         public EditCategoryViewModel CreateAddCategoryViewModel()
         {
-            Category newCategory = new();
+            Category newCategory = new(Guid.NewGuid());
 
             return CreateEditCategoryViewModel(newCategory, isCreated: false);
         }
@@ -157,7 +157,7 @@ namespace Moneyes.UI.ViewModels
         private EditCategoryViewModel CreateEditCategoryViewModel(Category category, bool isCreated)
         {
             List<Category> possibleParents = _categoryService.GetCategories(CategoryTypes.Real)
-                .Where(c => !c.Idquals(category)).ToList();
+                .Where(c => !c.Id.Equals(category.Id)).ToList();
 
             EditCategoryViewModel editCategoryViewModel = new(_categoryService, _statusMessageService)
             {

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Moneyes.Core
+namespace Moneyes.Data
 {
     /// <summary>
     /// A unique database entity.

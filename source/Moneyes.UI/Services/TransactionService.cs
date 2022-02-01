@@ -9,17 +9,15 @@ using System.Threading.Tasks;
 
 namespace Moneyes.UI
 {
-    public class TransactionService
+    public class TransactionService : ITransactionService
     {
-        private readonly IUniqueCachedRepository<Transaction> _transactionRepository;
-
-        //public event Action<Transaction> EntityAdded;
-        //public event Action<Transaction> EntityUpdated;
-        //public event Action<Transaction> EntityDeleted;
-        public event Action<RepositoryChangedEventArgs<Transaction>> RepositoryChanged;
-        public TransactionService(IUniqueCachedRepository<Transaction> transactionRepository)
+        private readonly IUniqueCachedRepository<TransactionDbo> _transactionRepository;
+        private readonly ITransactionFactory _transactionFactory;
+        public TransactionService(IUniqueCachedRepository<TransactionDbo> transactionRepository,
+            ITransactionFactory transactionFactory)
         {
             _transactionRepository = transactionRepository;
+            _transactionFactory = transactionFactory;
         }
 
         public IEnumerable<Transaction> GetByCategory(Category category)
@@ -27,25 +25,29 @@ namespace Moneyes.UI
             var stopwatch = Stopwatch.StartNew();
 
             // Category is null or all -> get all transactions
-            if (category == null || category.Idquals(Category.AllCategory))
+            if (category == null || category.Id.Equals(Category.AllCategoryId))
             {
                 return AllOrderedByDate();
             }
 
             // Category is NoCategory -> get all transactions without category
-            if (category.Idquals(Category.NoCategory))
+            if (category.IsNoCategory())
             {
                 return _transactionRepository
                     .GetAll()
+                    .AsParallel()
                     .Where(t => t.Categories.Count == 0)
                     .OrderByDescending(t => t.BookingDate)
+                    .Select(_transactionFactory.CreateFromDbo)
                     .ToList();
             }
 
             // Category is some real category
             var t = _transactionRepository.GetAll()
-                .Where(t => t.Categories.Any(c => c.Id == category.Id))
+                .AsParallel()
+                .Where(t => t.Categories.Any(c => c.Id.Equals(category.Id)))
                 .OrderByDescending(t => t.BookingDate)
+                .Select(_transactionFactory.CreateFromDbo)
                 .ToList();
 
             stopwatch.Stop();
@@ -53,23 +55,16 @@ namespace Moneyes.UI
 
             return t;
         }
-
-        private IEnumerable<Transaction> GetByTransactionType(TransactionType transactionType)
-        {
-            throw new NotImplementedException();
-            //return Cache.Values.Where(t => t.Type == transactionType);
-        }
-
-
         public IEnumerable<Transaction> AllOrderedByDate()
         {
             var stopwatch = Stopwatch.StartNew();
 
             var transactions = _transactionRepository.GetAll()
+                .AsParallel()
                 .OrderByDescending(t => t.BookingDate)
                 .ThenByDescending(t => t.PartnerIBAN)
                 .ThenByDescending(t => t.Index)
-                .ToList();
+                .Select(_transactionFactory.CreateFromDbo);
 
             stopwatch.Stop();
             Debug.WriteLine($"Took {stopwatch.ElapsedMilliseconds}ms to fetch all transactions ordered.");
@@ -136,6 +131,7 @@ namespace Moneyes.UI
 
             return query
                 .OrderByDescending(t => t.BookingDate)
+                .Select(_transactionFactory.CreateFromDbo)
                 .ToList();
         }
 
@@ -185,7 +181,9 @@ namespace Moneyes.UI
         {
             var stopwatch = Stopwatch.StartNew();
 
-            var t = _transactionRepository.GetAll().ToList();
+            var t = _transactionRepository.GetAll()
+                .Select(_transactionFactory.CreateFromDbo)
+                .ToList();
 
             stopwatch.Stop();
             Debug.WriteLine($"Took {stopwatch.ElapsedMilliseconds}ms to fetch transactions.");
@@ -199,64 +197,39 @@ namespace Moneyes.UI
         /// <param name="transactions">The transactions to search for by id.</param>
         /// <param name="onlyDiffering">Return only transactions differing from the existing transaction.</param>
         /// <returns></returns>
-        public IReadOnlyList<(Transaction existing, Transaction newTransaction)> GetExistingTransactions(
-        IEnumerable<Transaction> transactions, bool onlyDiffering = true)
-        {
-            var transactionsMap = transactions.ToDictionary(t => t.UID, t => t);
-            var transactionUIDs = transactionsMap.Keys.ToList();
+        //public IReadOnlyList<(Transaction existing, Transaction newTransaction)> GetExistingTransactions(
+        //IEnumerable<Transaction> transactions, bool onlyDiffering = true)
+        //{
+        //    var transactionsMap = transactions.ToDictionary(t => t.UID, t => t);
+        //    var transactionUIDs = transactionsMap.Keys.ToList();
 
-            var existingTransactions = _transactionRepository.GetAll()
-                .Where(t => transactionUIDs.Contains(t.UID))
-                .ToList();
+        //    var existingTransactions = _transactionRepository.GetAll()
+        //        .Where(t => transactionUIDs.Contains(t.UID))
+        //        .ToList();
 
-            return existingTransactions
-                .Select(e => (e, transactionsMap[e.UID]))
-                .Where(x => !onlyDiffering || !TransactionEquals(x.e, x.Item2))
-                .ToList();
-        }
+        //    return existingTransactions
+        //        .Select(e => (e, transactionsMap[e.UID]))
+        //        .Where(x => !onlyDiffering || !TransactionEquals(x.e, x.Item2))
+        //        .ToList();
+        //}
 
         public Transaction? GetByUID(string uid)
         {
-            return _transactionRepository.GetAll().FirstOrDefault(t => t.UID.Equals(uid));
+            var transactionDbo = _transactionRepository.GetAll()
+                .FirstOrDefault(t => t.UID.Equals(uid));
+
+            if (transactionDbo is null)
+            {
+                return null;
+            }
+
+            return _transactionFactory.CreateFromDbo(transactionDbo);
         }
-
-        /// <summary>
-        /// Add multiple transactions to the database.
-        /// </summary>
-        /// <param name="transactions"></param>
-        /// <returns></returns>
-        public bool AddTransactions(IEnumerable<Transaction> transactions)
-        {
-            //TODO: implemetn insert all
-            //_transactionRepository.CreateAll
-
-            //OnRepositoryChanged(RepositoryChangedAction.Add,
-            //    addedItems: transactions.ToList());
-
-            throw new NotImplementedException();
-        }
-
-        /// <summary>
-        /// Imports the <paramref name="transaction"/> into the database, 
-        /// by either inserting it if not already existing,
-        /// or updating the already existing transaction.
-        /// </summary>
-        /// <param name="transaction"></param>
-        /// <returns><see langword="true"/> if the transaction was inserted, <see langword="false"/> otherwise.</returns>
-        //TODO!!!
 
         public bool ImportTransaction(Transaction transaction)
         {
-            //var existing = await GetByUID(transaction.UID);
-
-            //_transactionRepository.
-
-            //if (existing != null)
-            //{
-            //    _transactionRepository.Update(transaction)
-            //}
-
-            throw new NotImplementedException();
+            var transactionDbo = transaction.ToDbo();
+            return _transactionRepository.Set(transactionDbo, onConflict: UpdateTransactionIfChanged);
         }
 
         /// <summary>
@@ -267,146 +240,54 @@ namespace Moneyes.UI
         /// <returns>The number of transactions inserted.</returns>
         public int ImportTransactions(IEnumerable<Transaction> transactions)
         {
-            //// Get existing transactions and track including categories
+            // TODO: Validate if duplicate categories and all categories exist, maybe in repo?
 
-            //var transactionUIDs = transactions.Select(t => t.UID).ToList();
-            //var existing = await ctx.Transactions
-            //    .Include(t => t.Categories)
-            //    .Where(t => transactionUIDs.Contains(t.UID))
-            //    .ToDictionaryAsync(t => t.UID, t => t);
+            var dbos = transactions.Select(b =>
+            {
+                if (!_transactionRepository.Contains(b.Id))
+                {
+                    return b.ToDbo(createdAt: DateTime.Now, updatedAt: DateTime.Now);
+                }
+                else
+                {
+                    return b.ToDbo(updatedAt: DateTime.Now);
+                }
+            }).ToList();
 
-
-            //// Update values of existing transaction
-
-            //var transactionsToUpdate = transactions
-            //    .Where(t => existing.ContainsKey(t.UID))
-            //    .ToList();
-
-            //await ctx.Transactions.UpsertRange(transactionsToUpdate)
-            //    .AllowIdentityMatch()
-            //    .RunAsync();
-
-
-            //// Update category assignments of existing transactions
-
-            //foreach (var transaction in transactions)
-            //{
-            //    var existingTransaction = existing[transaction.UID];
-            //    var categories = transaction.Categories.ToList();
-
-            //    existingTransaction.Categories.Clear();
-            //    existingTransaction.Categories.AddRange(categories);
-            //}
-
-
-            //await ctx.SaveChangesAsync();
-
-            //// Add new transcations
-
-            //var transactionsToAdd = transactions
-            //    .Where(t => !existing.ContainsKey(t.UID))
-            //    .ToList();
-
-            //await AddTransactions(transactionsToAdd);
-
-            //OnRepositoryChanged(RepositoryChangedAction.Add | RepositoryChangedAction.Replace,
-            //        addedItems: transactionsToAdd,
-            //        replacedItems: transactionsToUpdate);
-
-            //return transactionsToAdd.Count;
-
-            throw new NotImplementedException();
+            return _transactionRepository.Set(dbos, onConflict: UpdateTransactionIfChanged);
         }
 
-        /// <summary>
-        /// Updates the given transactions in the database.
-        /// </summary>
-        /// <param name="transactions"></param>
-        /// <returns></returns>
-        //public void UpdateTransactions(IEnumerable<Transaction> transactions)
-        //{
-        //    var uids = transactions.Select(t => t.UID).ToList();
-        //    var existing = _transactionRepository.GetAll()
-        //        .Where(t => uids.Contains(t.UID))
-        //        .ToList();
-
-        //    var existingUIDs = existing.Select(t => t.UID).ToList();
-
-            
-        //    foreach (var transaction in GetExistingTransactions(transactions))
-            
-        //    transactions.Where(t => existingUIDs.Contains(t.UID))
-        //}
-
-        /// <summary>
-        /// Updates the categories of the <paramref name="transaction"/> in the database.
-        /// </summary>
-        /// <param name="transaction"></param>
-        /// <returns></returns>
-        //public async Task UpdateOnlyCategories(Transaction transaction)
-        //{
-        //    using var ctx = _dbContextFactory.CreateDbContext();
-
-        //    ctx.AttachCategoriesOf(transaction);
-
-        //    var existingTransaction = ctx.Transactions
-        //        .Include(t => t.Categories)
-        //        .FirstOrDefault(t => transaction.UID.Equals(t.UID));
-
-        //    var categories = transaction.Categories.ToList();
-
-        //    existingTransaction.Categories.Clear();
-        //    existingTransaction.Categories.AddRange(categories);
-
-        //    await ctx.SaveChangesAsync();
-        //}
-
-        /// <summary>
-        /// Updates the categories of the <paramref name="transactions"/> in the database.
-        /// </summary>
-        /// <param name="transaction"></param>
-        /// <returns></returns>
-        //public async Task UpdateOnlyCategories(IEnumerable<Transaction> transactions)
-        //{
-        //    using var ctx = _dbContextFactory.CreateDbContext();
-
-        //    ctx.AttachAndReplaceCategoriesOf(transactions);
-
-        //    var uids = transactions.Select(t => t.UID).ToList();
-        //    var existing = await ctx.Transactions
-        //        .Include(t => t.Categories)
-        //        .Where(t => uids.Contains(t.UID))
-        //        .ToDictionaryAsync(t => t.UID, t => t);
-
-        //    foreach (var transaction in transactions)
-        //    {
-        //        var existingTransaction = existing[transaction.UID];
-        //        var categories = transaction.Categories.ToList();
-
-        //        existingTransaction.Categories.Clear();
-        //        existingTransaction.Categories.AddRange(categories);
-        //    }
-
-        //    await ctx.SaveChangesAsync();
-        //}
-
-        /// <summary>
-        /// Determines whether two <see cref="Transaction"/>s are equal.
-        /// </summary>
-        /// <param name="left"></param>
-        /// <param name="other"></param>
-        /// <returns></returns>
-        private static bool TransactionEquals(Transaction left, Transaction other)
+        private static ConflictResolutionAction UpdateTransactionIfChanged(
+            CachedRepository<TransactionDbo>.ConstraintViolation v)
         {
-            return other is Transaction transaction &&
-                   left.ValueDate == transaction.ValueDate &&
-                   left.Purpose == transaction.Purpose &&
-                   left.BookingType == transaction.BookingType &&
-                   left.IBAN == transaction.IBAN &&
-                   left.PartnerIBAN == transaction.PartnerIBAN &&
-                   left.BIC == transaction.BIC &&
-                   left.Name == transaction.Name &&
-                   left.Currency == transaction.Currency;
+            if (TransactionDbo.ContentEquals(v.ExistingEntity, v.NewEntity))
+            {
+                return ConflictResolutionAction.Ignore();
+            }
+
+            var updateTransaction = new TransactionDbo()
+            {
+                Id = v.ExistingEntity.Id,
+                CreatedAt = v.ExistingEntity.CreatedAt,
+                UpdatedAt = DateTime.Now,
+                Categories = v.NewEntity.Categories,
+                ValueDate = v.NewEntity.ValueDate,
+                Currency = v.NewEntity.Currency,
+                AltName = v.NewEntity.AltName,
+                Amount = v.NewEntity.Amount,
+                IBAN = v.NewEntity.IBAN,
+                BookingDate = v.NewEntity.BookingDate,
+                IsDeleted = v.NewEntity.IsDeleted,
+                UID = v.NewEntity.UID,
+                BIC = v.NewEntity.BIC,
+                BookingType = v.NewEntity.BookingType,
+                Index = v.NewEntity.Index,
+                Name = v.NewEntity.Name,
+                PartnerIBAN = v.NewEntity.PartnerIBAN,
+                Purpose = v.NewEntity.Purpose
+            };
+
+            return ConflictResolutionAction.Update(updateTransaction);
         }
     }
 }

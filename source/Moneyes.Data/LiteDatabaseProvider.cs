@@ -49,7 +49,7 @@ namespace Moneyes.Data
             {
                 LiteDbFactory databaseFactory = new(_dbConfig);
 
-                SecureString newPassword = _createMasterPasswordFunc?.Invoke();
+                SecureString newPassword = OnCreatePassword();
 
                 if (newPassword is null)
                 {
@@ -96,7 +96,7 @@ namespace Moneyes.Data
             {
                 try
                 {
-                    password = _requestMasterPasswordFunc?.Invoke();
+                    password = OnRequestPassword();
 
                     if (password is null)
                     {

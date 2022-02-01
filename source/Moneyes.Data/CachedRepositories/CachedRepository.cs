@@ -347,12 +347,11 @@ namespace Moneyes.Data
                 NewValue = newValue;
                 ExistingValue = existingValue;
             }
-
         }
 
         protected virtual ConstraintViolationHandler CreateConstraintViolationHandler()
         {
-            return new(this);
+            return new(this, Logger);
         }
 
 
@@ -439,7 +438,7 @@ namespace Moneyes.Data
                 {
                     Logger.LogWarning("Primary key violation: {key} already exists", key);
 
-                    throw new ConstraintViolationException("Primary key already exists", null, null, null);
+                    throw new DuplicateKeyException("Primary key already exists", key);
                 }
             }
         }
@@ -449,8 +448,7 @@ namespace Moneyes.Data
             if (!IsUnique(keys))
             {
                 // Duplicate PK in collection itself
-                throw new ConstraintViolationException("Duplicate primary key in given collection.",
-                    null, null, null);
+                throw new DuplicateKeyException("Duplicate primary key in given collection.");
             }
 
             existingEntities ??= GetFromCache().ToArray();
@@ -463,7 +461,7 @@ namespace Moneyes.Data
                 {
                     Logger.LogWarning("Primary key violation: {key} already exists", key);
 
-                    throw new ConstraintViolationException("Primary key already exists", null, null, null);
+                    throw new DuplicateKeyException("Primary key already exists", key);
                 }
             }
         }
@@ -539,6 +537,84 @@ namespace Moneyes.Data
             return createdEntity;
         }
 
+        public virtual int Create(IEnumerable<T> entities)
+        {
+            return Create(entities, null);
+        }
+        public virtual int Create(IEnumerable<T> entities, Func<ConstraintViolation, ConflictResolutionAction> onConflict)
+        {
+            // Get the primary keys of the entities to upsert
+            var keys = entities.Select(GetKey).ToHashSet();
+
+            if (!IsAutoId)
+            {
+                ValidatePrimaryKeys(keys);
+            }
+
+            // Create the contraint validation handler
+            var constraintViolationHandler = CreateConstraintViolationHandler();
+
+            // Create validator function
+            var validateUniqueConstraints = CreateUniqueConstraintValidator(
+                existingEntities: GetFromCache(),
+                uniqueConstraints: UniqueConstraints,
+                onViolation: v =>
+                {
+                    // Call user conflict resolution delegate if provided
+                    var userConflictResolution = onConflict?.Invoke(v);
+
+                    // Use the constraint violation handler to handle this violation
+                    return constraintViolationHandler.Handle(v, userConflictResolution);
+                });
+
+            // Validate unique constraints -> get all valid entities
+            var entitiesToInsert = entities.Where(e => validateUniqueConstraints(e)).ToList();
+
+
+            _cacheLock.AcquireWriterLock(CacheTimeout);
+
+            int counter = 0;
+            List<T> addedEntities = new();
+
+            try
+            {
+                counter = Collection.Insert(entitiesToInsert);
+
+                foreach (T entity in entitiesToInsert)
+                {
+                    object id = GetKey(entity);
+
+                    if (AddToCache(entity))
+                    {
+                        addedEntities.Add(entity);
+                    }
+                }
+            }
+            finally
+            {
+                _cacheLock.ReleaseWriterLock();
+            }
+
+
+            // Now perform deletes and updates of violated constraints
+            constraintViolationHandler.PerformDeletes();
+            constraintViolationHandler.PerformUpdates();
+
+            // Notify
+
+            foreach (var entity in addedEntities)
+            {
+                OnEntityAdded(entity);
+            }
+
+            if (addedEntities.Any())
+            {
+                OnRepositoryChanged(RepositoryChangedAction.Add, addedItems: addedEntities);
+            }
+
+            return counter;
+        }
+
         public virtual IEnumerable<T> GetAll()
         {
             return GetFromCache();
@@ -572,6 +648,42 @@ namespace Moneyes.Data
             return default;
         }
 
+        public virtual IReadOnlyList<T> FindAllById(params object[] ids)
+        {
+            ArgumentNullException.ThrowIfNull(ids);
+
+            if (ids.Length == 0)
+            {
+                return new List<T>();
+            }
+
+            return ids
+                .Select(id => Cache.GetValueOrDefault(id))
+                .Where(x => x != null)
+                .ToList();
+        }
+
+        public virtual bool Contains(object id)
+        {
+            ArgumentNullException.ThrowIfNull(id);
+
+            return Cache.ContainsKey(id);
+        }
+
+        public virtual bool ContainsAll(params object[] ids)
+        {
+            ArgumentNullException.ThrowIfNull(ids);
+
+            return ids.All(id => Cache.ContainsKey(id));
+        }
+
+        public virtual bool ContainsAny(params object[] ids)
+        {
+            ArgumentNullException.ThrowIfNull(ids);
+
+            return ids.Any(id => Cache.ContainsKey(id));
+        }
+
         public virtual bool Set(T entity, Func<ConstraintViolation, ConflictResolutionAction>? onConflict)
         {
             ArgumentNullException.ThrowIfNull(entity);
@@ -579,7 +691,7 @@ namespace Moneyes.Data
             object key = GetKey(entity);
             bool? inserted = null;
 
-            // Dont validate primary key, because might be update
+            // Dont validate primary key, because might be update            
 
             // Get all entities that will not be replaced
             var otherEntities = Cache.Where(x => !key.Equals(x.Key)).Select(x => x.Value);
@@ -783,7 +895,7 @@ namespace Moneyes.Data
                     return constraintViolationHandler.Handle(v, null);
                 });
 
-            bool inserted = false;
+            bool updated = false;
 
             _cacheLock.UpgradeToWriterLock(CacheTimeout);
             try
@@ -791,7 +903,7 @@ namespace Moneyes.Data
                 if (validateUniqueConstraints(entity))
                 {
                     // Upsert in db
-                    inserted = Collection.Update(entity);
+                    updated = Collection.Update(entity);
 
                     // Get key after update (might be not set until auto id)
                     key = GetKey(entity);
@@ -809,11 +921,90 @@ namespace Moneyes.Data
             constraintViolationHandler.PerformDeletes();
             constraintViolationHandler.PerformUpdates();
 
-            if (inserted)
+            if (updated)
             {
                 OnEntityUpdated(entity);
                 OnRepositoryChanged(RepositoryChangedAction.Replace, replacedItems: new List<T>() { entity });
             }
+        }
+
+        public virtual bool Update(object id, Func<T, T> updateFactory)
+        {
+            ArgumentNullException.ThrowIfNull(id);
+            ArgumentNullException.ThrowIfNull(updateFactory);
+
+            try
+            {
+                _cacheLock.AcquireReaderLock(CacheTimeout);
+
+                // Check if entity exists
+                if (!Cache.ContainsKey(id))
+                {
+                    throw new KeyNotFoundException();
+                }
+            }
+            catch
+            {
+                _cacheLock.ReleaseReaderLock();
+                throw;
+            }
+
+            if (!Cache.TryGetValue(id, out var existingEntity))
+            {
+                return false;
+            }
+
+            T entity = updateFactory(existingEntity);
+
+            // Get all entities that will not be replaced
+            var otherEntities = Cache.Where(x => !id.Equals(x.Key)).Select(x => x.Value);
+
+            // Create the contraint validation handler
+            var constraintViolationHandler = CreateConstraintViolationHandler();
+
+            // Create validator function
+            var validateUniqueConstraints = CreateUniqueConstraintValidator(
+                existingEntities: otherEntities,
+                uniqueConstraints: UniqueConstraints,
+                onViolation: v =>
+                {
+                    // Use the constraint violation handler to handle this violation
+                    return constraintViolationHandler.Handle(v, null);
+                });
+
+            bool updated = false;
+
+            _cacheLock.UpgradeToWriterLock(CacheTimeout);
+            try
+            {
+                if (validateUniqueConstraints(entity))
+                {
+                    // Upsert in db
+                    updated = Collection.Update(entity);
+
+                    // Get key after update (might be not set until auto id)
+                    id = GetKey(entity);
+
+                    // Upsert in cache
+                    AddOrUpdateCache(entity);
+                }
+            }
+            finally
+            {
+                _cacheLock.ReleaseWriterLock();
+            }
+
+            // Now perform deletes and updates of violated constraints
+            constraintViolationHandler.PerformDeletes();
+            constraintViolationHandler.PerformUpdates();
+
+            if (updated)
+            {
+                OnEntityUpdated(entity);
+                OnRepositoryChanged(RepositoryChangedAction.Replace, replacedItems: new List<T>() { entity });
+            }
+
+            return updated;
         }
         public virtual int Update(IEnumerable<T> entities)
         {

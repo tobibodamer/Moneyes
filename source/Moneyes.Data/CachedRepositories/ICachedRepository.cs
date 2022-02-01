@@ -31,8 +31,55 @@ namespace Moneyes.Data
         /// </summary>
         /// <param name="entities"></param>
         void RenewCacheFor(IEnumerable<T> entities);
+
         bool Set(T entity, Func<CachedRepository<T>.ConstraintViolation, ConflictResolutionAction> onConflict);
+
         int Set(IEnumerable<T> entities, Func<CachedRepository<T>.ConstraintViolation, ConflictResolutionAction> onConflict);
+
+        /// <summary>
+        /// Updates the entity with the given <paramref name="id"/>.
+        /// </summary>
+        /// <param name="id">The key of the entity to update.</param>
+        /// <param name="updateFactory">A factory function that receives the existing entity 
+        /// and returns the entity to insert.</param>
+        /// <returns></returns>
+        bool Update(object id, Func<T, T> updateFactory);
+
+        /// <summary>
+        /// Checks if the repostory contains any entities with the given <paramref name="ids"/>.
+        /// </summary>
+        /// <param name="ids">The entity keys.</param>
+        /// <returns><see langword="true"/> if at least one entity exists.</returns>
+        bool ContainsAny(params object[] ids);
+
+        /// <summary>
+        /// Checks if the repostory contains all entities with the given <paramref name="ids"/>.
+        /// </summary>
+        /// <param name="ids">The entity keys.</param>
+        /// <returns><see langword="true"/> if all entities exist.</returns>
+        bool ContainsAll(params object[] ids);
+
+        /// <summary>
+        /// Checks if the repostory contains an entity with the given <paramref name="id"/>.
+        /// </summary>
+        /// <param name="id">The key of the entity.</param>
+        /// <returns><see langword="true"/> if the entity exists.</returns>
+        bool Contains(object id);
+
+        /// <summary>
+        /// Inserts the given <paramref name="entities"/> into the database.
+        /// </summary>
+        /// <param name="entities">The entities to insert.</param>
+        /// <returns>The number of inserted entities.</returns>
+        int Create(IEnumerable<T> entities);
+
+        /// <summary>
+        /// Inserts the given <paramref name="entities"/> into the database.
+        /// </summary>
+        /// <param name="entities">The entities to insert.</param>
+        /// <param name="onConflict">A delegate that is invoked when a constraint violation occurs.</param>
+        /// <returns>The number of inserted entities.</returns>
+        int Create(IEnumerable<T> entities, Func<CachedRepository<T>.ConstraintViolation, ConflictResolutionAction> onConflict);
 
         /// <summary>
         /// Raised when the repository changed.
@@ -52,6 +99,8 @@ namespace Moneyes.Data
 #nullable enable
         T? FindById(TKey id);
 #nullable disable
+
+        IReadOnlyList<T> FindAllById(params object[] ids);
 
         bool Delete(T entity);
         bool DeleteById(TKey id);

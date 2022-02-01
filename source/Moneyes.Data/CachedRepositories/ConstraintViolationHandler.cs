@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Microsoft.Extensions.Logging;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Moneyes.Data
@@ -10,12 +11,14 @@ namespace Moneyes.Data
             private readonly List<T> _toDelete = new();
             private readonly List<T> _toUpdate = new();
             private readonly ICachedRepository<T> _repository;
+            private readonly ILogger _logger;
 
             public IReadOnlyList<T> ToUpdate => _toUpdate;
             public IReadOnlyList<T> ToDelete => _toDelete;
-            public ConstraintViolationHandler(ICachedRepository<T> repository)
+            public ConstraintViolationHandler(ICachedRepository<T> repository, ILogger logger)
             {
                 _repository = repository;
+                _logger = logger;
             }
 
             public (bool continueValidation, bool ignore) Handle(ConstraintViolation violation, ConflictResolutionAction? userAction)
@@ -36,8 +39,9 @@ namespace Moneyes.Data
                     {
                         conflictResolution = userAction.Resolution.Value;
                     }
-
                 }
+
+                _logger.LogInformation("Choosing conflic resolution {method}.", conflictResolution);
 
                 switch (conflictResolution)
                 {

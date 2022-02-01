@@ -18,6 +18,10 @@ namespace Moneyes.Data
         bool DeleteById(Guid id, bool softDelete = true);
         int DeleteAll(bool softDelete = true);
         int DeleteMany(Expression<Func<T, bool>> predicate, bool softDelete = true);
+        bool ContainsAny(bool includeSoftDeleted = false, params object[] ids);
+        bool ContainsAll(bool includeSoftDeleted = false, params object[] ids);
+        bool Contains(object id, bool includeSoftDeleted = false);
+        IReadOnlyList<T> FindAllById(bool includeSoftDeleted = false, params object[] ids);
     }
 
     public class UniqueCachedRepository<T> : CachedRepository<T, Guid>, IUniqueCachedRepository<T>
@@ -87,6 +91,97 @@ namespace Moneyes.Data
             }
 
             return result;
+        }
+
+        public IReadOnlyList<T> FindAllById(bool includeSoftDeleted = false, params object[] ids)
+        {
+            if (includeSoftDeleted)
+            {
+                return base.FindAllById(ids);
+            }
+
+            ArgumentNullException.ThrowIfNull(ids);
+
+            if (ids.Length == 0)
+            {
+                return new List<T>();
+            }
+
+            return ids
+                .Select(id => Cache.GetValueOrDefault(id))
+                .Where(x => !x?.IsDeleted ?? false)
+                .ToList();
+        }
+
+        public override IReadOnlyList<T> FindAllById(params object[] ids)
+        {
+            return base.FindAllById(ids);
+        }
+
+        public bool Contains(object id, bool includeSoftDeleted = false)
+        {
+            if (includeSoftDeleted)
+            {
+                return base.Contains(id);
+            }
+
+            if (Cache.TryGetValue(id, out var entity))
+            {
+                return !entity.IsDeleted;
+            }
+
+            return false;
+        }
+
+        public override bool Contains(object id)
+        {
+            return Contains(id, includeSoftDeleted: false);
+        }
+
+        public bool ContainsAll(bool includeSoftDeleted = false, params object[] ids)
+        {
+            if (includeSoftDeleted)
+            {
+                return base.Contains(ids);
+            }
+
+            return ids.All(id =>
+            {
+                if (Cache.TryGetValue(id, out var entity))
+                {
+                    return !entity.IsDeleted;
+                }
+
+                return false;
+            });
+        }
+
+        public override bool ContainsAll(params object[] ids)
+        {
+            return ContainsAll(false, ids);
+        }
+
+        public bool ContainsAny(bool includeSoftDeleted = false, params object[] ids)
+        {
+            if (includeSoftDeleted)
+            {
+                return base.ContainsAny(ids);
+            }
+
+            return ids.Any(id =>
+            {
+                if (Cache.TryGetValue(id, out var entity))
+                {
+                    return !entity.IsDeleted;
+                }
+
+                return false;
+            });
+        }
+
+        public override bool ContainsAny(params object[] ids)
+        {
+            return ContainsAny(false, ids);
         }
 
         /// <summary>
@@ -181,8 +276,8 @@ namespace Moneyes.Data
         #region Validation
 
         protected override Func<T, bool> CreateUniqueConstraintValidator(
-            IEnumerable<T> existingEntities, 
-            IEnumerable<IUniqueConstraint<T>> uniqueConstraints, 
+            IEnumerable<T> existingEntities,
+            IEnumerable<IUniqueConstraint<T>> uniqueConstraints,
             Func<ConstraintViolation, (bool continueValidation, bool ignore)> onViolation)
         {
             var validateAgainstSoftDeleted = base.CreateUniqueConstraintValidator(

@@ -113,7 +113,7 @@ namespace Moneyes.UI
                 .AddCachedRepositories(options =>
                 {
                     options.AddUniqueRepository<TransactionDbo>("Transaction")
-                        .DependsOnMany(t => t.Categories, "Category")
+                        .DependsOnOne(t => t.Category, "Category")
                         .WithUniqueProperty(t => t.UID, onConflict: ConflictResolution.Replace);
 
                     options.AddUniqueRepository<CategoryDbo>("Category")
@@ -526,6 +526,71 @@ namespace Moneyes.UI
 
                 logger.LogInformation("Migrated to version 2");
 
+            }
+
+            if (database.UserVersion == 2)
+            {
+                logger.LogInformation("Database version is 2. Migrating to version 3...");
+
+                var categories = database.GetCollection("Category");
+                var categoryDocuments = categories.FindAll().ToList();
+                var categoryIdMap = new Dictionary<Guid, BsonDocument>();
+
+                foreach (var document in categoryDocuments)
+                {                    
+                    categoryIdMap.Add(document["_id"], document);                    
+                }
+                
+
+                logger.LogInformation("Migrating Transactions...");
+
+                var transactions = database.GetCollection("Transaction");
+                var transactionDocuments = transactions.FindAll().ToList();
+
+
+                foreach (var document in transactionDocuments)
+                {
+                    transactions.Delete(document["_id"]);
+
+                    var categoryIds = document["Categories"].AsArray
+                        .Select(x => x["$id"])
+                        .ToList();
+
+                    if (!categoryIds.Any())
+                    {
+                        document["Category"] = null;
+                        document.Remove("Categories");
+
+                        continue;
+                    }
+
+                    var firstWithParent = categoryIds
+                        .FirstOrDefault(cid => !categoryIdMap[cid]["Parent"].IsNull);
+
+                    if (firstWithParent is null)
+                    {
+                        var firstCategoryId = categoryIds.FirstOrDefault();
+                        document["Category"] = new BsonDocument {["$id"] = firstCategoryId, ["$ref"] = "Category" };
+                    }
+                    else
+                    {
+                        document["Category"] = new BsonDocument { ["$id"] = firstWithParent, ["$ref"] = "Category" };
+                    }
+
+                    document.Remove("Categories");
+                    document["UpdatedAt"] = DateTime.UtcNow;
+                }
+
+                transactions.Insert(transactionDocuments);
+            
+
+                logger.LogInformation("Migration successful");
+
+                database.UserVersion = 3;
+
+                database.Checkpoint();
+
+                logger.LogInformation("Migrated to version 1");
             }
         }
 

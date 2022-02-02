@@ -148,7 +148,6 @@ namespace Moneyes.UI.ViewModels
 
 
         public ICommand MoveToCategory { get; set; }
-        public ICommand CopyToCategory { get; set; }
 
         public bool IsNoCategory => _category == Category.NoCategory;
 

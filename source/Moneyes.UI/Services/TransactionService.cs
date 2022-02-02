@@ -36,7 +36,7 @@ namespace Moneyes.UI
                 return _transactionRepository
                     .GetAll()
                     .AsParallel()
-                    .Where(t => t.Categories.Count == 0)
+                    .Where(t => t.Category == null)
                     .OrderByDescending(t => t.BookingDate)
                     .Select(_transactionFactory.CreateFromDbo)
                     .ToList();
@@ -45,7 +45,7 @@ namespace Moneyes.UI
             // Category is some real category
             var t = _transactionRepository.GetAll()
                 .AsParallel()
-                .Where(t => t.Categories.Any(c => c.Id.Equals(category.Id)))
+                .Where(t => t.Category?.Id == category.Id)
                 .OrderByDescending(t => t.BookingDate)
                 .Select(_transactionFactory.CreateFromDbo)
                 .ToList();
@@ -126,7 +126,7 @@ namespace Moneyes.UI
             if (!hasNoCategory)
             {
                 query = query
-                    .Where(t => t.Categories.Any(c => categoryIds.Contains(c.Id)));
+                    .Where(t => t.Category != null && categoryIds.Contains(t.Category.Id));
             }
 
             return query
@@ -270,7 +270,7 @@ namespace Moneyes.UI
                 Id = v.ExistingEntity.Id,
                 CreatedAt = v.ExistingEntity.CreatedAt,
                 UpdatedAt = DateTime.Now,
-                Categories = v.NewEntity.Categories,
+                Category = v.NewEntity.Category,
                 ValueDate = v.NewEntity.ValueDate,
                 Currency = v.NewEntity.Currency,
                 AltName = v.NewEntity.AltName,

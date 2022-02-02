@@ -21,7 +21,7 @@ namespace Moneyes.Data
                 BIC = transaction.BIC,
                 BookingDate = transaction.BookingDate,
                 BookingType = transaction.BookingType,
-                Categories = transaction.Categories.Select(c => c.ToDbo()).ToList(),
+                Category = transaction.Category?.ToDbo(),
                 Currency = transaction.Currency,
                 UID = transaction.UID,
                 ValueDate = transaction.ValueDate,

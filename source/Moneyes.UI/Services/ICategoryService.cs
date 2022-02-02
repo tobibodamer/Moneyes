@@ -21,11 +21,10 @@ namespace Moneyes.UI
         /// <param name="category"></param>
         int AssignCategory(Category category, AssignMethod assignMethod = AssignMethod.KeepPrevious);
 
-        bool AddToCategory(Transaction transaction, Category category);
 
-        bool MoveToCategory(Transaction transaction, Category currentCategory, Category targetCategory);
+        bool MoveToCategory(Transaction transaction, Category category);
 
-        bool RemoveFromCategory(Transaction transaction, Category category);
+        bool RemoveFromCategory(Transaction transaction);
 
         Category GetCategoryByName(string name);
 

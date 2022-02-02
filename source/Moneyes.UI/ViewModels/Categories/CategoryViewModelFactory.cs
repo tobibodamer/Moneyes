@@ -49,7 +49,7 @@ namespace Moneyes.UI.ViewModels
                 if (targetCategory == Category.AllCategory) { return false; }
 
                 // cant add to own category
-                bool isOwn = transaction.Categories.Contains(targetCategory);
+                bool isOwn = transaction.Category?.Id == targetCategory.Id;
 
                 return !isOwn;
             };
@@ -114,33 +114,9 @@ namespace Moneyes.UI.ViewModels
             categoryViewModel.MoveToCategory = new RelayCommand<Transaction>(transaction =>
             {
                 Category targetCategory = categoryViewModel.Category;
-                Category currentCategory = getCurrentCategory?.Invoke();
 
-                _categoryService.MoveToCategory(transaction, currentCategory, targetCategory);
+                _categoryService.MoveToCategory(transaction, targetCategory);
             }, t => categoryViewModel.IsCreated && canAssign(t));
-
-            categoryViewModel.CopyToCategory = new RelayCommand<Transaction>(transaction =>
-            {
-                Category targetCategory = categoryViewModel.Category;
-
-                _categoryService.AddToCategory(transaction, targetCategory);
-            }, transaction =>
-            {
-                if (!categoryViewModel.IsCreated)
-                {
-                    return false;
-                }
-
-                Category targetCategory = categoryViewModel.Category;
-                Category currentCategory = getCurrentCategory?.Invoke();
-
-                if (targetCategory.IsExlusive || currentCategory.IsExlusive)
-                {
-                    return false;
-                }
-
-                return canAssign(transaction);
-            });
         }
 
         public EditCategoryViewModel CreateAddCategoryViewModel()

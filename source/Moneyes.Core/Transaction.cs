@@ -117,10 +117,11 @@ namespace Moneyes.Core
         /// The country code provided with the transaction.
         /// </summary>
         public string CountryCode => ParseCityAndCountry()?.Country;
+
         /// <summary>
-        /// Gets the categories of this transaction.
+        /// Gets the category of this transaction.
         /// </summary>
-        public List<Category> Categories { get; set; } = new();
+        public Category? Category { get; set; }
 
         /// <summary>
         /// Gets the index of this transactions. For identical transactions only!
@@ -220,7 +221,7 @@ namespace Moneyes.Core
                    PartnerIBAN == transaction.PartnerIBAN &&
                    BIC == transaction.BIC &&
                    Name == transaction.Name &&
-                   Categories.SequenceEqual(transaction.Categories) &&
+                   Category?.Id == transaction.Category?.Id &&
                    Index.Equals(transaction.Index) &&
                    Currency == transaction.Currency;
         }
@@ -238,7 +239,7 @@ namespace Moneyes.Core
             hash.Add(PartnerIBAN);
             hash.Add(BIC);
             hash.Add(Name);
-            hash.Add(Categories);
+            hash.Add(Category?.Id);
             hash.Add(Index);
             hash.Add(Currency);
 

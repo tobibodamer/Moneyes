@@ -110,6 +110,8 @@ namespace Moneyes.UI.View
                     EndDate = GetLastDayOfMonth(date);
                     break;
             }
+
+            ApplyDateCommand?.Execute(null);
         }
 
         private static DateTime GetFirstDayOfMonth(DateTime date)
@@ -185,7 +187,15 @@ namespace Moneyes.UI.View
                 new FrameworkPropertyMetadata(DateTime.Now,
                     FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
 
+        public ICommand ApplyDateCommand
+        {
+            get { return (ICommand)GetValue(ApplyDateCommandProperty); }
+            set { SetValue(ApplyDateCommandProperty, value); }
+        }
 
+        // Using a DependencyProperty as the backing store for DecrementMonthCommand.  This enables animation, styling, binding, etc...
+        private static readonly DependencyProperty ApplyDateCommandProperty =
+            DependencyProperty.Register("ApplyDateCommand", typeof(ICommand), typeof(DateSelectionControl));
 
         public DateSelectionMode SelectionMode
         {

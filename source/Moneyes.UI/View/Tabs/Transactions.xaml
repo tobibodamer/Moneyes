@@ -70,6 +70,7 @@
                 <local:DateSelectionControl x:Name="DateSelectionControl" DataContext="{Binding Selector}" 
                                             StartDate="{Binding FromDate}" EndDate="{Binding EndDate}"
                                             SelectionMode="{Binding DateSelection}"
+                                            ApplyDateCommand="{Binding ApplyDateCommand}"
                                             HorizontalAlignment="Center" Grid.ColumnSpan="10" VerticalAlignment="Bottom" Margin="0,0,0,-3"/>
 
 

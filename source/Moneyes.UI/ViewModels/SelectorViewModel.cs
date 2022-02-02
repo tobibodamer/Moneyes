@@ -34,12 +34,10 @@ namespace Moneyes.UI.ViewModels
             set
             {
                 _selectorStore.CurrentAccount = value;
-                
+
                 OnPropertyChanged();
             }
         }
-
-        private DateTime _fromDate;
         public DateTime FromDate
         {
             get => _selectorStore.StartDate;
@@ -49,8 +47,6 @@ namespace Moneyes.UI.ViewModels
                 OnPropertyChanged();
             }
         }
-
-        private DateTime _endDate;
         public DateTime EndDate
         {
             get => _selectorStore.EndDate;
@@ -71,6 +67,8 @@ namespace Moneyes.UI.ViewModels
                 OnPropertyChanged();
             }
         }
+
+        public ICommand ApplyDateCommand { get; }
 
         public AsyncCommand FetchOnlineCommand { get; }
 
@@ -107,9 +105,14 @@ namespace Moneyes.UI.ViewModels
                 }
             }, () => _bankingService.HasBankingDetails && CurrentAccount != null);
 
+            ApplyDateCommand = new RelayCommand(() =>
+            {
+                OnPropertyChanged(nameof(FromDate));
+                OnPropertyChanged(nameof(EndDate));
+                SelectorChanged?.Invoke(this, EventArgs.Empty);
+            });
 
             _selectorStore.AccountChanged += SelectorStore_AccountChanged;
-            _selectorStore.DateChanged += SelectorStore_DateChanged;
 
             RefreshAccounts();
 
@@ -138,15 +141,7 @@ namespace Moneyes.UI.ViewModels
         ~SelectorViewModel()
         {
             _selectorStore.AccountChanged -= SelectorStore_AccountChanged;
-            _selectorStore.DateChanged -= SelectorStore_DateChanged;
             _bankingService.NewAccountsImported -= BankingService_NewAccountsImported;
-        }
-
-        private void SelectorStore_DateChanged(object sender, EventArgs e)
-        {
-            OnPropertyChanged(nameof(FromDate));
-            OnPropertyChanged(nameof(EndDate));
-            SelectorChanged?.Invoke(this, EventArgs.Empty);
         }
 
         private void SelectorStore_AccountChanged(object sender, EventArgs e)

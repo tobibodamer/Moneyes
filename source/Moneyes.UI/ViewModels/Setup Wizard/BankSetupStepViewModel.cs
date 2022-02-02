@@ -225,7 +225,10 @@ namespace Moneyes.UI.ViewModels
             // Bank connection successful -> create bank details model
             BankDetails bankDetails = new(Guid.NewGuid(), onlineBankingDetails.BankCode)
             {
-                UserId = onlineBankingDetails.UserId
+                UserId = onlineBankingDetails.UserId,
+                Name = Bank.BankName,
+                Server = Bank.BankServerUri?.AbsoluteUri,
+                HbciVersion = Bank.BankVersion.Contains("3.0") ? 300 : 0
             };
 
             if (SavePassword)

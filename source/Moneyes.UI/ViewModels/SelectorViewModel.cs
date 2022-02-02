@@ -85,7 +85,16 @@ namespace Moneyes.UI.ViewModels
 
             FetchOnlineCommand = new AsyncCommand(async ct =>
             {
-                Result<int> result = await _liveDataService.FetchTransactionsAndBalances(CurrentAccount);
+                Result<int> result;
+
+                if (CurrentAccount != null)
+                {
+                    result = await _liveDataService.FetchTransactionsAndBalances(CurrentAccount);
+                }
+                else
+                {
+                    result = await _liveDataService.FetchTransactionsAndBalances(_bankingService.GetAllAccounts().ToArray());
+                }
 
                 if (result.IsSuccessful)
                 {
@@ -102,7 +111,7 @@ namespace Moneyes.UI.ViewModels
                     statusMessageService.ShowMessage($"Fetching transactions failed", "Retry",
                         () => FetchOnlineCommand.Execute(null));
                 }
-            }, () => CurrentAccount != null);
+            }, () => CurrentAccount != null || _bankingService.GetAllAccounts().Any());
 
             ApplyDateCommand = new RelayCommand(() =>
             {

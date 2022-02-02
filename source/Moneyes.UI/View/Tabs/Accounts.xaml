@@ -9,14 +9,10 @@
              xmlns:vm="clr-namespace:Moneyes.UI.ViewModels"
              xmlns:m="clr-namespace:Moneyes.Core;assembly=Moneyes.Core"
              xmlns:controls="clr-namespace:System.Windows.Controls;assembly=MultiSelectTreeView"
-             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes" 
+             d:DataContext="{d:DesignInstance Type=vm:AccountsViewModel}"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
-    <i:Interaction.Triggers>
-        <i:EventTrigger EventName="Loaded">
-            <i:InvokeCommandAction Command="{Binding LoadedCommand}" />
-        </i:EventTrigger>
-    </i:Interaction.Triggers>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -50,7 +46,7 @@
         </materialDesign:ColorZone>
         
         <DataGrid ItemsSource="{Binding Accounts}" CanUserAddRows="False" CanUserDeleteRows="False" AutoGenerateColumns="False"
-                  Grid.Row="1" Margin="10">
+                  Grid.Row="1" Margin="10" IsReadOnly="True">
             <DataGrid.Columns>                
                 <DataGridTextColumn Header="Name" Binding="{Binding Type}"/>                
                 <DataGridTextColumn Header="Number" Binding="{Binding Number}"/>

@@ -26,12 +26,12 @@
                             Source={x:Reference accounts}}"/>
             </CompositeCollection>
         </Border.Resources>
-        <!--ItemsSource="{DynamicResource AccountsCollection}" 
-                              SelectedItem="{Binding CurrentAccount, 
-                                            Converter={StaticResource EmptyItemConverter},
-                                            ConverterParameter={StaticResource NullItem}}"-->
 
-        <ComboBox Name="accounts" ItemsSource="{Binding Accounts}" SelectedItem="{Binding CurrentAccount}"
+
+        <ComboBox Name="accounts" ItemsSource="{DynamicResource AccountsCollection}" 
+                              SelectedItem="{Binding CurrentAccount,
+                                            Converter={StaticResource EmptyItemConverter},
+                                            ConverterParameter={StaticResource NullItem}}"
                                Margin="0,0"
                           materialDesign:ComboBoxAssist.ShowSelectedItem="True" BorderThickness="0"
                   VerticalAlignment="Stretch" HorizontalAlignment="Right" 

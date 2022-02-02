@@ -187,7 +187,7 @@ namespace Moneyes.UI
             services.AddTransient<ITabViewModel, CategoriesTabViewModel>();
             //services.AddTransient<ITabViewModel, AddressBookViewModel>();
             services.AddTransient<ITabViewModel, AccountsViewModel>();
-            services.AddTransient<ITabViewModel, BankSetupViewModel>();
+            services.AddTransient<ITabViewModel, SettingsTabViewModel>();
 
             services.AddTransient<SetupWizardViewModel>();
 
@@ -590,7 +590,39 @@ namespace Moneyes.UI
 
                 database.Checkpoint();
 
-                logger.LogInformation("Migrated to version 1");
+                logger.LogInformation("Migrated to version 3");
+            }
+
+            if (database.UserVersion == 3)
+            {
+                logger.LogInformation("Database version is 3. Migrating to version 4...");
+
+                logger.LogInformation("Migrating bank details...");
+
+                var banks = database.GetCollection("BankDetails");
+                var bankDocuments = banks.FindAll().ToList();                
+
+                foreach (var document in bankDocuments)
+                {
+                    var bankCode = document["BankCode"].AsInt32;
+
+                    var fintsInstitute = Moneyes.LiveData.BankInstitutes.GetInstitute(bankCode);
+
+                    document["Name"] = fintsInstitute.Name;
+                    document["Server"] = fintsInstitute.FinTs_Url;
+                    document["HbciVersion"] = fintsInstitute.Version.Contains("3.0") ? 300 : null;
+                    document["UpdateAt"] = DateTime.UtcNow;
+                }
+
+                banks.Update(bankDocuments);
+
+                logger.LogInformation("Migration successful");
+
+                database.UserVersion = 4;
+
+                database.Checkpoint();
+
+                logger.LogInformation("Migrated to version 4");
             }
         }
 

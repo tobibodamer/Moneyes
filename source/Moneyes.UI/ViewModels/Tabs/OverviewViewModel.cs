@@ -2,6 +2,7 @@
 using Moneyes.Core.Filters;
 using Moneyes.Data;
 using Moneyes.LiveData;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -173,7 +174,14 @@ namespace Moneyes.UI.ViewModels
 
             await ExpenseCategories.UpdateCategories(GetFilter(), CategoryTypes.Real | CategoryTypes.NoCategory, order: true);
 
-            CurrentBalance = _bankingService.GetBalance(Selector.EndDate, Selector.CurrentAccount);
+            if (Selector.CurrentAccount == null)
+            {
+                CurrentBalance = new Balance(Guid.Empty) { Amount = _bankingService.GetOverallBalance(Selector.EndDate) };
+            }
+            else
+            {
+                CurrentBalance = _bankingService.GetBalance(Selector.EndDate, Selector.CurrentAccount);
+            }
         }
 
         public override void OnSelect()

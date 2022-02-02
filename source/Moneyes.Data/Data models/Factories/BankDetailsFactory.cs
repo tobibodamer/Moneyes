@@ -8,6 +8,7 @@ namespace Moneyes.Data
         {
             return new(bankDbo.Id, bankDbo.BankCode)
             {
+                Name = bankDbo.Name,
                 BIC = bankDbo.BIC,
                 HbciVersion = bankDbo.HbciVersion,
                 Server = bankDbo.Server,

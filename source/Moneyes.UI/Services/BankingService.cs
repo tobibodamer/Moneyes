@@ -112,7 +112,14 @@ namespace Moneyes.UI
         {
             //TODO: implement total balance            
             return GetBalanceByDate(date, account);
+        }
 
+        public decimal GetOverallBalance(DateTime date)
+        {
+            return GetAllAccounts()
+                .Select(acc => GetBalanceByDate(date, acc))
+                .Where(x => x != null)
+                .Sum(b => b.Amount);            
         }
 
         /// <summary>
@@ -233,5 +240,7 @@ namespace Moneyes.UI
                     isDeleted: existing.IsDeleted);
             });
         }
+
+        
     }
 }

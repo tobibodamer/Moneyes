@@ -2,9 +2,8 @@
 using System.Collections;
 using System.Collections.Generic;
 
-namespace Moneyes.Core
-    .Filters
-{
+namespace Moneyes.Core.Filters
+{    
     /// <summary>
     /// Provides an evaluable condition filter for objects of type <typeparamref name="T"/>.
     /// </summary>

@@ -9,55 +9,88 @@ namespace Moneyes.UI
 {
     public class CategoryService : ICategoryService
     {
-        private readonly TransactionRepository _transactionRepository;
-        private readonly CategoryRepository _categoryRepo;
+        private readonly ITransactionService _transactionService;
+        private readonly IUniqueCachedRepository<TransactionDbo> _transactionRepo;
 
-        public CategoryService(TransactionRepository transactionRepo,
-            CategoryRepository categoryRepo)
+        private readonly IUniqueCachedRepository<CategoryDbo> _categoryRepo;
+        private readonly ICategoryFactory _categoryFactory;
+
+        public CategoryService(ITransactionService transactionService,
+            IUniqueCachedRepository<CategoryDbo> categoryRepo,
+            ICategoryFactory categoryFactory, IUniqueCachedRepository<TransactionDbo> transactionRepo)
         {
-            _transactionRepository = transactionRepo;
+            _transactionService = transactionService;
             _categoryRepo = categoryRepo;
+            _categoryFactory = categoryFactory;
+            _transactionRepo = transactionRepo;
         }
 
         public Category GetCategoryByName(string name)
         {
-            return _categoryRepo.FindByName(name);
+            var dbo = _categoryRepo.GetAll().FirstOrDefault(c => c.Name.Equals(name));
+
+            return dbo is null
+                ? null
+                : _categoryFactory.CreateFromDbo(dbo);
         }
 
         public IEnumerable<Category> GetCategories(CategoryTypes includeCategories = CategoryTypes.All)
         {
-            IList<Category> categories =
-                _categoryRepo.GetAll().ToList();
+            List<Category> categories = new();
 
-            if (includeCategories.HasFlag(CategoryTypes.AllCategory)
-                && !categories.Any(c => c.Idquals(Category.AllCategory)))
+            if (includeCategories.HasFlag(CategoryTypes.Real))
             {
-                categories.Add(Category.AllCategory);
-            }
-
-            if (includeCategories.HasFlag(CategoryTypes.NoCategory)
-                && !categories.Any(c => c.Idquals(Category.NoCategory)))
-            {
-                categories.Add(Category.NoCategory);
-            }
-
-            if (!includeCategories.HasFlag(CategoryTypes.Real))
-            {
-                categories = new Category[] {
-                        _categoryRepo.FindById(Category.NoCategory.Id) ?? Category.NoCategory,
-                        _categoryRepo.FindById(Category.AllCategory.Id)  ?? Category.AllCategory
-                    }.Where(c => c != null).ToList();
-            }
-
-            if (!includeCategories.HasFlag(CategoryTypes.NoCategory))
-            {
-                categories = categories.Where(c => c != Category.NoCategory).ToList();
+                categories = _categoryRepo.GetAll()
+                    .Select(c => _categoryFactory.CreateFromDbo(c))
+                    .ToList();
             }
 
             if (!includeCategories.HasFlag(CategoryTypes.AllCategory))
             {
-                categories = categories.Where(c => c != Category.AllCategory).ToList();
+                int allCategoryIndex = categories.IndexOfFirst(c => c.Id.Equals(Category.AllCategoryId));
+
+                if (allCategoryIndex != -1)
+                {
+                    categories.RemoveAt(allCategoryIndex);
+                }
             }
+            else if (!categories.Any(c => c.IsAllCategory()))
+            {
+                categories.Add(Category.AllCategory);
+            }
+
+
+            if (!includeCategories.HasFlag(CategoryTypes.NoCategory))
+            {
+                int noCategoryIndex = categories.IndexOfFirst(c => c.Id.Equals(Category.NoCategoryId));
+
+                if (noCategoryIndex != -1)
+                {
+                    categories.RemoveAt(noCategoryIndex);
+                }
+            }
+            else if (!categories.Any(c => c.IsNoCategory()))
+            {
+                categories.Add(Category.NoCategory);
+            }
+
+            //if (!includeCategories.HasFlag(CategoryTypes.Real))
+            //{
+            //    categories = new Category[] {
+            //            _categoryFactory.CreateFromDbo(_categoryRepo.FindById(Category.NoCategory.Id)) ?? Category.NoCategory,
+            //            _categoryFactory.CreateFromDbo(_categoryRepo.FindById(Category.AllCategory.Id)) ?? Category.AllCategory
+            //        }.Where(c => c != null).ToList();
+            //}
+
+            //if (!includeCategories.HasFlag(CategoryTypes.NoCategory))
+            //{
+            //    categories = categories.Where(c => c.IsNoCategory()).ToList();
+            //}
+
+            //if (!includeCategories.HasFlag(CategoryTypes.AllCategory))
+            //{
+            //    categories = categories.Where(c => c.IsAllCategory()).ToList();
+            //}
 
             return categories;
         }
@@ -71,7 +104,7 @@ namespace Moneyes.UI
 
             if (assignMethod is not AssignMethod.Simple or AssignMethod.Reset)
             {
-                oldTransaction = _transactionRepository.FindById(transaction.UID);
+                oldTransaction = _transactionService.GetByUID(transaction.UID);
             }
 
             // Assign categories
@@ -95,7 +128,7 @@ namespace Moneyes.UI
                 {
                     if (updateDatabase)
                     {
-                        _transactionRepository.Set(transaction);
+                        _transactionService.ImportTransaction(transaction);
                     }
 
                     return;
@@ -119,10 +152,9 @@ namespace Moneyes.UI
 
             if (updateDatabase)
             {
-                _transactionRepository.Set(transaction);
+                _transactionService.ImportTransaction(transaction);
             }
         }
-
 
         public void AssignCategories(IEnumerable<Transaction> transactions,
             AssignMethod assignMethod = AssignMethod.KeepPrevious,
@@ -133,7 +165,7 @@ namespace Moneyes.UI
 
             if (assignMethod is not AssignMethod.Simple or AssignMethod.Reset)
             {
-                oldTransactions = _transactionRepository.All()
+                oldTransactions = _transactionService.All()
                     .ToDictionary(t => t.UID, t => t);
             }
 
@@ -186,7 +218,7 @@ namespace Moneyes.UI
             if (updateDatabase)
             {
                 // Store
-                _transactionRepository.Set(transactionsToUpdate);
+                _transactionService.ImportTransactions(transactionsToUpdate);
             }
         }
 
@@ -194,7 +226,7 @@ namespace Moneyes.UI
         {
             if (assignMethod is AssignMethod.KeepPrevious) { return; }
 
-            IEnumerable<Transaction> transactions = _transactionRepository.All();
+            IEnumerable<Transaction> transactions = _transactionService.All();
 
             AssignCategories(transactions, assignMethod, true);
         }
@@ -202,7 +234,7 @@ namespace Moneyes.UI
         public int AssignCategory(Category category, AssignMethod assignMethod = AssignMethod.KeepPrevious)
         {
             // Get transactions
-            var transactions = _transactionRepository.All().ToList();
+            var transactions = _transactionService.All().ToList();
             var transactionsToUpdate = new List<Transaction>();
 
             if (category.Filter == null) { return 0; }
@@ -220,7 +252,7 @@ namespace Moneyes.UI
                     continue;
                 }
 
-                if (!transaction.Categories.Any(c => category.Idquals(c)) &&
+                if (!transaction.Categories.Any(c => category.Id.Equals(c.Id)) &&
                     category.Filter != null && category.Filter.Evaluate(transaction))
                 {
                     transaction.Categories.Add(category);
@@ -229,34 +261,72 @@ namespace Moneyes.UI
             }
 
             // Store
-            _ = _transactionRepository.Set(transactionsToUpdate);
+            _ = _transactionService.ImportTransactions(transactionsToUpdate);
 
             return transactionsToUpdate.Count;
         }
 
         public bool AddCategory(Category category)
         {
-            return _categoryRepo.Create(category) != null;
+            try
+            {
+                var dbo = category.ToDbo(
+                    createdAt: DateTime.Now,
+                    updatedAt: DateTime.Now);
+
+                return _categoryRepo.Create(dbo) != null;
+            }
+            catch (CachedRepository<CategoryDbo>.ConstraintViolationException ex)
+            {
+                if (ex.PropertyName.Equals(nameof(CategoryDbo.Name)))
+                {
+                    // Name already exists
+                }
+            }
+            catch (DuplicateKeyException)
+            {
+                // Primary key already exists
+            }
+
+            return false;
         }
 
         public bool UpdateCategory(Category category)
         {
-            return _categoryRepo.Set(category);
+            ArgumentNullException.ThrowIfNull(category, nameof(category));
+
+            if (category.IsNoCategory() || category.IsAllCategory()
+                && !_categoryRepo.Contains(category.Id))
+            {
+                return AddCategory(category);
+            }
+
+            _categoryRepo.Update(category.Id, (existing) =>
+            {
+                return category.ToDbo(
+                    createdAt: existing.CreatedAt,
+                    updatedAt: DateTime.Now,
+                    isDeleted: existing.IsDeleted);
+            });
+
+            return false;
         }
 
-        public bool DeleteCategory(Category category)
+        public bool DeleteCategory(Category category, bool deleteSubCategories = true)
         {
-            if (_categoryRepo.Delete(category.Id))
-            {
-                var transactions = _transactionRepository.GetByCategory(category).ToList();
+            ArgumentNullException.ThrowIfNull(category, nameof(category));
 
-                foreach (var transaction in transactions)
+            if (_categoryRepo.DeleteById(category.Id))
+            {
+                if (!deleteSubCategories)
                 {
-                    transaction.Categories.RemoveAll(c => c.Idquals(category));
+                    return true;
                 }
 
+                // Delete sub categories
+
                 var directSubCategories = GetCategories()
-                    .Where(c => c.Parent?.Idquals(category) ?? false);
+                    .Where(c => c.Parent?.Id.Equals(category.Id) ?? false);
 
                 foreach (var subCategory in directSubCategories)
                 {
@@ -271,58 +341,115 @@ namespace Moneyes.UI
 
         public bool AddToCategory(Transaction transaction, Category category)
         {
-            return MoveToCategory(transaction, null, category);
+            return MoveToCategoryInternal(transaction, null, category);
         }
-        public bool MoveToCategory(Transaction transaction, Category currentCategory, Category targetCategory)
+
+        public bool MoveToCategory(
+            Transaction transaction,
+            Category currentCategory,
+            Category targetCategory)
         {
-            if (targetCategory == null || targetCategory == Category.AllCategory) { return false; }
+            if (transaction is null)
+            {
+                throw new ArgumentNullException(nameof(transaction));
+            }
+
+            if (currentCategory is null)
+            {
+                throw new ArgumentNullException(nameof(currentCategory));
+            }
+
+            if (targetCategory is null)
+            {
+                throw new ArgumentNullException(nameof(targetCategory));
+            }
+
+            if (currentCategory.IsReal && !transaction.Categories.Any(c => c.Id.Equals(currentCategory.Id)))
+            {
+                throw new ArgumentException
+                    (
+                        "The transaction doesn't contain the current category",
+                        nameof(currentCategory)
+                    );
+            }
+
+            return MoveToCategoryInternal(transaction, currentCategory, targetCategory);
+        }
+
+        public bool RemoveFromCategory(Transaction transaction, Category category)
+        {
+            if (transaction is null)
+            {
+                throw new ArgumentNullException(nameof(transaction));
+            }
+
+            if (category is null)
+            {
+                throw new ArgumentNullException(nameof(category));
+            }
+
+            if (category.IsReal && !transaction.Categories.Any(c => c.Id.Equals(category.Id)))
+            {
+                throw new ArgumentException
+                    (
+                        "The transaction doesn't contain the given category",
+                        nameof(category)
+                    );
+            }
+
+            if (category.IsAllCategory() || category.IsNoCategory())
+            {
+                return false;
+            }
+
+            return MoveToCategoryInternal(transaction, category, null);
+        }
+
+        private bool MoveToCategoryInternal(Transaction transaction, Category? currentCategory, Category? targetCategory)
+        {
+            if (targetCategory.IsAllCategory()) { return false; }
             if (transaction == null) { return false; }
-            if (transaction.Categories.Contains(targetCategory)) { return false; }
+            if (transaction.Categories.Any(c => c.Id.Equals(targetCategory.Id))) { return false; }
 
-
-            if (targetCategory == Category.NoCategory)
+            if (targetCategory.IsNoCategory())
             {
                 transaction.Categories.Clear();
             }
             else
             {
-                // Remove from current category if set
-                transaction.Categories.Remove(currentCategory);
+                if (currentCategory != null)
+                {
+                    int removeIndex = transaction.Categories.IndexOfFirst(c => c.Id.Equals(currentCategory.Id));
 
-                // Add category to transaction
-                transaction.Categories.Add(targetCategory);
+                    if (removeIndex > -1)
+                    {
+                        // Remove from current category if set
+                        transaction.Categories.RemoveAt(removeIndex);
+                    }
+                }
+
+                if (targetCategory != null)
+                {
+                    // Add category to transaction
+                    transaction.Categories.Add(targetCategory);
+                }
             }
 
             // Update transaction in repo
-            _transactionRepository.Set(transaction);
-
-            return true;
+            return _transactionRepo.Update(transaction.Id, (oldValue) =>
+            {
+                return transaction.ToDbo(
+                     createdAt: oldValue.CreatedAt,
+                     updatedAt: DateTime.Now,
+                     isDeleted: oldValue.IsDeleted);
+            });
         }
 
-        public bool RemoveFromCategory(Transaction transaction, Category category)
-        {
-            if (transaction == null ||
-                category == null ||
-                !transaction.Categories.Contains(category) ||
-                category == Category.AllCategory ||
-                category == Category.NoCategory)
-            {
-                return false;
-            }
 
-            if (transaction.Categories.Remove(category))
-            {
-                _transactionRepository.Set(transaction);
-
-                return true;
-            }
-
-            return false;
-        }
 
         public IEnumerable<Category> GetSubCategories(Category category, int depth = -1)
         {
-            if (category == Category.NoCategory || category == Category.AllCategory)
+            if (category.IsNoCategory() || category.IsAllCategory())
             {
                 return Enumerable.Empty<Category>();
             }
@@ -339,7 +466,7 @@ namespace Moneyes.UI
         {
             foreach (Category category in allCategories)
             {
-                if (!category.Parent?.Idquals(current) ?? true)
+                if (!category.Parent?.Id.Equals(current.Id) ?? true)
                 {
                     continue;
                 }

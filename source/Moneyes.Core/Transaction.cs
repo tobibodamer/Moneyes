@@ -12,8 +12,10 @@ namespace Moneyes.Core
     /// <summary>
     /// Represents a banking transaction.
     /// </summary>
-    public class Transaction : UniqueEntity
+    public class Transaction
     {
+        public Guid Id { get; init; }
+
         private readonly Lazy<string> _idLazy;
         private string _id;
 
@@ -125,9 +127,11 @@ namespace Moneyes.Core
         /// </summary>
         public int Index { get; init; }
 
-        public Transaction()
+        public Transaction(Guid id)
         {
             _idLazy = new(() => GenerateUID());
+
+            Id = id;
         }
 
         private DateTime? ParseDate()

@@ -15,7 +15,6 @@ namespace Moneyes.UI.ViewModels
     {
         private LiveDataService _liveDataService;
         private IExpenseIncomeService _expenseIncomeService;
-        private readonly TransactionRepository _transactionRepository;
         private readonly IBankingService _bankingService;
 
         decimal _totalExpense;
@@ -102,7 +101,7 @@ namespace Moneyes.UI.ViewModels
         public OverviewViewModel(
             LiveDataService liveDataService,
             IExpenseIncomeService expenseIncomeService,
-            TransactionRepository transactionRepository,
+            IUniqueCachedRepository<TransactionDbo> transactionRepository,
             IBankingService bankingService,
             ExpenseCategoriesViewModel expenseCategoriesViewModel,
             SelectorViewModel selectorViewModel)
@@ -113,7 +112,6 @@ namespace Moneyes.UI.ViewModels
             Selector = selectorViewModel;
             _liveDataService = liveDataService;
             _expenseIncomeService = expenseIncomeService;
-            _transactionRepository = transactionRepository;
             _bankingService = bankingService;
 
             NeedsUpdate = true;

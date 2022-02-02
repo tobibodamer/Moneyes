@@ -10,26 +10,47 @@ namespace Moneyes.Core.Filters
     public static class ConditionFilters
     {
         /// <summary>
+        /// Holds all factories for a condition filter of type T with selector name.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        private static class FactoryCache<T>
+        {
+            // Maps property name to factory method
+            public static readonly Dictionary<string, Func<IConditionFilter<T>>> Factories = new();
+        }
+        
+
+        /// <summary>
         /// Creates a condition filter instance from a selector.
         /// </summary>
         /// <param name="selector"></param>
         /// <returns></returns>
         public static IConditionFilter<T> Create<T>(string selector)
         {
-            // Getting type of selector
-            Type selectorType = typeof(T).GetProperty(selector).PropertyType;
+            if (!FactoryCache<T>.Factories.TryGetValue(selector, out var factory))
+            {
+                // Getting type of selector
+                Type selectorType = typeof(T).GetProperty(selector).PropertyType;
 
-            // Make generic condition filter type
-            Type conditionFilterType = typeof(ConditionFilter<,>).MakeGenericType(typeof(T), selectorType);
+                // Make generic condition filter type
+                Type conditionFilterType = typeof(ConditionFilter<,>).MakeGenericType(typeof(T), selectorType);
 
-            dynamic conditionFilter = Activator.CreateInstance(conditionFilterType);
+                factory = Expression.Lambda<Func<IConditionFilter<T>>>
+                    (
+                        Expression.New(conditionFilterType.GetConstructor(Type.EmptyTypes))
+                    ).Compile();
+
+                FactoryCache<T>.Factories.Add(selector, factory);
+            }
+
+            var conditionFilter = factory();
 
             if (conditionFilter != null)
             {
                 conditionFilter.Selector = selector;
             }
 
-            return conditionFilter as IConditionFilter<T>;
+            return conditionFilter;
         }
     }
 
@@ -42,6 +63,9 @@ namespace Moneyes.Core.Filters
     /// <typeparam name="TValue"></typeparam>
     public class ConditionFilter<T, TValue> : IConditionFilter<T>
     {
+        // Holds all previously instantiated selector Funcs for this type
+        private static readonly Dictionary<string, Func<T, TValue>> SelectorCache = new();
+
         private string _selectorName;
         private Func<T, TValue> _selector;
         public string Selector
@@ -52,14 +76,20 @@ namespace Moneyes.Core.Filters
             }
             set
             {
-                var parameterExpression = Expression.Parameter(typeof(T), "input");
-                var propExpression = Expression.Property(parameterExpression, value);
+                if (!SelectorCache.TryGetValue(value, out var selector))
+                {
+                    var parameterExpression = Expression.Parameter(typeof(T), "i");
+                    var propExpression = Expression.Property(parameterExpression, value);
 
-                var lambdaExpression = Expression
-                    .Lambda<Func<T, TValue>>(propExpression, parameterExpression);
+                    var lambdaExpression = Expression
+                        .Lambda<Func<T, TValue>>(propExpression, parameterExpression);
 
-                _selector = lambdaExpression.Compile();
+                    selector = lambdaExpression.Compile();
 
+                    SelectorCache.Add(value, selector);
+                }
+                                
+                _selector = selector;
                 _selectorName = value;
             }
         }
@@ -118,16 +148,6 @@ namespace Moneyes.Core.Filters
                     valueSelector(value => !stringTarget.Contains(CaseSensitive ? value as string : (value as string).ToLower())),
                 _ => false
             };
-        }
-
-        /// <summary>
-        /// Sets the selector expression.
-        /// </summary>
-        /// <param name="selector"></param>
-        public void SetSelector(Func<T, TValue> selector)
-        {
-            _selector = selector;
-            _selectorName = selector.GetName();
         }
     }
 }

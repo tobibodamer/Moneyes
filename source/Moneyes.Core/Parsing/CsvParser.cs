@@ -89,7 +89,7 @@ namespace Moneyes.Core.Parsing
                  shortPartnerName = entry.AccountName.Split("//").First().Trim();
             }
 
-            return new()
+            return new(id: Guid.NewGuid())
             {
                 Amount = entry.Amount,
                 AltName = entry.AccountName,
@@ -112,7 +112,7 @@ namespace Moneyes.Core.Parsing
             string purpose = purposes.GetValueOrDefault("SVWZ") ?? entry.Verwendungszweck;
             string altName = purposes.GetValueOrDefault("ABWA");
 
-            return new()
+            return new(id: Guid.NewGuid())
             {
                 Amount = entry.Amount,
                 AltName = altName,

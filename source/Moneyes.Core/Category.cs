@@ -1,7 +1,6 @@
 ﻿using Moneyes.Core.Filters;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
@@ -11,7 +10,7 @@ namespace Moneyes.Core
     /// <summary>
     /// Represents a category for transactions.
     /// </summary>
-    public class Category : UniqueEntity
+    public class Category
     {
         public static readonly Guid NoCategoryId = new("38093a27-b7e4-4222-a7f7-9ca72c98544c");
 
@@ -20,12 +19,17 @@ namespace Moneyes.Core
         /// <summary>
         /// Gets a category indicating no category has been assoiated with a transaction.
         /// </summary>
-        public static readonly Category NoCategory = new() { Name = "No category", IsExlusive = true, Id = NoCategoryId };
+        public static readonly Category NoCategory = new(NoCategoryId) { Name = "No category", IsExlusive = true };
 
         /// <summary>
         /// Gets a category all transactions belong to.
         /// </summary>
-        public static readonly Category AllCategory = new() { Name = "All", IsExlusive = true, Id = AllCategoryId };
+        public static readonly Category AllCategory = new(AllCategoryId) { Name = "All", IsExlusive = true };
+
+        /// <summary>
+        /// Gets the unique identifier of this category.
+        /// </summary>
+        public Guid Id { get; init; }
 
         /// <summary>
         /// Name of the category.
@@ -57,6 +61,12 @@ namespace Moneyes.Core
 
 
         public bool IsReal => this.Id != NoCategory.Id && this.Id != AllCategory.Id;
+
+
+        public Category(Guid id)
+        {
+            Id = id;
+        }
 
         public override bool Equals(object obj)
         {

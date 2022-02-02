@@ -34,7 +34,7 @@ namespace Moneyes.UI
 
         bool AddCategory(Category category);
         bool UpdateCategory(Category category);
-        bool DeleteCategory(Category category);
+        bool DeleteCategory(Category category, bool deleteSubCategories = true);
 
         /// <summary>
         /// Get alls sub categories of a category up to a certain depth.

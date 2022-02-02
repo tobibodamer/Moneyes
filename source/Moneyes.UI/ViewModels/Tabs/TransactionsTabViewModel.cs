@@ -92,10 +92,11 @@ namespace Moneyes.UI.ViewModels
 
         #endregion
         public TransactionsTabViewModel(
-            TransactionRepository transactionRepository,
-            CategoryRepository categoryRepository,
-            IBankingService bankingService,
+            ICachedRepository<TransactionDbo> transactionRepository,
+            ITransactionService transactionService,
             ICategoryService categoryService,
+            ICachedRepository<CategoryDbo> categoryRepository,
+            IBankingService bankingService,
             IStatusMessageService statusMessageService,
             ExpenseCategoriesViewModel expenseCategoriesViewModel,
             SelectorViewModel selectorViewModel)
@@ -128,7 +129,7 @@ namespace Moneyes.UI.ViewModels
                 await UpdateCategories();
 
                 if (e.Actions.HasFlag(RepositoryChangedAction.Replace)
-                 && e.ReplacedItems.Any(c => Categories.IsSelected(c)))
+                 && e.ReplacedItems.Any(c => Categories.IsSelected(c.Id)))
                 {
                     await UpdateTransactions();
                 }
@@ -165,7 +166,7 @@ namespace Moneyes.UI.ViewModels
             //    }
             //};
 
-            TransactionsViewModel = new(transactionRepository)
+            TransactionsViewModel = new(transactionService)
             {
                 RemoveFromCategory = new CollectionRelayCommand<Transaction>(transactions =>
                 {

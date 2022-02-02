@@ -11,16 +11,14 @@ namespace Moneyes.UI
 {
     partial class ExpenseIncomServieUsingDb : IExpenseIncomeService
     {
-        private readonly IBaseRepository<Category> _categoryRepo;
-        private readonly TransactionRepository _transactionRepo;
+        private readonly ITransactionService _transactionService;
         private readonly ICategoryService _categoryService;
 
         public ExpenseIncomServieUsingDb(
-            IBaseRepository<Category> categoryStore, TransactionRepository transactionStore,
+            ITransactionService transactionervice,
             ICategoryService categoryService)
         {
-            _categoryRepo = categoryStore ?? throw new ArgumentNullException(nameof(categoryStore));
-            _transactionRepo = transactionStore ?? throw new ArgumentNullException(nameof(transactionStore));
+            _transactionService = transactionervice ?? throw new ArgumentNullException(nameof(transactionervice));
             _categoryService = categoryService ?? throw new ArgumentNullException(nameof(categoryService));
         }
 
@@ -52,12 +50,12 @@ namespace Moneyes.UI
                 filter.TransactionType = transactionType;
 
                 // Get transactions for filter and categories
-                List<Transaction> transactions = _transactionRepo.All(filter, categories.ToArray())
+                List<Transaction> transactions = _transactionService.All(filter, categories.ToArray())
                     .ToList();
 
                 // Find total start and end date
-                DateTime startDate = filter.StartDate ?? _transactionRepo.EarliestTransactionDate(filter);
-                DateTime endDate = filter.EndDate ?? _transactionRepo.LatestTransactionDate(filter);
+                DateTime startDate = filter.StartDate ?? _transactionService.EarliestTransactionDate(filter);
+                DateTime endDate = filter.EndDate ?? _transactionService.LatestTransactionDate(filter);
 
                 return Result.Successful(new Expenses(transactions)
                 {
@@ -133,12 +131,12 @@ namespace Moneyes.UI
                 filter.TransactionType = transactionType;
 
                 // Get transactions for filter and categories
-                List<Transaction> transactions = _transactionRepo.All(filter)
+                List<Transaction> transactions = _transactionService.All(filter)
                     .ToList();
 
                 // Find total start and end date
-                DateTime startDate = filter.StartDate ?? _transactionRepo.EarliestTransactionDate(filter);
-                DateTime endDate = filter.EndDate ?? _transactionRepo.LatestTransactionDate(filter);
+                DateTime startDate = filter.StartDate ?? _transactionService.EarliestTransactionDate(filter);
+                DateTime endDate = filter.EndDate ?? _transactionService.LatestTransactionDate(filter);
 
                 return Result.Successful(new Expenses(transactions)
                 {

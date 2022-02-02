@@ -293,7 +293,7 @@ namespace Moneyes.UI
             foreach (var account in accounts)
             {
                 BankingResult<TransactionData> result = await EnsurePassword(async () =>
-                            await _onlineBankingService.Transactions(account, startDate: FirstOfMonth, endDate: DateTime.Now));
+                            await _onlineBankingService.Transactions(account, startDate: DateTime.Now.AddDays(-30), endDate: DateTime.Now));
 
                 if (!result.IsSuccessful)
                 {
@@ -354,7 +354,7 @@ namespace Moneyes.UI
                 await InitOnlineBankingService();
 
                 var result = await EnsurePassword(async () =>
-                    await _onlineBankingService.Accounts());
+                    await _onlineBankingService.Accounts(_bankingService.GetBankEntries().First()));
 
                 if (!result.IsSuccessful)
                 {

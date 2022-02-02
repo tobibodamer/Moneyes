@@ -2,6 +2,7 @@
 using Moneyes.Core.Filters;
 using Moneyes.Data;
 using Moneyes.UI.Services;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -105,7 +106,7 @@ namespace Moneyes.UI.ViewModels
             foreach (var category in categoriesWithParent)
             {
                 var parent = category.Parent;
-                var parentCategoryViewModel = flatCategories.FirstOrDefault(c => c.Category.Idquals(parent));
+                var parentCategoryViewModel = flatCategories.FirstOrDefault(c => c.Category.Id == parent.Id);
 
                 parentCategoryViewModel.SubCatgeories.Add(category);
             }
@@ -157,7 +158,7 @@ namespace Moneyes.UI.ViewModels
 
             Categories.DynamicUpdate(
                 categories,
-                (c1, c2) => c1.Category.Idquals(c2.Category),
+                (c1, c2) => c1.Category.Id.Equals(c2.Category),
                 comparer);
 
             if (previouslySelectedCategory != null)
@@ -190,9 +191,9 @@ namespace Moneyes.UI.ViewModels
         /// </summary>
         /// <param name="category"></param>
         /// <returns></returns>
-        public bool IsSelected(Category category)
+        public bool IsSelected(Guid categoryId)
         {
-            return SelectedCategory.Category == category;
+            return SelectedCategory.Category?.Id.Equals(categoryId) ?? false;
         }
 
         /// <summary>

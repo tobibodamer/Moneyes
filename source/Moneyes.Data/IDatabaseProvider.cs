@@ -2,9 +2,12 @@
 
 namespace Moneyes.Data
 {
-    public interface IDatabaseProvider
+    /// <summary>
+    /// Provides
+    /// </summary>
+    public interface IDatabaseProvider<T>
     {
-        ILiteDatabase Database { get; }
+        T Database { get; }
 
         bool IsDatabaseCreated { get; }
         bool IsOpen { get; }

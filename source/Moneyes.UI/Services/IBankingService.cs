@@ -32,6 +32,8 @@ namespace Moneyes.UI
         /// <param name="update"></param>
         void UpdateBankingDetails(Action<OnlineBankingDetails> update);
 
+        IEnumerable<BankDetails> GetBankEntries();
+
         /// <summary>
         /// Gets all accounts available for the current banking details.
         /// </summary>

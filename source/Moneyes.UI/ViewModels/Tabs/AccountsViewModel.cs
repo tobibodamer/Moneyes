@@ -19,7 +19,7 @@ namespace Moneyes.UI.ViewModels
         private readonly IStatusMessageService _statusMessageService;
         private readonly IDialogService<ImportAccountsViewModel> _importAccountsDialogService;
 
-        private ObservableCollection<AccountDetails> _accounts;
+        private ObservableCollection<AccountDetails> _accounts = new();
         public ObservableCollection<AccountDetails> Accounts
         {
             get => _accounts;
@@ -36,11 +36,38 @@ namespace Moneyes.UI.ViewModels
             }
         }
 
+        private BankDetails _selectedBankConnection;
+        public BankDetails SelectedBankConnection
+        {
+            get => _selectedBankConnection;
+            set
+            {
+                _selectedBankConnection = value;
+
+                OnPropertyChanged();
+
+                UpdateAccounts();
+                ImportAccountsCommand.RaiseCanExecuteChanged();
+            }
+        }
+
+        private ObservableCollection<BankDetails> _bankConnections = new();
+        public ObservableCollection<BankDetails> BankConnections
+        {
+            get => _bankConnections;
+            set
+            {
+                _bankConnections = value;
+
+                OnPropertyChanged(nameof(BankConnections));
+            }
+        }
+
         public ICommand LoadedCommand { get; }
 
         public AsyncCommand ImportAccountsCommand { get; }
 
-        public bool HasBankConnection => _bankingService.HasBankingDetails;
+        //public bool HasBankConnection => _bankingService.GetBankEntries().Any();
 
         public AccountsViewModel(
             LiveDataService liveDataService,
@@ -55,14 +82,9 @@ namespace Moneyes.UI.ViewModels
             _statusMessageService = statusMessageService;
             _importAccountsDialogService = importAccountsDialogService;
 
-            LoadedCommand = new AsyncCommand(async ct =>
-            {
-                
-            });
-
             ImportAccountsCommand = new AsyncCommand(async ct =>
             {
-                var accountResult = await _liveDataService.FetchAccounts();
+                var accountResult = await _liveDataService.FetchAccounts(SelectedBankConnection);
 
                 if (accountResult.IsSuccessful)
                 {
@@ -80,7 +102,7 @@ namespace Moneyes.UI.ViewModels
 
                         _statusMessageService.ShowMessage($"{numAccountsImported} new accounts imported.");
 
-                        Accounts = new(_bankingService.GetAccounts());
+                        Accounts = new(_bankingService.GetAccounts(SelectedBankConnection));
                     }
                 }
                 else
@@ -90,23 +112,45 @@ namespace Moneyes.UI.ViewModels
                 }
 
             },
-            () => _bankingService.HasBankingDetails,
+            () => SelectedBankConnection != null,
             errorHandler: (ex) => _statusMessageService.ShowMessage("Error while importing accounts"));
+        }
+
+        public void UpdateBankConnections()
+        {
+            var bankConnections = _bankingService.GetBankEntries();
+
+            var selectedTemp = SelectedBankConnection?.Id;
+
+            BankConnections.DynamicUpdate(bankConnections, (b1, b2) => b1.Id == b2.Id);
+
+            if (selectedTemp != null)
+            {
+                SelectedBankConnection = BankConnections.FirstOrDefault(x => x.Id == selectedTemp);
+            }
+            else
+            {
+                SelectedBankConnection = bankConnections.FirstOrDefault();
+            }
+
+        }
+        public void UpdateAccounts()
+        {
+            if (SelectedBankConnection == null)
+            {
+                return;
+            }
+
+            var accounts = _bankingService.GetAccounts(SelectedBankConnection);
+
+            Accounts.DynamicUpdate(accounts, (a1, a2) => a1.Id == a2.Id);
         }
 
         public override void OnSelect()
         {
             base.OnSelect();
 
-            if (!_bankingService.HasBankingDetails)
-            {
-                // No bank connection configured -> show message?
-                return;
-            }
-
-            Accounts = new(_bankingService.GetAccounts());
-
-            ImportAccountsCommand.RaiseCanExecuteChanged();
+            UpdateBankConnections();
         }
     }
 }

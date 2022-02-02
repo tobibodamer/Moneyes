@@ -12,6 +12,8 @@ namespace Moneyes.UI.ViewModels
     {
         private readonly LiveDataService _liveDataService;
         private readonly IBankingService _bankingService;
+        private readonly IStatusMessageService _statusMessageService;
+        private BankDetails _bankDetails;
 
         public ICommand ImportCommand => TransitionController?.NextStepCommand;
         public ICommand CancelCommand => TransitionController?.FinishCommand;
@@ -24,11 +26,19 @@ namespace Moneyes.UI.ViewModels
         {
             _liveDataService = liveDataService;
             _bankingService = bankingService;
+            _statusMessageService = statusMessageService;
         }
 
         public async Task OnTransitedTo(TransitionContext transitionContext)
         {
-            var accountResult = await _liveDataService.FetchAccounts();
+            if (transitionContext.Argument is not BankDetails bankDetails)
+            {
+                return;
+            }
+
+            _bankDetails = bankDetails;
+
+            var accountResult = await _liveDataService.FetchAccounts(bankDetails);
 
             if (accountResult.IsSuccessful)
             {
@@ -47,7 +57,9 @@ namespace Moneyes.UI.ViewModels
         {
             int numAccountsImported = _bankingService.ImportAccounts(SelectedAccounts);
 
-            //statusMessageService.ShowMessage($"{numAccountsImported} new accounts imported.");
+            _statusMessageService.ShowMessage($"{numAccountsImported} new accounts imported.");
+
+            transitionContext.Argument = _bankDetails;
 
             return Task.CompletedTask;
         }

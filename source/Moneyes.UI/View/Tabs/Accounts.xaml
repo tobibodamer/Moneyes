@@ -23,7 +23,7 @@
             <RowDefinition/>
         </Grid.RowDefinitions>
         
-        <materialDesign:ColorZone Mode="Standard" Padding="12" Grid.ColumnSpan="2" Height="60">
+        <materialDesign:ColorZone Mode="Standard" Padding="12" Grid.ColumnSpan="2" Height="80">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
@@ -31,6 +31,8 @@
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
+
+                <local:BankConnectionComboBox/>
 
                 <Button Command="{Binding ImportAccountsCommand}" Style="{StaticResource MaterialDesignFlatButton}" HorizontalAlignment="Center"
                 Height="24" Margin="5" VerticalAlignment="Center" Width="100" Padding="0" Grid.Column="3">
@@ -53,7 +55,7 @@
                 <DataGridTextColumn Header="Name" Binding="{Binding Type}"/>                
                 <DataGridTextColumn Header="Number" Binding="{Binding Number}"/>
                 <DataGridTextColumn Header="IBAN" Binding="{Binding IBAN}"/>                
-                <DataGridTextColumn Header="Bank code" Binding="{Binding BankCode}"/>
+                <DataGridTextColumn Header="Bank code" Binding="{Binding BankDetails.BankCode}"/>
                 <DataGridTextColumn Header="Owner" Binding="{Binding OwnerName}"/>
             </DataGrid.Columns>
         </DataGrid>

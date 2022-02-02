@@ -35,24 +35,30 @@ namespace Moneyes.UI.ViewModels
             _bankingService = bankingService;
         }
 
+        private BankDetails _bankDetails;
 
         public async Task OnTransitedTo(TransitionContext transitionContext)
         {
+            if (transitionContext.Argument is BankDetails bankDetails)
+            {
+                _bankDetails = bankDetails;
+            }
+
             await Task.CompletedTask;
         }
 
         public async Task OnTransitedFrom(TransitionContext transitionContext)
         {
-            if (!FetchAfterFinish)
+            if (!FetchAfterFinish || _bankDetails == null)
             {
                 return;
             }
 
-            IEnumerable<AccountDetails> accounts = _bankingService.GetAccounts();
+            var accounts = _bankingService.GetAccounts(_bankDetails);
 
             if (accounts.Any())
             {
-                _ = await _liveDataService.FetchTransactionsAndBalances(accounts.First());
+                _ = await _liveDataService.FetchTransactionsAndBalances(accounts.ToArray());
             }
         }
     }

@@ -25,6 +25,8 @@ namespace Moneyes.UI.ViewModels
         /// Gets whether this transition was caused by invoking the <see cref="ITransitionController.FinishCommand"/>.
         /// </summary>
         public bool IsFinishTransition { get; init; }
+
+        public object Argument { get; set; }
     }
     public class SetupWizardViewModel : ViewModelBase, IDialogViewModel, ITransitionController
     {
@@ -71,7 +73,7 @@ namespace Moneyes.UI.ViewModels
             Steps = new();
             Steps.CollectionChanged += Steps_CollectionChanged;
 
-            BankSetupStepViewModel bankSetup = new(liveDataService, bankingService);
+            BankSetupStepViewModel bankSetup = new(liveDataService, bankingService, statusMessageService);
 
             ImportAccountsStepViewModel accountImport = new(
                     liveDataService, bankingService, statusMessageService);

@@ -155,6 +155,8 @@ namespace Moneyes.UI.ViewModels
 
             IsUpdating = false;
             Updated?.Invoke(this, EventArgs.Empty);
+
+            OnPropertyChanged(nameof(Categories));
         }
 
         /// <summary>

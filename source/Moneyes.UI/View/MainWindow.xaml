@@ -84,7 +84,7 @@
                 <DataTemplate DataType="{x:Type vm:AccountsViewModel}">
                     <local:Accounts/>
                 </DataTemplate>
-                <DataTemplate DataType="{x:Type vm:BankSetupViewModel}">
+                <DataTemplate DataType="{x:Type vm:SettingsTabViewModel}">
                     <local:SettingsPage/>
                 </DataTemplate>
             </dragablz:TabablzControl.Resources>

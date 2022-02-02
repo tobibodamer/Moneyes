@@ -35,7 +35,7 @@
                                Margin="0,0"
                           materialDesign:ComboBoxAssist.ShowSelectedItem="True" BorderThickness="0"
                   VerticalAlignment="Stretch" HorizontalAlignment="Right" 
-                  Width="195" Grid.Column="0" VerticalContentAlignment="Center" Padding="10,0,0,0">
+                  Width="225" Grid.Column="0" VerticalContentAlignment="Center" Padding="10,0,0,0">
             <ComboBox.Style>
                 <Style TargetType="ComboBox" BasedOn="{StaticResource MaterialDesignDataGridComboBox}">
                     <Style.Triggers>
@@ -54,7 +54,7 @@
                                 <Setter Property="Text">
                                     <Setter.Value>
                                         <MultiBinding StringFormat="{}{0}">
-                                                <Binding Path="Id" />                                            
+                                                <Binding Path="Name" />                                            
                                         </MultiBinding>
                                     </Setter.Value>
                                 </Setter>

@@ -6,7 +6,7 @@
       xmlns:i="clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity"
       xmlns:local="clr-namespace:Moneyes.UI.View"
       xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes" xmlns:viewmodels="clr-namespace:Moneyes.UI.ViewModels"
-             d:DataContext="{d:DesignInstance Type=viewmodels:BankSetupViewModel}"
+             d:DataContext="{d:DesignInstance Type=viewmodels:SettingsTabViewModel}"
              TextElement.Foreground="{DynamicResource MaterialDesignBody}"
       TextElement.FontWeight="Regular"
       TextElement.FontSize="13"
@@ -34,7 +34,9 @@
             <RowDefinition/>
         </Grid.RowDefinitions>
 
-        <GroupBox Header="Online banking" Width="400" Height="230">
+        <local:BankContactsView DataContext="{Binding BankContactSettings}"/>
+
+        <!--<GroupBox Header="Online banking" Width="400" Height="230">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
@@ -84,9 +86,9 @@
                     </Button>
 
                 </Grid>
-                <!--<TextBlock Text="Bank: " Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="10,0" Padding="4"
+                --><!--<TextBlock Text="Bank: " Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="10,0" Padding="4"
                            Visibility="{Binding BankLookupCompleted, Converter={StaticResource BooleanToVisibilityConverter}}"
-                           FontSize="12" />-->
+                           FontSize="12" />--><!--
                 <TextBlock Text="{Binding BankLookupResult}" TextWrapping="WrapWithOverflow" 
                            Foreground="{Binding BankFound, Converter={StaticResource BoolToColorConverter}, 
                            ConverterParameter=DimGray;#ba0c00, Mode=OneWay}" FontStyle="Italic"
@@ -107,8 +109,8 @@
                 <PasswordBox local:PasswordBoxHelper.SecurePassword="{Binding PIN}" Grid.Row="3" Grid.Column="1" Width="120" materialDesign:HintAssist.Hint="Ask when needed"
                              VerticalAlignment="Top" HorizontalAlignment="Left" Margin="5" Cursor="IBeam"/>
             </Grid>
-        </GroupBox>
+        </GroupBox>-->
 
-        <Button Content="Apply" Command="{Binding ApplyCommand}" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="20"/>
+        <!--<Button Content="Apply" Command="{Binding ApplyCommand}" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="20"/>-->
     </Grid>
 </UserControl>

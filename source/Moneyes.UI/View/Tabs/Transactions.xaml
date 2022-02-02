@@ -7,7 +7,7 @@
       xmlns:local="clr-namespace:Moneyes.UI.View"
       xmlns:vm="clr-namespace:Moneyes.UI.ViewModels"
       xmlns:m="clr-namespace:Moneyes.Core;assembly=Moneyes.Core"
-      xmlns:controls="clr-namespace:System.Windows.Controls;assembly=MultiSelectTreeView"
+      xmlns:controls="clr-namespace:Moneyes.UI.View.Controls"
       xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes" 
       d:DataContext="{d:DesignInstance Type=vm:TransactionsTabViewModel}"
       TextElement.Foreground="{DynamicResource MaterialDesignBody}"

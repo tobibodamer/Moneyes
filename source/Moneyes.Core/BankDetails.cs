@@ -7,6 +7,8 @@ namespace Moneyes.Core
     {
         public Guid Id { get; init; }
 
+        public string Name { get; set; }
+
         /// <summary>
         /// The bank code of the bank to connect to.
         /// </summary>
@@ -30,7 +32,7 @@ namespace Moneyes.Core
         /// <summary>
         /// Online banking server uri.
         /// </summary>
-        public Uri Server { get; set; }
+        public string Server { get; set; }
 
         /// <summary>
         /// The supported HBCI version of the bank.

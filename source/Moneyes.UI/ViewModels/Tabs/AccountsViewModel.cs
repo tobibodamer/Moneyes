@@ -113,7 +113,15 @@ namespace Moneyes.UI.ViewModels
 
             },
             () => SelectedBankConnection != null,
-            errorHandler: (ex) => _statusMessageService.ShowMessage("Error while importing accounts"));
+            errorHandler: (ex) =>
+            {
+                if (ex is OperationCanceledException)
+                {
+                    return;
+                }
+
+                _statusMessageService.ShowMessage("Error while importing accounts");
+            });
         }
 
         public void UpdateBankConnections()
@@ -132,7 +140,6 @@ namespace Moneyes.UI.ViewModels
             {
                 SelectedBankConnection = bankConnections.FirstOrDefault();
             }
-
         }
         public void UpdateAccounts()
         {

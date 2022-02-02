@@ -5,6 +5,8 @@ namespace Moneyes.Data
 {
     public class BankDbo : UniqueEntity
     {
+        public string Name { get; set; }
+
         /// <summary>
         /// The bank code of the bank to connect to.
         /// </summary>
@@ -26,9 +28,9 @@ namespace Moneyes.Data
         public SecureString Pin { get; set; }
 
         /// <summary>
-        /// Online banking server uri.
+        /// Online banking server url.
         /// </summary>
-        public Uri Server { get; set; }
+        public string Server { get; set; }
 
         /// <summary>
         /// The supported HBCI version of the bank.

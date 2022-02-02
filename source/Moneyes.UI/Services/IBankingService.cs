@@ -34,6 +34,8 @@ namespace Moneyes.UI
         /// <returns></returns>
         IReadOnlyList<AccountDetails> GetAllAccounts();
 
+        decimal GetOverallBalance(DateTime date);
+
         /// <summary>
         /// Gets the balance most recent to the given <paramref name="date"/>, 
         /// for a specific <paramref name="account"/>.

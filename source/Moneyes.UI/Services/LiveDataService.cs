@@ -204,13 +204,13 @@ namespace Moneyes.UI
                 var bank = FindBank(bankDetails.BankCode);
                 if (bank != null)
                 {
-                    bankServer = new Uri(bank.FinTs_Url);
+                    bankServer = bank.FinTs_Url;
                 }
             }
             OnlineBankingDetails onlineBankingDetails = new()
             {
                 BankCode = bankDetails.BankCode,
-                Server = bankServer,
+                Server = new Uri(bankServer),
                 UserId = bankDetails.UserId,
                 Pin = password
             };

@@ -75,6 +75,7 @@ namespace Moneyes.Data
                 CreatedAt = createdAt ?? DateTime.MinValue,
                 UpdatedAt = updatedAt ?? DateTime.MinValue,
                 Id = bankDetails.Id,
+                Name = bankDetails.Name,
                 BankCode = bankDetails.BankCode,
                 BIC = bankDetails.BIC,
                 HbciVersion = bankDetails.HbciVersion,

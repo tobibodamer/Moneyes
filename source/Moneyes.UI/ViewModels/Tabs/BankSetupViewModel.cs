@@ -1,5 +1,7 @@
-﻿using Moneyes.Data;
+﻿using Moneyes.Core;
+using Moneyes.Data;
 using Moneyes.LiveData;
+using Moneyes.UI.Services;
 using System;
 using System.Collections;
 using System.Collections.Concurrent;
@@ -27,6 +29,7 @@ namespace Moneyes.UI.ViewModels
     {
         private readonly LiveDataService _liveDataService;
         private readonly IBankingService _bankingService;
+        private readonly IStatusMessageService _statusMessageService;
 
         #region UI
 
@@ -147,7 +150,7 @@ namespace Moneyes.UI.ViewModels
 
         #endregion
 
-        public BankSetupViewModel(LiveDataService liveDataService, IBankingService bankingService)
+        public BankSetupViewModel(LiveDataService liveDataService, IBankingService bankingService, IStatusMessageService statusMessageService)
         {
             DisplayName = "Settings";
 
@@ -163,6 +166,7 @@ namespace Moneyes.UI.ViewModels
             {
                 await ApplySettings();
             }, () => (IsBankFound ?? false) && !string.IsNullOrEmpty(UserId));
+            _statusMessageService = statusMessageService;
         }
 
         private OnlineBankingDetails CreateBankingDetails()
@@ -170,6 +174,7 @@ namespace Moneyes.UI.ViewModels
             return new()
             {
                 BankCode = BankCode.Value,
+                Server = new Uri(Bank.BankServer),
                 UserId = UserId,
                 Pin = PIN
             };
@@ -190,26 +195,45 @@ namespace Moneyes.UI.ViewModels
                 return;
             }
 
-            OnlineBankingDetails bankingDetails = CreateBankingDetails();
-
-            if (!PIN.IsNullOrEmpty())
+            if (PIN.IsNullOrEmpty())
             {
-                Result result = await _liveDataService.CreateBankConnection(bankingDetails, testConnection: true);
+                return;
+            }
 
-                if (!result.IsSuccessful)
+            // Create connection details from view model properties
+            OnlineBankingDetails onlineBankingDetails = CreateBankingDetails();
+            
+            // Test banking connection
+            BankingResult result = await _liveDataService.TestConnection(onlineBankingDetails);
+
+            if (!result.IsSuccessful)
+            {
+                State = BankSetupState.ConnectionFailed;
+
+                if (result.ErrorCode is
+                    OnlineBankingErrorCode.InvalidPin or
+                    OnlineBankingErrorCode.InvalidUsernameOrPin)
                 {
-                    State = BankSetupState.ConnectionFailed;
-                    return;
+                    _statusMessageService.ShowMessage("Invalid credentials.");
                 }
+
+                return;
             }
 
-            if (!SavePassword)
+            // Bank connection successful -> create bank details model
+            BankDetails bankConnection = new(Guid.NewGuid(), onlineBankingDetails.BankCode)
             {
-                bankingDetails.Pin = null;
+                UserId = onlineBankingDetails.UserId,
+            };
+
+            if (SavePassword)
+            {
+                bankConnection.Pin = onlineBankingDetails.Pin;
             }
 
-            // If sync was established -> save configuration
-            _bankingService.BankingDetails = bankingDetails;
+            // Add bank details model
+            _bankingService.AddBankConnection(bankConnection);
+
 
             State = BankSetupState.ConnectionSuccessful;
         }
@@ -247,23 +271,6 @@ namespace Moneyes.UI.ViewModels
             }
 
             BankLookupCompleted = true;
-        }
-
-        public override void OnSelect()
-        {
-            base.OnSelect();
-
-            if (_bankingService.HasBankingDetails)
-            {
-                OnlineBankingDetails bankingDetails = _bankingService.BankingDetails;
-
-                // Set UI fields
-                BankCode = bankingDetails.BankCode;
-                UserId = bankingDetails.UserId;
-                PIN = bankingDetails.Pin;
-
-                FindBankCommand.Execute(null);
-            }
         }
 
         public class SimpleBankViewModel : ViewModelBase

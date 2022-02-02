@@ -129,7 +129,7 @@ namespace Moneyes.UI
                         .WithUniqueProperty(b => new { b.Date, b.Account.Id });
 
                     options.AddUniqueRepository<BankDbo>("BankDetails")
-                        .WithUniqueProperty(b => b.BankCode);
+                        .WithUniqueProperty(b => new { b.BankCode, b.UserId } );
                 });
 
 

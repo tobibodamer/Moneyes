@@ -12,33 +12,27 @@ namespace Moneyes.UI
     public interface IBankingService
     {
         /// <summary>
-        /// Gets whether online banking connection details are stored.
-        /// </summary>
-        bool HasBankingDetails { get; }
-
-        /// <summary>
-        /// Gets or sets the current online banking connection details.
-        /// </summary>
-        OnlineBankingDetails BankingDetails { get; set; }
-
-        /// <summary>
         /// Raised when new accounts are imported.
         /// </summary>
         event Action NewAccountsImported;
 
-        /// <summary>
-        /// Updates the online banking connection details and stores the updated value.
-        /// </summary>
-        /// <param name="update"></param>
-        void UpdateBankingDetails(Action<OnlineBankingDetails> update);
+        void AddBankConnection(BankDetails bankDetails);
 
-        IEnumerable<BankDetails> GetBankEntries();
+        void UpdateBankConnection(BankDetails bankDetails);
+
+        IReadOnlyList<BankDetails> GetBankEntries();
 
         /// <summary>
         /// Gets all accounts available for the current banking details.
         /// </summary>
         /// <returns></returns>
-        IEnumerable<AccountDetails> GetAccounts();
+        IReadOnlyList<AccountDetails> GetAccounts(BankDetails bankDetails);
+
+        /// <summary>
+        /// Gets all accounts available.
+        /// </summary>
+        /// <returns></returns>
+        IReadOnlyList<AccountDetails> GetAllAccounts();
 
         /// <summary>
         /// Gets the balance most recent to the given <paramref name="date"/>, 

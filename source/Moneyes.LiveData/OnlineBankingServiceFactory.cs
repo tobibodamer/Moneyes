@@ -23,8 +23,7 @@ namespace Moneyes.LiveData
 
             FinTsClient client = new(details);
 
-            return new OnlineBankingService(
-                client, new OnlineBankingDetails(), _loggerFactory?.CreateLogger<OnlineBankingService>());
+            return new OnlineBankingService(client, _loggerFactory?.CreateLogger<OnlineBankingService>());
         }
 
         /// <summary>
@@ -65,7 +64,7 @@ namespace Moneyes.LiveData
             FinTsClient client = new(details);
 
             return new OnlineBankingService(
-                client, bankingDetailsCopy, _loggerFactory?.CreateLogger<OnlineBankingService>());
+                client, _loggerFactory?.CreateLogger<OnlineBankingService>());
         }
 
         private static void ValidateBankingDetails(OnlineBankingDetails bankingDetails)

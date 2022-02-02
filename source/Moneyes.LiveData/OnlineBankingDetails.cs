@@ -11,7 +11,7 @@ namespace Moneyes.LiveData
         /// <summary>
         /// The bank code of the bank to connect to.
         /// </summary>
-        public int BankCode { get; init; }
+        public int BankCode { get; set; }
 
         /// <summary>
         /// Online banking username for the bank account.
@@ -26,7 +26,7 @@ namespace Moneyes.LiveData
         /// <summary>
         /// Online banking server uri.
         /// </summary>
-        public Uri Server { get; init; }
+        public Uri Server { get; set; }
 
         /// <summary>
         /// Creates a deep copy of this object.

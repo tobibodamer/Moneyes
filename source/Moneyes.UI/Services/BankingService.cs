@@ -39,86 +39,26 @@ namespace Moneyes.UI
             _bankDetailsFactory = bankDetailsFactory;
         }
 
-        public bool HasBankingDetails => _bankDetailsRepository.GetAll().Any();
-
-        public void UpdateBankingDetails(Action<OnlineBankingDetails> update)
-        {
-            var onlineBankinDetails = BankingDetails;
-
-            update(onlineBankinDetails);
-
-            // This copy stuff is all temorary. TODO: replace everything with BankDetails
-
-            BankingDetails = onlineBankinDetails;
-        }
-
-        public OnlineBankingDetails BankingDetails
-        {
-            get
-            {
-                if (BankDetails == null)
-                {
-                    return null;
-                }
-
-                return new()
-                {
-                    UserId = BankDetails.UserId,
-                    Server = BankDetails.Server,
-                    BankCode = BankDetails.BankCode,
-                    Pin = BankDetails.Pin
-                };
-            }
-            set
-            {
-                BankDetails bankDetails = new(BankDetails?.Id ?? Guid.NewGuid(), value.BankCode)
-                {
-                    UserId = value.UserId,
-                    Server = value.Server,
-                    BankCode = value.BankCode,
-                    Pin = value.Pin,
-                };
-
-                BankDetails = bankDetails;
-            }
-        }
-
-        private BankDetails BankDetails
-        {
-            get
-            {
-                var dbo = _bankDetailsRepository.GetAll().FirstOrDefault();
-                if (dbo == null)
-                {
-                    return null;
-                }
-
-                return _bankDetailsFactory.CreateFromDbo(dbo);
-            }
-            set
-            {
-                _bankDetailsRepository.Set(value.ToDbo());
-            }
-        }
-
         public event Action NewAccountsImported;
 
-        public IEnumerable<BankDetails> GetBankEntries()
+        public IReadOnlyList<BankDetails> GetBankEntries()
         {
             return _bankDetailsRepository.GetAll()
                 .Select(b => _bankDetailsFactory.CreateFromDbo(b))
                 .ToList();
         }
 
-        public IEnumerable<AccountDetails> GetAccounts()
+        public IReadOnlyList<AccountDetails> GetAllAccounts()
         {
-            if (!HasBankingDetails)
-            {
-                return Enumerable.Empty<AccountDetails>();
-            }
-
             return _accountRepository.GetAll()
-                .Where(acc => acc.Bank.Id.Equals(BankDetails.Id))
+                .Select(a => _accountFactory.CreateFromDbo(a))
+                .ToList();
+        }
+
+        public IReadOnlyList<AccountDetails> GetAccounts(BankDetails bankDetails)
+        {
+            return _accountRepository.GetAll()
+                .Where(acc => acc.Bank.Id.Equals(bankDetails.Id))
                 .Select(a => _accountFactory.CreateFromDbo(a))
                 .ToList();
         }
@@ -170,20 +110,9 @@ namespace Moneyes.UI
 
         public Balance GetBalance(DateTime date, AccountDetails account)
         {
-            //TODO: implement total balance
-            if (account == null)
-            {
-                foreach (var acc in GetAccounts())
-                {
-                    return GetBalanceByDate(date, acc);
-                }
+            //TODO: implement total balance            
+            return GetBalanceByDate(date, account);
 
-                return null;
-            }
-            else
-            {
-                return GetBalanceByDate(date, account);
-            }
         }
 
         /// <summary>
@@ -266,6 +195,42 @@ namespace Moneyes.UI
                 };
 
                 return ConflictResolutionAction.Update(update);
+            });
+        }
+
+        public void AddBankConnection(BankDetails bankDetails)
+        {
+            try
+            {
+                var dbo = bankDetails.ToDbo(
+                    createdAt: DateTime.Now,
+                    updatedAt: DateTime.Now);
+
+                _bankDetailsRepository.Create(dbo);
+            }
+            catch (CachedRepository<CategoryDbo>.ConstraintViolationException ex)
+            {
+                if (ex.PropertyName.Equals(nameof(CategoryDbo.Name)))
+                {
+                    // Name already exists
+                }
+            }
+            catch (DuplicateKeyException)
+            {
+                // Primary key already exists
+            }
+        }
+
+        public void UpdateBankConnection(BankDetails bankDetails)
+        {
+            ArgumentNullException.ThrowIfNull(bankDetails, nameof(bankDetails));
+
+            _bankDetailsRepository.Update(bankDetails.Id, (existing) =>
+            {
+                return bankDetails.ToDbo(
+                    createdAt: existing.CreatedAt,
+                    updatedAt: DateTime.Now,
+                    isDeleted: existing.IsDeleted);
             });
         }
     }

@@ -41,6 +41,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Update="View\Controls\BankConnectionComboBox.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Update="View\Dialogs\AddCategoryDialog.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -68,6 +71,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Page Update="View\Controls\BankConnectionComboBox.xaml">
+      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Update="View\Dialogs\AddCategoryDialog.xaml">
       <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
       <SubType>Designer</SubType>

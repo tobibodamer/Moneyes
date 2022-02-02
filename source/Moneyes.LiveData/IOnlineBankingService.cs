@@ -7,10 +7,17 @@ namespace Moneyes.LiveData
 {
     public interface IOnlineBankingService
     {
-        OnlineBankingDetails BankingDetails { get; }
-        Task<BankingResult<IEnumerable<AccountDetails>>> Accounts(BankDetails bank);
-        Task<BankingResult<Balance>> Balance(AccountDetails account);
-        Task<BankingResult> Sync();
-        Task<BankingResult<TransactionData>> Transactions(AccountDetails account, DateTime? startDate = null, DateTime? endDate = null);
+        Task<BankingResult> Sync(OnlineBankingDetails onlineBankingDetails);
+        Task<BankingResult<IEnumerable<AccountDetails>>> Accounts(
+            OnlineBankingDetails onlineBankingDetails, 
+            BankDetails bank);
+        Task<BankingResult<Balance>> Balance(
+            OnlineBankingDetails onlineBankingDetails, 
+            AccountDetails account);
+        Task<BankingResult<TransactionData>> Transactions(
+            OnlineBankingDetails onlineBankingDetails, 
+            AccountDetails account, 
+            DateTime? startDate = null, 
+            DateTime? endDate = null);
     }
 }

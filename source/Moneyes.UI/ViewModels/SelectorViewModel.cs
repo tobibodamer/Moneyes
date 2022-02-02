@@ -85,8 +85,7 @@ namespace Moneyes.UI.ViewModels
 
             FetchOnlineCommand = new AsyncCommand(async ct =>
             {
-                Result<int> result = await _liveDataService
-                    .FetchTransactionsAndBalances(CurrentAccount);
+                Result<int> result = await _liveDataService.FetchTransactionsAndBalances(CurrentAccount);
 
                 if (result.IsSuccessful)
                 {
@@ -103,7 +102,7 @@ namespace Moneyes.UI.ViewModels
                     statusMessageService.ShowMessage($"Fetching transactions failed", "Retry",
                         () => FetchOnlineCommand.Execute(null));
                 }
-            }, () => _bankingService.HasBankingDetails && CurrentAccount != null);
+            }, () => CurrentAccount != null);
 
             ApplyDateCommand = new RelayCommand(() =>
             {
@@ -152,13 +151,7 @@ namespace Moneyes.UI.ViewModels
 
         public void RefreshAccounts()
         {
-            if (!_bankingService.HasBankingDetails)
-            {
-                // No bank connection configured -> show message?
-                return;
-            }
-
-            Accounts = new(_bankingService.GetAccounts());
+            Accounts = new(_bankingService.GetAllAccounts());
 
             FetchOnlineCommand.RaiseCanExecuteChanged();
         }

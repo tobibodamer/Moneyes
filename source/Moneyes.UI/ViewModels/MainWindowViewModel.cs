@@ -52,7 +52,7 @@ namespace Moneyes.UI.ViewModels
 
             LoadedCommand = new RelayCommand(() =>
             {
-                if (!bankingService.HasBankingDetails)
+                if (!bankingService.GetBankEntries().Any())
                 {
                     SetupWizard = setupWizardViewModel;
                 }

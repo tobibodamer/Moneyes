@@ -149,10 +149,9 @@ namespace Moneyes.UI.ViewModels
 
         public ICommand MoveToCategory { get; set; }
 
-        public bool IsNoCategory => _category == Category.NoCategory;
+        public bool IsNoCategory => _category.IsNoCategory();
 
-        public bool IsRealCategory => !_category.Equals(Category.NoCategory)
-            && !_category.Equals(Category.AllCategory);
+        public bool IsRealCategory => Category.IsReal;
 
         #region Filter
 

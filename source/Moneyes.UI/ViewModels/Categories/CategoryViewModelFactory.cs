@@ -18,12 +18,11 @@ namespace Moneyes.UI.ViewModels
             _statusMessageService = statusMessageService;
         }
         public CategoryViewModel CreateCategoryViewModel(Category category,
-            Func<Category> getCurrentCategory,
             Action<EditCategoryViewModel> editCallback)
         {
             CategoryViewModel categoryViewModel = new(_categoryService, _statusMessageService);
 
-            InitViewModel(category, categoryViewModel, getCurrentCategory, editCallback);
+            InitViewModel(category, categoryViewModel, editCallback);
 
             return categoryViewModel;
         }
@@ -31,7 +30,6 @@ namespace Moneyes.UI.ViewModels
         private void InitViewModel<TCategoryViewModel>(
             Category category,
             TCategoryViewModel categoryViewModel,
-            Func<Category> getCurrentCategory,
             Action<EditCategoryViewModel> editCallback)
             where TCategoryViewModel : CategoryViewModel
         {
@@ -115,7 +113,10 @@ namespace Moneyes.UI.ViewModels
             {
                 Category targetCategory = categoryViewModel.Category;
 
-                _categoryService.MoveToCategory(transaction, targetCategory);
+                if (_categoryService.MoveToCategory(transaction, targetCategory))
+                {
+                    _statusMessageService.ShowMessage($"Moved to '{targetCategory.Name}'");
+                }
             }, t => categoryViewModel.IsCreated && canAssign(t));
         }
 
@@ -150,12 +151,11 @@ namespace Moneyes.UI.ViewModels
         public CategoryExpenseViewModel CreateCategoryExpenseViewModel(
             Category category,
             Expenses expenses,
-            Func<Category> getCurrentCategory,
             Action<EditCategoryViewModel> editCallback)
         {
             CategoryExpenseViewModel categoryViewModel = new(category, expenses, _categoryService, _statusMessageService);
 
-            InitViewModel(category, categoryViewModel, getCurrentCategory, editCallback);
+            InitViewModel(category, categoryViewModel, editCallback);
 
             return categoryViewModel;
         }

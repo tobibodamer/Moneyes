@@ -49,7 +49,6 @@
                     <!--<Setter Property="IsSelected" Value="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" />-->
                     <!--<Setter Property="IsExpanded" Value="True"/>-->
                     <Setter Property="local:DropBehavior.PreviewDropCommand" Value="{Binding MoveToCategory}"/>
-                    <Setter Property="local:DropBehavior.PreviewDropCopyCommand" Value="{Binding CopyToCategory}"/>
                     <Setter Property="ContextMenu">
                         <Setter.Value>
                             <ContextMenu>

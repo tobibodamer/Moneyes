@@ -27,7 +27,6 @@ namespace Moneyes.UI.ViewModels
                 {
                     categoryViewModels.Add(
                         Factory.CreateCategoryViewModel(category,
-                            getCurrentCategory: () => SelectedCategory?.Category,
                             editViewModel =>
                             {
                                 EditCategoryViewModel = editViewModel;

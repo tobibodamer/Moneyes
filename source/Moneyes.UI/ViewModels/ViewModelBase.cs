@@ -5,7 +5,16 @@ namespace Moneyes.UI.ViewModels
 {
     public abstract class ViewModelBase : INotifyPropertyChanged
     {
-        public string DisplayName { get; set; }
+        private string _displayName;
+        public string DisplayName
+        {
+            get => _displayName;
+            set
+            {
+                _displayName = value;
+                OnPropertyChanged();
+            }
+        }
 
         public event PropertyChangedEventHandler PropertyChanged;
 

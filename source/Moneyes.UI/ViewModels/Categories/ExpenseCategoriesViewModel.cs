@@ -28,26 +28,39 @@ namespace Moneyes.UI.ViewModels
             _expenseIncomeService = expenseIncomeService;
         }
 
-        protected override CategoryExpenseViewModel CreateEntry(
-            Category category, TransactionFilter filter, CategoryTypes categoryTypes, bool flat)
+        protected override Task<List<CategoryExpenseViewModel>> GetCategoriesAsync(TransactionFilter filter, CategoryTypes categoryTypes, bool flat)
         {
-            Expenses expenses;
-
-            var expensesResult = _expenseIncomeService.GetExpenses(category, filter, includeSubCategories: true);
-            if (!expensesResult.IsSuccessful)
+            return Task.Run(() =>
             {
-                // Failed to get expenses
-            }
+                List<CategoryExpenseViewModel> categoryViewModels = new();
 
-            expenses = expensesResult.Data;
-
-            return Factory.CreateCategoryExpenseViewModel(category, expenses,
-                () => SelectedCategory?.Category,
-                editViewModel =>
+                var expensesResult = _expenseIncomeService.GetAllExpenses(filter, categoryTypes, includeSubCategories: true);
+                if (!expensesResult.IsSuccessful)
                 {
-                    EditCategoryViewModel = editViewModel;
-                });
+                    // Failed to get expenses
+                }
+
+                foreach ((Category category, Expenses expenses) in expensesResult.Data)
+                {
+                    categoryViewModels.Add(
+                        Factory.CreateCategoryExpenseViewModel(category, expenses,
+                        () => SelectedCategory?.Category,
+                        editViewModel =>
+                        {
+                            EditCategoryViewModel = editViewModel;
+                        }));
+                }
+
+                if (!flat)
+                {
+                    // Set sub categories
+                    SetSubCategories(categoryViewModels);
+                }
+
+                return categoryViewModels;
+            });
         }
+
         protected override IComparer<CategoryExpenseViewModel> GetComparer(bool order)
         {
             if (order)

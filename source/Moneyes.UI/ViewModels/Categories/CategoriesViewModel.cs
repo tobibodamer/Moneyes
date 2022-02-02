@@ -2,6 +2,8 @@
 using Moneyes.Core.Filters;
 using Moneyes.Data;
 using Moneyes.UI.Services;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Moneyes.UI.ViewModels
 {
@@ -12,14 +14,34 @@ namespace Moneyes.UI.ViewModels
             : base(factory, categoryService, statusMessageService)
         {
         }
-        protected override CategoryViewModel CreateEntry(Category category, TransactionFilter filter, CategoryTypes categoryTypes, bool flat)
+
+        protected override Task<List<CategoryViewModel>> GetCategoriesAsync(TransactionFilter filter, CategoryTypes categoryTypes, bool flat)
         {
-            return Factory.CreateCategoryViewModel(category,
-                getCurrentCategory: () => SelectedCategory?.Category,
-                editViewModel =>
+            return Task.Run(() =>
+            {
+                List<CategoryViewModel> categoryViewModels = new();
+
+                var categories = CategoryService.GetCategories(categoryTypes);
+
+                foreach (var category in categories)
                 {
-                    EditCategoryViewModel = editViewModel;
-                });
+                    categoryViewModels.Add(
+                        Factory.CreateCategoryViewModel(category,
+                            getCurrentCategory: () => SelectedCategory?.Category,
+                            editViewModel =>
+                            {
+                                EditCategoryViewModel = editViewModel;
+                            }));
+                }
+
+                if (!flat)
+                {
+                    // Set sub categories
+                    SetSubCategories(categoryViewModels);
+                }
+
+                return categoryViewModels;
+            });
         }
     }
 }

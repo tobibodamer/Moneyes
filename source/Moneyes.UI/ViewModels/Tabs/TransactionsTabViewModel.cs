@@ -16,6 +16,7 @@ using System.Threading;
 using Moneyes.UI.View;
 using Moneyes.UI.Services;
 using System.Diagnostics;
+using Microsoft.Extensions.Logging;
 
 namespace Moneyes.UI.ViewModels
 {
@@ -26,6 +27,7 @@ namespace Moneyes.UI.ViewModels
         private readonly ICategoryService _categoryService;
         private Balance _currentBalance;
         private bool _isLoaded;
+        private readonly ILogger<TransactionsTabViewModel> _logger;
 
         private TransactionsViewModel _transactionsViewModel;
 
@@ -99,7 +101,8 @@ namespace Moneyes.UI.ViewModels
             IBankingService bankingService,
             IStatusMessageService statusMessageService,
             ExpenseCategoriesViewModel expenseCategoriesViewModel,
-            SelectorViewModel selectorViewModel)
+            SelectorViewModel selectorViewModel, 
+            ILogger<TransactionsTabViewModel> logger)
         {
             DisplayName = "Transactions";
             Categories = expenseCategoriesViewModel;
@@ -109,11 +112,15 @@ namespace Moneyes.UI.ViewModels
             _bankingService = bankingService;
             _statusMessageService = statusMessageService;
 
+            _logger = logger;
+
             NeedsUpdate = true;
 
             Categories.PropertyChanged += (sender, args) =>
             {
-                if (args.PropertyName == nameof(Categories.SelectedCategory) && Categories.SelectedCategory is not null)
+                if (args.PropertyName == nameof(Categories.SelectedCategory) 
+                    && Categories.SelectedCategory is not null 
+                    && !Categories.IsUpdating)
                 {
                     BeginUpdateTransactions();
                 }
@@ -126,11 +133,14 @@ namespace Moneyes.UI.ViewModels
                     return;
                 }
 
+                _logger.LogDebug("Category repository changed -> Updating categories.");
+
                 await UpdateCategories();
 
                 if (e.Actions.HasFlag(RepositoryChangedAction.Replace)
                  && e.ReplacedItems.Any(c => Categories.IsSelected(c.Id)))
                 {
+                    _logger.LogDebug("Repository change was a replace action -> Updating transactions");
                     await UpdateTransactions();
                 }
             };
@@ -142,6 +152,8 @@ namespace Moneyes.UI.ViewModels
                     return;
                 }
 
+                _logger.LogDebug("Transaction repository changed -> Updating categories and transactions");
+
                 await UpdateCategories();
                 await UpdateTransactions();
             };
@@ -152,6 +164,8 @@ namespace Moneyes.UI.ViewModels
                 {
                     return;
                 }
+
+                _logger.LogDebug("Selector changed -> Updating categories and transactions");
 
                 await UpdateCategories();
                 await UpdateTransactions();
@@ -198,6 +212,7 @@ namespace Moneyes.UI.ViewModels
 
                 BeginUpdateTransactions();
             };
+            _logger = logger;
         }
 
         private TransactionFilter GetTransactionFilter()
@@ -254,6 +269,7 @@ namespace Moneyes.UI.ViewModels
             {
                 UpdateCategories().ContinueWith(t =>
                     {
+                        BeginUpdateTransactions();
                         _isLoaded = true;
                     })
                     .FireAndForgetSafeAsync();

@@ -5,6 +5,7 @@ using Moneyes.UI.Services;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -71,12 +72,20 @@ namespace Moneyes.UI.ViewModels
                     return;
                 }
 
+
+                Debug.WriteLine($"Category {value?.Name} selected.");
+
                 _selectedCategory = value;
+
                 OnPropertyChanged();
             }
         }
 
         public ICommand AddCommand { get; protected set; }
+
+        public bool IsUpdating { get; private set; }
+
+        public event EventHandler Updated;
 
         public CategoriesViewModelBase(CategoryViewModelFactory factory, ICategoryService categoryService,
             IStatusMessageService statusMessageService)
@@ -115,37 +124,8 @@ namespace Moneyes.UI.ViewModels
             flatCategories.RemoveAll(c => categoriesWithParent.Contains(c));
         }
 
-        protected virtual Task<List<TCategoryViewModel>> GetCategoriesAsync(
-           TransactionFilter filter, CategoryTypes categoryTypes, bool flat)
-        {
-            return Task.Run(() =>
-            {
-                List<TCategoryViewModel> categoryViewModels = new();
-
-                IEnumerable<Category> categories = CategoryService.GetCategories(categoryTypes);
-
-                foreach (Category category in categories)
-                {
-                    categoryViewModels.Add(CreateEntry(category, filter, categoryTypes, flat));
-                }
-
-                if (!flat)
-                {
-                    // Set sub categories
-                    SetSubCategories(categoryViewModels);
-                }
-
-                return categoryViewModels;
-            });
-        }
-
-        /// <summary>
-        /// Create a view model entry from a <see cref="Category"/>.
-        /// </summary>
-        /// <param name="category"></param>
-        /// <returns></returns>
-        protected abstract TCategoryViewModel CreateEntry(
-            Category category, TransactionFilter filter, CategoryTypes categoryTypes, bool flat);
+        protected abstract Task<List<TCategoryViewModel>> GetCategoriesAsync(
+           TransactionFilter filter, CategoryTypes categoryTypes, bool flat);
 
         /// <summary>
         /// Dynamically updates the list of category viewmodels by inserting new and updating existing entries.
@@ -154,11 +134,13 @@ namespace Moneyes.UI.ViewModels
         protected virtual void UpdateCategoriesInternal(IList<TCategoryViewModel> categories,
             IComparer<TCategoryViewModel> comparer)
         {
+            IsUpdating = true;
+
             var previouslySelectedCategory = SelectedCategory?.Category;
 
             Categories.DynamicUpdate(
                 categories,
-                (c1, c2) => c1.Category.Id.Equals(c2.Category),
+                (c1, c2) => c1.Category.Id == c2.Category.Id,
                 comparer);
 
             if (previouslySelectedCategory != null)
@@ -171,7 +153,8 @@ namespace Moneyes.UI.ViewModels
                 SelectCategory(Category.AllCategory);
             }
 
-            OnPropertyChanged(nameof(Categories));
+            IsUpdating = false;
+            Updated?.Invoke(this, EventArgs.Empty);
         }
 
         /// <summary>

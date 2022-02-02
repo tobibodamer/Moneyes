@@ -14,6 +14,10 @@ namespace Moneyes.Data
 
         public Transaction CreateFromDbo(TransactionDbo transactionDbo)
         {
+            Category category = transactionDbo.Category != null 
+                ? _categoryFactory.CreateFromDbo(transactionDbo.Category)
+                : null;
+
             return new Transaction(id: transactionDbo.Id)
             {
                 AltName = transactionDbo.AltName,
@@ -22,7 +26,7 @@ namespace Moneyes.Data
                 BIC = transactionDbo.BIC,
                 BookingDate = transactionDbo.BookingDate,
                 BookingType = transactionDbo.BookingType,
-                Categories = transactionDbo.Categories?.Select(c => _categoryFactory.CreateFromDbo(c)).ToList() ?? null,
+                Category = category,
                 Currency = transactionDbo.Currency,
                 Index = transactionDbo.Index,
                 Name = transactionDbo.Name,

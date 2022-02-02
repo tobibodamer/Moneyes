@@ -44,11 +44,10 @@ namespace Moneyes.UI.ViewModels
                 {
                     categoryViewModels.Add(
                         Factory.CreateCategoryExpenseViewModel(category, expenses,
-                        () => SelectedCategory?.Category,
-                        editViewModel =>
-                        {
-                            EditCategoryViewModel = editViewModel;
-                        }));
+                            editViewModel =>
+                            {
+                                EditCategoryViewModel = editViewModel;
+                            }));
                 }
 
                 if (!flat)

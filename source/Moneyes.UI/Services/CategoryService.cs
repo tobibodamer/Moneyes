@@ -115,13 +115,13 @@ namespace Moneyes.UI
 
             if (assignMethod is AssignMethod.Reset)
             {
-                transaction.Categories.Clear();
+                transaction.Category = null;
             }
 
             if (assignMethod is not AssignMethod.Simple && oldTransaction != null)
             {
                 // Transaction already imported -> keep old categories
-                transaction.Categories = oldTransaction.Categories;
+                transaction.Category = oldTransaction.Category;
 
                 // Dont merge if keep previous method is used
                 if (assignMethod is AssignMethod.KeepPrevious)
@@ -138,7 +138,7 @@ namespace Moneyes.UI
             // Transaction not imported or merge -> assign new categories
             foreach (Category category in categories)
             {
-                if (category.IsExlusive && transaction.Categories.Any())
+                if (category.IsExlusive && transaction.Category is not null)
                 {
                     // Exclusive category and already assigned
                     continue;
@@ -146,7 +146,7 @@ namespace Moneyes.UI
 
                 if (category.Filter != null && category.Filter.Evaluate(transaction))
                 {
-                    transaction.Categories.Add(category);
+                    transaction.Category = category;
                 }
             }
 
@@ -181,14 +181,14 @@ namespace Moneyes.UI
             {
                 if (assignMethod is AssignMethod.Reset)
                 {
-                    transaction.Categories.Clear();
+                    transaction.Category = null;
                 }
 
                 if (assignMethod is not AssignMethod.Simple or AssignMethod.Reset &&
                     oldTransactions.TryGetValue(transaction.UID, out Transaction oldTransaction))
                 {
                     // Transaction already imported -> keep old categories
-                    transaction.Categories = oldTransaction.Categories;
+                    transaction.Category = oldTransaction.Category;
 
                     // Dont merge if keep previous method is used
                     if (assignMethod is AssignMethod.KeepPrevious)
@@ -200,7 +200,7 @@ namespace Moneyes.UI
                 // Transaction not imported or merge -> assign new categories
                 foreach (Category category in categories)
                 {
-                    if (category.IsExlusive && transaction.Categories.Any())
+                    if (category.IsExlusive && transaction.Category is not null)
                     {
                         // Exclusive category and already assigned
                         continue;
@@ -208,7 +208,7 @@ namespace Moneyes.UI
 
                     if (category.Filter != null && category.Filter.Evaluate(transaction))
                     {
-                        transaction.Categories.Add(category);
+                        transaction.Category = category;
                     }
                 }
 
@@ -243,19 +243,21 @@ namespace Moneyes.UI
             {
                 if (assignMethod is AssignMethod.Reset)
                 {
-                    transaction.Categories.Clear();
+                    transaction.Category = null;
                 }
 
-                if (category.IsExlusive && transaction.Categories.Any())
+                if (category.IsExlusive && transaction.Category is not null)
                 {
                     // Exclusive category and already assigned
                     continue;
                 }
 
-                if (!transaction.Categories.Any(c => category.Id.Equals(c.Id)) &&
-                    category.Filter != null && category.Filter.Evaluate(transaction))
+                if (transaction.Category is not null &&
+                    transaction.Category.Id != category.Id &&
+                    category.Filter != null &&
+                    category.Filter.Evaluate(transaction))
                 {
-                    transaction.Categories.Add(category);
+                    transaction.Category = category;
                     transactionsToUpdate.Add(transaction);
                 }
             }
@@ -339,44 +341,12 @@ namespace Moneyes.UI
             return false;
         }
 
-        public bool AddToCategory(Transaction transaction, Category category)
+        public bool RemoveFromCategory(Transaction transaction)
         {
-            return MoveToCategoryInternal(transaction, null, category);
+            return MoveToCategory(transaction, Category.NoCategory);
         }
 
-        public bool MoveToCategory(
-            Transaction transaction,
-            Category currentCategory,
-            Category targetCategory)
-        {
-            if (transaction is null)
-            {
-                throw new ArgumentNullException(nameof(transaction));
-            }
-
-            if (currentCategory is null)
-            {
-                throw new ArgumentNullException(nameof(currentCategory));
-            }
-
-            if (targetCategory is null)
-            {
-                throw new ArgumentNullException(nameof(targetCategory));
-            }
-
-            if (currentCategory.IsReal && !transaction.Categories.Any(c => c.Id.Equals(currentCategory.Id)))
-            {
-                throw new ArgumentException
-                    (
-                        "The transaction doesn't contain the current category",
-                        nameof(currentCategory)
-                    );
-            }
-
-            return MoveToCategoryInternal(transaction, currentCategory, targetCategory);
-        }
-
-        public bool RemoveFromCategory(Transaction transaction, Category category)
+        public bool MoveToCategory(Transaction transaction, Category category)
         {
             if (transaction is null)
             {
@@ -388,63 +358,25 @@ namespace Moneyes.UI
                 throw new ArgumentNullException(nameof(category));
             }
 
-            if (category.IsReal && !transaction.Categories.Any(c => c.Id.Equals(category.Id)))
+            if (category.IsAllCategory()) { return false; }            
+            if (transaction.Category?.Id == category.Id) { return false; }
+
+            transaction.Category = null;
+
+            if (!category.IsNoCategory())
             {
-                throw new ArgumentException
-                    (
-                        "The transaction doesn't contain the given category",
-                        nameof(category)
-                    );
-            }
-
-            if (category.IsAllCategory() || category.IsNoCategory())
-            {
-                return false;
-            }
-
-            return MoveToCategoryInternal(transaction, category, null);
-        }
-
-        private bool MoveToCategoryInternal(Transaction transaction, Category? currentCategory, Category? targetCategory)
-        {
-            if (targetCategory.IsAllCategory()) { return false; }
-            if (transaction == null) { return false; }
-            if (transaction.Categories.Any(c => c.Id.Equals(targetCategory.Id))) { return false; }
-
-            if (targetCategory.IsNoCategory())
-            {
-                transaction.Categories.Clear();
-            }
-            else
-            {
-                if (currentCategory != null)
-                {
-                    int removeIndex = transaction.Categories.IndexOfFirst(c => c.Id.Equals(currentCategory.Id));
-
-                    if (removeIndex > -1)
-                    {
-                        // Remove from current category if set
-                        transaction.Categories.RemoveAt(removeIndex);
-                    }
-                }
-
-                if (targetCategory != null)
-                {
-                    // Add category to transaction
-                    transaction.Categories.Add(targetCategory);
-                }
+                transaction.Category = category;
             }
 
             // Update transaction in repo
-            return _transactionRepo.Update(transaction.Id, (oldValue) =>
+            return _transactionRepo.Update(transaction.Id, (existing) =>
             {
                 return transaction.ToDbo(
-                     createdAt: oldValue.CreatedAt,
+                     createdAt: existing.CreatedAt,
                      updatedAt: DateTime.Now,
-                     isDeleted: oldValue.IsDeleted);
+                     isDeleted: existing.IsDeleted);
             });
         }
-
 
 
         public IEnumerable<Category> GetSubCategories(Category category, int depth = -1)

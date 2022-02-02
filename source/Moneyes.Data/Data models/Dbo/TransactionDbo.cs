@@ -63,9 +63,9 @@ namespace Moneyes.Data
         #endregion
 
         /// <summary>
-        /// Gets the categories of this transaction.
+        /// Gets the category of this transaction.
         /// </summary>
-        public List<CategoryDbo> Categories { get; set; } = new();
+        public CategoryDbo? Category { get; set; }
 
         /// <summary>
         /// Gets the index of this transactions. For identical transactions only!

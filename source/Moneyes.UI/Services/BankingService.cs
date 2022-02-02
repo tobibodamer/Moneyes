@@ -259,7 +259,10 @@ namespace Moneyes.UI
                     CreatedAt = v.ExistingEntity.CreatedAt,
                     UpdatedAt = v.NewEntity.UpdatedAt,
                     IsDeleted = v.NewEntity.IsDeleted,
-                    Date = v.NewEntity.Date
+                    Date = v.NewEntity.Date,
+                    Amount = v.NewEntity.Amount,
+                    Account = v.NewEntity.Account,
+                    Currency = v.NewEntity.Currency,
                 };
 
                 return ConflictResolutionAction.Update(update);

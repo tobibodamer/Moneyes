@@ -86,7 +86,7 @@ namespace Moneyes.UI.ViewModels
             {
                 _flatCategories = value;
                 OnPropertyChanged();
-                UpdateCategories().FireAndForgetSafeAsync();
+                OnFlatDisplayChanged();
             }
         }
 
@@ -101,7 +101,7 @@ namespace Moneyes.UI.ViewModels
             IBankingService bankingService,
             IStatusMessageService statusMessageService,
             ExpenseCategoriesViewModel expenseCategoriesViewModel,
-            SelectorViewModel selectorViewModel, 
+            SelectorViewModel selectorViewModel,
             ILogger<TransactionsTabViewModel> logger)
         {
             DisplayName = "Transactions";
@@ -118,8 +118,8 @@ namespace Moneyes.UI.ViewModels
 
             Categories.PropertyChanged += (sender, args) =>
             {
-                if (args.PropertyName == nameof(Categories.SelectedCategory) 
-                    && Categories.SelectedCategory is not null 
+                if (args.PropertyName == nameof(Categories.SelectedCategory)
+                    && Categories.SelectedCategory is not null
                     && !Categories.IsUpdating)
                 {
                     BeginUpdateTransactions();
@@ -184,22 +184,13 @@ namespace Moneyes.UI.ViewModels
             {
                 RemoveFromCategory = new CollectionRelayCommand<Transaction>(transactions =>
                 {
-                    Category selectedCategory = Categories.SelectedCategory.Category;
-
                     foreach (Transaction t in transactions)
                     {
-                        if (t.Categories.Contains(selectedCategory))
-                        {
-                            _categoryService.RemoveFromCategory(t, selectedCategory);
-                        }
+                        _categoryService.RemoveFromCategory(t);
                     }
                 }, transactions =>
                 {
-                    return transactions != null
-                        && transactions.All(transaction => transaction != null &&
-                            Categories.SelectedCategory != null &&
-                            Categories.SelectedCategory.IsRealCategory &&
-                            transaction.Categories.Contains(Categories.SelectedCategory.Category));
+                    return transactions != null && transactions.Any(t => t.Category != null);
                 })
             };
 
@@ -231,6 +222,19 @@ namespace Moneyes.UI.ViewModels
             UpdateTransactions().FireAndForgetSafeAsync();
         }
 
+        private void OnFlatDisplayChanged()
+        {
+            UpdateCategories().ContinueWith(t =>
+            {
+                if (Categories.SelectedCategory != null &&
+                (Categories.SelectedCategory.IsRealCategory ||
+                Categories.SelectedCategory.IsNoCategory))
+                {
+                    BeginUpdateTransactions();
+                }
+            }).FireAndForgetSafeAsync();
+        }
+
         private async Task UpdateTransactions()
         {
             if (Selector.CurrentAccount != null)
@@ -240,10 +244,19 @@ namespace Moneyes.UI.ViewModels
 
             Category selectedCategory = Categories.SelectedCategory?.Category;
 
-            //var withSubCategories = _categoryService.GetSubCategories(selectedCategory)
-            //    .Concat(new Category[] { selectedCategory });
+            if (FlatCategories)
+            {
+                await TransactionsViewModel.UpdateTransactions(GetTransactionFilter(), selectedCategory);
+            }
+            else
+            {
+                List<Category> categories = new(_categoryService.GetSubCategories(selectedCategory));
 
-            await TransactionsViewModel.UpdateTransactions(GetTransactionFilter(), selectedCategory);
+                categories.Add(selectedCategory);
+
+                await TransactionsViewModel.UpdateTransactions(GetTransactionFilter(), categories.ToArray());
+            }
+
         }
 
         private async Task UpdateCategories()

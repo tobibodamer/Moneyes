@@ -18,12 +18,11 @@ namespace Moneyes.UI.ViewModels
             _statusMessageService = statusMessageService;
         }
         public CategoryViewModel CreateCategoryViewModel(Category category,
-            Func<Category> getCurrentCategory,
             Action<EditCategoryViewModel> editCallback)
         {
             CategoryViewModel categoryViewModel = new(_categoryService, _statusMessageService);
 
-            InitViewModel(category, categoryViewModel, getCurrentCategory, editCallback);
+            InitViewModel(category, categoryViewModel, editCallback);
 
             return categoryViewModel;
         }
@@ -31,7 +30,6 @@ namespace Moneyes.UI.ViewModels
         private void InitViewModel<TCategoryViewModel>(
             Category category,
             TCategoryViewModel categoryViewModel,
-            Func<Category> getCurrentCategory,
             Action<EditCategoryViewModel> editCallback)
             where TCategoryViewModel : CategoryViewModel
         {
@@ -49,7 +47,7 @@ namespace Moneyes.UI.ViewModels
                 if (targetCategory == Category.AllCategory) { return false; }
 
                 // cant add to own category
-                bool isOwn = transaction.Categories.Contains(targetCategory);
+                bool isOwn = transaction.Category?.Id == targetCategory.Id;
 
                 return !isOwn;
             };
@@ -114,33 +112,12 @@ namespace Moneyes.UI.ViewModels
             categoryViewModel.MoveToCategory = new RelayCommand<Transaction>(transaction =>
             {
                 Category targetCategory = categoryViewModel.Category;
-                Category currentCategory = getCurrentCategory?.Invoke();
 
-                _categoryService.MoveToCategory(transaction, currentCategory, targetCategory);
+                if (_categoryService.MoveToCategory(transaction, targetCategory))
+                {
+                    _statusMessageService.ShowMessage($"Moved to '{targetCategory.Name}'");
+                }
             }, t => categoryViewModel.IsCreated && canAssign(t));
-
-            categoryViewModel.CopyToCategory = new RelayCommand<Transaction>(transaction =>
-            {
-                Category targetCategory = categoryViewModel.Category;
-
-                _categoryService.AddToCategory(transaction, targetCategory);
-            }, transaction =>
-            {
-                if (!categoryViewModel.IsCreated)
-                {
-                    return false;
-                }
-
-                Category targetCategory = categoryViewModel.Category;
-                Category currentCategory = getCurrentCategory?.Invoke();
-
-                if (targetCategory.IsExlusive || currentCategory.IsExlusive)
-                {
-                    return false;
-                }
-
-                return canAssign(transaction);
-            });
         }
 
         public EditCategoryViewModel CreateAddCategoryViewModel()
@@ -174,12 +151,11 @@ namespace Moneyes.UI.ViewModels
         public CategoryExpenseViewModel CreateCategoryExpenseViewModel(
             Category category,
             Expenses expenses,
-            Func<Category> getCurrentCategory,
             Action<EditCategoryViewModel> editCallback)
         {
             CategoryExpenseViewModel categoryViewModel = new(category, expenses, _categoryService, _statusMessageService);
 
-            InitViewModel(category, categoryViewModel, getCurrentCategory, editCallback);
+            InitViewModel(category, categoryViewModel, editCallback);
 
             return categoryViewModel;
         }

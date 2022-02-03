@@ -257,8 +257,7 @@ namespace Moneyes.UI
             return _transactionRepository.Set(dbos, onConflict: UpdateTransactionIfChanged);
         }
 
-        private static ConflictResolutionAction UpdateTransactionIfChanged(
-            CachedRepository<TransactionDbo>.ConstraintViolation v)
+        private static ConflictResolutionAction UpdateTransactionIfChanged(ConstraintViolation<TransactionDbo> v)
         {
             if (TransactionDbo.ContentEquals(v.ExistingEntity, v.NewEntity))
             {

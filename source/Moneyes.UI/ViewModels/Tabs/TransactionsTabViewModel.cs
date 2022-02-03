@@ -134,13 +134,12 @@ namespace Moneyes.UI.ViewModels
                 }
 
                 _logger.LogDebug("Category repository changed -> Updating categories.");
-
+                                
                 await UpdateCategories();
 
-                if (e.Actions.HasFlag(RepositoryChangedAction.Replace)
-                 && e.ReplacedItems.Any(c => Categories.IsSelected(c.Id)))
+                if (e.Actions.HasFlag(RepositoryChangedAction.Replace) || e.Actions.HasFlag(RepositoryChangedAction.Remove))
                 {
-                    _logger.LogDebug("Repository change was a replace action -> Updating transactions");
+                    _logger.LogDebug("Repository change was a replace / remove action -> Updating transactions");
                     await UpdateTransactions();
                 }
             };
@@ -180,19 +179,7 @@ namespace Moneyes.UI.ViewModels
             //    }
             //};
 
-            TransactionsViewModel = new(transactionService)
-            {
-                RemoveFromCategory = new CollectionRelayCommand<Transaction>(transactions =>
-                {
-                    foreach (Transaction t in transactions)
-                    {
-                        _categoryService.RemoveFromCategory(t);
-                    }
-                }, transactions =>
-                {
-                    return transactions != null && transactions.Any(t => t.Category != null);
-                })
-            };
+            TransactionsViewModel = new(transactionService, categoryService, statusMessageService);
 
             TransactionFilter.FilterChanged += (sender, args) =>
             {

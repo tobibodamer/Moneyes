@@ -49,9 +49,15 @@
             </TextBlock.Style>
         </TextBlock>
 
+        <local:DialogBehavior ViewModel="{Binding EditCategoryViewModel}"
+                              Dialog="{x:Type local:AddCategoryDialog}"/>
+
+        <local:DialogBehavior ViewModel="{Binding AddCategoryViewModel}"
+                              Dialog="{x:Type local:AddCategoryDialog}"/>
+
         <ListView Name="transactionsListView" ItemsSource="{Binding Transactions}" 
                       HorizontalContentAlignment="Stretch" Margin="5,5,5,5"
-                      SelectionMode="Extended">
+                      SelectionMode="Extended" local:ListViewExtensions.SelectedValues="{Binding SelectedTransactions}">
             <ListView.ItemTemplate>
                 <DataTemplate>
                     <DockPanel>
@@ -90,14 +96,22 @@
                     </DockPanel>
                 </DataTemplate>
             </ListView.ItemTemplate>
-            <ListView.ContextMenu>
-                <ContextMenu Focusable="False">
+            <ListView.Resources>
+                <!--<Style TargetType="MenuItem" BasedOn="{StaticResource MaterialDesignMenuItem}">
+                    <Setter Property="Padding" Value="10,4,10,4"/>
+                </Style>-->
+                <ContextMenu Name="ItemContextMenu" x:Key="ItemContextMenu" Opened="ItemContextMenu_Opened">
                     <MenuItem Header="Remove from category"
-                                  Command="{Binding RemoveFromCategory}"
-                                  CommandParameter="{Binding PlacementTarget.SelectedItems,
-                                            RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=ContextMenu}}"/>
+                                  Command="{Binding DataContext.RemoveFromCategory, RelativeSource={RelativeSource AncestorType=ListView}}"
+                                  CommandParameter="{Binding SelectedItems, RelativeSource={RelativeSource AncestorType=ListView}}"/>
+                    <MenuItem Header="Select category" Name="AddToCategoryItem"/>
                 </ContextMenu>
-            </ListView.ContextMenu>
+            </ListView.Resources>
+            <ListView.ItemContainerStyle>
+                <Style TargetType="{x:Type ListViewItem}" BasedOn="{StaticResource MaterialDesignListBoxItem}">
+                    <Setter Property="ContextMenu" Value="{StaticResource ItemContextMenu}"/>
+                </Style>
+            </ListView.ItemContainerStyle>
         </ListView>
 
         <!--<DataGrid ItemsSource="{Binding Transactions}" AutoGenerateColumns="True" Margin="5" Grid.Row="1" Grid.Column="1"

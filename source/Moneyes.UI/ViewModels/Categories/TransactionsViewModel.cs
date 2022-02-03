@@ -1,6 +1,7 @@
 ﻿using Moneyes.Core;
 using Moneyes.Core.Filters;
 using Moneyes.Data;
+using Moneyes.UI.Services;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
@@ -15,6 +16,7 @@ namespace Moneyes.UI.ViewModels
     internal class TransactionsViewModel : ViewModelBase
     {
         private readonly ITransactionService _transactionService;
+        private readonly ICategoryService _categoryService;
 
         private ObservableCollection<Transaction> _transactions = new();
         public ObservableCollection<Transaction> Transactions
@@ -30,6 +32,8 @@ namespace Moneyes.UI.ViewModels
             }
         }
 
+        public IEnumerable<Category> Categories => _categoryService.GetCategories(CategoryTypes.Real);
+
         private bool _isLoading;
         public bool IsLoading
         {
@@ -43,10 +47,75 @@ namespace Moneyes.UI.ViewModels
 
         public ICommand RemoveFromCategory { get; set; }
 
-        public TransactionsViewModel(ITransactionService transactionService)
+        public ICommand AddToCategory { get; set; }
+
+        public ICommand AddToNewCategory { get; set; }
+
+        public ObservableCollection<Transaction> SelectedTransactions { get; set; } = new();
+
+        public TransactionsViewModel(ITransactionService transactionService, ICategoryService categoryService,
+            IStatusMessageService statusMessageService)
         {
             _transactionService = transactionService;
+            _categoryService = categoryService;
+
+            CategoryViewModelFactory categoryViewModelFactory = new(categoryService, statusMessageService);
+
+            RemoveFromCategory = new CollectionRelayCommand<Transaction>(transactions =>
+            {
+                foreach (Transaction t in transactions)
+                {
+                    categoryService.RemoveFromCategory(t);
+                }
+            }, transactions =>
+            {
+                return transactions != null && transactions.Any(t => t.Category != null);
+            });
+
+            AddToCategory = new RelayCommand<Category>(category =>
+            {
+                var transactions = SelectedTransactions;
+
+                foreach (Transaction t in transactions)
+                {
+                    categoryService.MoveToCategory(t, category);
+                }
+
+                statusMessageService.ShowMessage($"Added to category \"{category.Name}\".");
+            });
+
+            AddToNewCategory = new RelayCommand(() =>
+            {
+                var transactions = SelectedTransactions;
+
+                AddCategoryViewModel = categoryViewModelFactory.CreateAddCategoryViewModel();
+                AddCategoryViewModel.Saved += (category) =>
+                {
+
+                    foreach (var t in transactions)
+                    {
+                        categoryService.MoveToCategory(t, category);
+                    }
+                };
+            });
+
         }
+
+        private EditCategoryViewModel _addCategoryViewModel;
+        public EditCategoryViewModel AddCategoryViewModel
+        {
+            get
+            {
+                return _addCategoryViewModel;
+            }
+            set
+            {
+                _addCategoryViewModel = value;
+                OnPropertyChanged();
+            }
+        }
+
+
         private CancellationTokenSource _updateCTS = new();
         public async Task UpdateTransactions(TransactionFilter filter, params Category[] categories)
         {

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Interactivity;
@@ -38,51 +39,54 @@ namespace Moneyes.UI.View
         private static void OnViewModelPropertyChanged(
             DependencyObject inDependencyObject, DependencyPropertyChangedEventArgs inEventArgs)
         {
-            if (inDependencyObject is not DialogBehavior dialogBehavior)
-            {
-                return;
-            }
-
-            if (dialogBehavior.Dialog == null) { return; }
-
-            if (dialogBehavior.ViewModel is null)
-            {
-                //dialogBehavior.Dialog.Close();
-                return;
-            }
-
-            if (!dialogBehavior.Dialog.BaseType.IsEquivalentTo(typeof(Window)))
-            {
-                return;
-            }
-
-            var dlg = Activator.CreateInstance(dialogBehavior.Dialog) as Window;
-            bool isClosed = false;
-
-            dlg.Closed += (sender, args) =>
-            {
-                isClosed = true;
-            };
-
-            dlg.DataContext = dialogBehavior.ViewModel;
-
-            if (Application.Current.MainWindow != null
-                && Application.Current.MainWindow != dlg)
-            {
-                dlg.Owner = Application.Current.MainWindow;
-            }
-
-            dialogBehavior.ViewModel.RequestClose += (sender, args) =>
-            {
-                if (isClosed)
+                if (inDependencyObject is not DialogBehavior dialogBehavior)
                 {
                     return;
                 }
 
-                dlg.DialogResult = args.Result;
-            };
+                if (dialogBehavior.Dialog == null) { return; }
 
-            dlg.ShowDialog();
+                if (dialogBehavior.ViewModel is null)
+                {
+                    //dialogBehavior.Dialog.Close();
+                    return;
+                }
+
+                if (!dialogBehavior.Dialog.BaseType.IsEquivalentTo(typeof(Window)))
+                {
+                    return;
+                }
+
+                var dlg = Activator.CreateInstance(dialogBehavior.Dialog) as Window;
+                bool isClosed = false;
+
+                dlg.Closed += (sender, args) =>
+                {
+                    isClosed = true;
+                };
+
+                dlg.DataContext = dialogBehavior.ViewModel;
+
+                if (Application.Current.MainWindow != null
+                    && Application.Current.MainWindow != dlg)
+                {
+                    dlg.Owner = Application.Current.MainWindow;
+                }
+
+                dialogBehavior.ViewModel.RequestClose += (sender, args) =>
+                {
+                    if (isClosed)
+                    {
+                        return;
+                    }
+
+                    dlg.DialogResult = args.Result;
+                };
+
+            _ = Task.Factory.StartNew(() =>
+            {
+                dlg.ShowDialog();
+            }, CancellationToken.None, TaskCreationOptions.None, TaskScheduler.FromCurrentSynchronizationContext());
         }
     }
 }

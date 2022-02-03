@@ -66,7 +66,7 @@
             <ColumnDefinition/>
         </Grid.ColumnDefinitions>
 
-        <TextBox x:Name="NameField" Style="{StaticResource MaterialDesignFloatingHintTextBox}" Text="{Binding Name}" Grid.Column="1" 
+        <TextBox x:Name="NameField" Style="{StaticResource MaterialDesignFloatingHintTextBox}" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Grid.Column="1" 
                  materialDesign:HintAssist.Hint="Name" FontSize="20" FontWeight="SemiBold"
                  HorizontalAlignment="Left" VerticalAlignment="Top" Margin="5" Width="200"
                  IsReadOnly="{Binding IsRealCategory, Converter={StaticResource InvertBooleanConverter}}" Cursor="IBeam"/>

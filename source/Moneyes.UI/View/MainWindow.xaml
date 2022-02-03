@@ -20,7 +20,7 @@
         mc:Ignorable="d"
         WindowStartupLocation="CenterScreen"
         Title="Moneyes" Height="800" Width="1200" WindowStyle="None"
-        Icon="../Resources/Icon.png">
+        Icon="../Resources/icons8-love-for-money-64.ico">
     <!--<i:Interaction.Triggers>
         <i:EventTrigger EventName="Loaded">
             <i:InvokeCommandAction Command="{Binding LoadedCommand}"/>

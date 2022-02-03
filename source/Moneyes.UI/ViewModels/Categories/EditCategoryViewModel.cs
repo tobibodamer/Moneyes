@@ -24,12 +24,12 @@ namespace Moneyes.UI.ViewModels
         public EditCategoryViewModel(ICategoryService categoryService, IStatusMessageService statusMessageService) 
             : base(categoryService, statusMessageService)
         {
-            ApplyCommand = new RelayCommand(() =>
-            {
-                SaveCommand.Execute(null);
+            ApplyCommand = SaveCommand;
 
+            Saved += (category) =>
+            {
                 RequestClose?.Invoke(this, new() { Result = true });
-            });
+            };
 
             CancelCommand = new AsyncCommand(async ct =>
             {

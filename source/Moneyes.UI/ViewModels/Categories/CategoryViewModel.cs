@@ -204,6 +204,7 @@ namespace Moneyes.UI.ViewModels
 
         #endregion
 
+        public event Action<Category> Saved;
 
         public CategoryViewModel(ICategoryService categoryService, IStatusMessageService statusMessageService)
         {
@@ -243,6 +244,8 @@ namespace Moneyes.UI.ViewModels
                 {
                     ReassignCommand.Execute(null);
                 }
+
+                Saved?.Invoke(category);
             });
         }
 

@@ -83,7 +83,8 @@ namespace Moneyes.Data
                    left.BIC == transaction.BIC &&
                    left.Name == transaction.Name &&
                    left.Currency == transaction.Currency &&
-                   left.UID == transaction.UID;
+                   left.UID == transaction.UID &&
+                   left.Category?.Id == transaction.Category?.Id;
         }
     }
 }

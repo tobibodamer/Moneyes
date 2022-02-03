@@ -207,7 +207,7 @@ namespace Moneyes.Data
         {
             if (softDelete)
             {
-                return DeleteById(id);
+                return base.DeleteById(id);
             }
 
             return base.DeleteById(id);

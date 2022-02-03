@@ -75,29 +75,29 @@ namespace Moneyes.UI.ViewModels
                 }
             }, () => categoryViewModel.CanReassign);
 
-            categoryViewModel.SaveCommand = new RelayCommand(() =>
-            {
-                if (!categoryViewModel.Validate())
-                {
-                    return;
-                }
+            //categoryViewModel.SaveCommand = new RelayCommand(() =>
+            //{
+            //    if (!categoryViewModel.Validate())
+            //    {
+            //        return;
+            //    }
 
-                Category category = categoryViewModel.Category;
+            //    Category category = categoryViewModel.Category;
 
-                if (_categoryService.UpdateCategory(category))
-                {
-                    _statusMessageService.ShowMessage($"Category '{category.Name}' created");
-                }
-                else
-                {
-                    _statusMessageService.ShowMessage($"Category '{category.Name}' saved");
-                }
+            //    if (_categoryService.UpdateCategory(category))
+            //    {
+            //        _statusMessageService.ShowMessage($"Category '{category.Name}' created");
+            //    }
+            //    else
+            //    {
+            //        _statusMessageService.ShowMessage($"Category '{category.Name}' saved");
+            //    }
 
-                if (categoryViewModel.CanReassign && categoryViewModel.AssignTransactions)
-                {
-                    categoryViewModel.ReassignCommand.Execute(null);
-                }
-            });
+            //    if (categoryViewModel.CanReassign && categoryViewModel.AssignTransactions)
+            //    {
+            //        categoryViewModel.ReassignCommand.Execute(null);
+            //    }
+            //});
 
             categoryViewModel.DeleteCommand = new RelayCommand(() =>
             {

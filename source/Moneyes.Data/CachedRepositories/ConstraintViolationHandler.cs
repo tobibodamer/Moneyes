@@ -35,7 +35,7 @@ namespace Moneyes.Data
                         // not include, continue
                         return (continueValidation: true, ignore: false);
                     }
-                    else
+                    else if (userAction.Resolution != null)
                     {
                         conflictResolution = userAction.Resolution.Value;
                     }

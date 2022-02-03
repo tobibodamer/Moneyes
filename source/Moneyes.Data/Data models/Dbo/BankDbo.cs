@@ -36,5 +36,40 @@ namespace Moneyes.Data
         /// The supported HBCI version of the bank.
         /// </summary>
         public int HbciVersion { get; set; }
+
+        public override bool ContentEquals(UniqueEntity other)
+        {
+            return other is BankDbo otherBank &&
+                Name == otherBank.Name &&
+                BankCode == otherBank.BankCode &&
+                BIC == otherBank.BIC &&
+                UserId == otherBank.UserId &&
+                (Pin?.Equals(otherBank.Pin) ?? otherBank.Pin is null) &&
+                Server == otherBank.Server &&
+                HbciVersion == otherBank.HbciVersion;
+        }
+
+        public BankDbo(
+            Guid id,
+            int bankCode,
+            DateTime? createdAt = null,
+            DateTime? updatedAt = null,
+            bool isDeleted = false)
+            : base(id, createdAt, updatedAt, isDeleted)
+        {
+            BankCode = bankCode;
+        }
+
+        public BankDbo(
+            BankDbo other,
+            int? bankCode = null,
+            Guid? id = null,
+            DateTime? createdAt = null,
+            DateTime? updatedAt = null,
+            bool? isDeleted = null)
+            : base(other, id, createdAt, updatedAt, isDeleted)
+        {
+            BankCode = bankCode ?? other.BankCode;            
+        }
     }
 }

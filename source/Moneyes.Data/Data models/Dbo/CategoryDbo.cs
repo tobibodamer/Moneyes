@@ -33,6 +33,16 @@ namespace Moneyes.Data
         /// </summary>
         public bool IsExlusive { get; set; }
 
+        public override bool ContentEquals(UniqueEntity other)
+        {
+            return other is CategoryDbo otherCategory &&
+                Name == otherCategory.Name &&
+                (Filter?.Equals(otherCategory.Filter) ?? otherCategory.Filter is null) &&
+                (Parent?.IdEquals(otherCategory.Parent) ?? otherCategory.Parent is null) &&
+                Target == otherCategory.Target &&
+                IsExlusive == otherCategory.IsExlusive;
+        }
+
         public override bool Equals(object obj)
         {
             return obj is CategoryDbo category &&
@@ -45,6 +55,29 @@ namespace Moneyes.Data
         public override int GetHashCode()
         {
             return HashCode.Combine(Name, Filter, Target);
+        }
+
+        public CategoryDbo(
+            Guid id,
+            string name,
+            DateTime? createdAt = null,
+            DateTime? updatedAt = null,
+            bool isDeleted = false)
+            : base(id, createdAt, updatedAt, isDeleted)
+        {
+            Name = name;
+        }
+
+        public CategoryDbo(
+            CategoryDbo other,
+            string name = null,
+            Guid? id = null,
+            DateTime? createdAt = null,
+            DateTime? updatedAt = null,
+            bool? isDeleted = null)
+            : base(other, id, createdAt, updatedAt, isDeleted)
+        {
+            Name = name ?? other.Name;
         }
     }
 }

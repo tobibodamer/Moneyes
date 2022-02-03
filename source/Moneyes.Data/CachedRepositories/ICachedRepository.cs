@@ -15,6 +15,11 @@ namespace Moneyes.Data
         string CollectionName { get; }
 
         /// <summary>
+        /// Gets or sets the default conflict resolution delegate to use if none is supplied.
+        /// </summary>
+        Func<RepositoryOperation, ConflictResolutionDelegate<T>> DefaultConflictHandler { get; set; }
+
+        /// <summary>
         /// Gets the primary key of the given <paramref name="entity"/>.
         /// </summary>
         /// <param name="entity"></param>
@@ -32,9 +37,9 @@ namespace Moneyes.Data
         /// <param name="entities"></param>
         void RenewCacheFor(IEnumerable<T> entities);
 
-        bool Set(T entity, Func<ConstraintViolation<T>, ConflictResolutionAction> onConflict);
+        bool Set(T entity, ConflictResolutionDelegate<T> onConflict);
 
-        int Set(IEnumerable<T> entities, Func<ConstraintViolation<T>, ConflictResolutionAction> onConflict);
+        int Set(IEnumerable<T> entities, ConflictResolutionDelegate<T> onConflict);
 
         /// <summary>
         /// Updates the entity with the given <paramref name="id"/>.
@@ -79,7 +84,7 @@ namespace Moneyes.Data
         /// <param name="entities">The entities to insert.</param>
         /// <param name="onConflict">A delegate that is invoked when a constraint violation occurs.</param>
         /// <returns>The number of inserted entities.</returns>
-        int Create(IEnumerable<T> entities, Func<ConstraintViolation<T>, ConflictResolutionAction> onConflict);
+        int Create(IEnumerable<T> entities, ConflictResolutionDelegate<T> onConflict);
 
         /// <summary>
         /// Raised when the repository changed.

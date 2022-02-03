@@ -10,11 +10,8 @@ namespace Moneyes.Data
         public static TransactionDbo ToDbo(this Transaction transaction,
             DateTime? createdAt = null, DateTime? updatedAt = null, bool isDeleted = false)
         {
-            return new TransactionDbo()
-            {
-                IsDeleted = isDeleted,
-                CreatedAt = createdAt ?? DateTime.MinValue,
-                UpdatedAt = updatedAt ?? DateTime.MinValue,
+            return new TransactionDbo(transaction.Id, transaction.UID, createdAt, updatedAt, isDeleted)
+            {                
                 AltName = transaction.AltName,
                 Amount = transaction.Amount,
                 IBAN = transaction.IBAN,
@@ -23,9 +20,7 @@ namespace Moneyes.Data
                 BookingType = transaction.BookingType,
                 Category = transaction.Category?.ToDbo(),
                 Currency = transaction.Currency,
-                UID = transaction.UID,
                 ValueDate = transaction.ValueDate,
-                Id = transaction.Id,
                 Index = transaction.Index,
                 Name = transaction.Name,
                 PartnerIBAN = transaction.PartnerIBAN,
@@ -35,15 +30,10 @@ namespace Moneyes.Data
         public static CategoryDbo ToDbo(this Category category,
             DateTime? createdAt = null, DateTime? updatedAt = null, bool isDeleted = false)
         {
-            return new()
+            return new(category.Id, category.Name, createdAt, updatedAt, isDeleted)
             {
-                IsDeleted = isDeleted,
-                CreatedAt = createdAt ?? DateTime.MinValue,
-                UpdatedAt = updatedAt ?? DateTime.MinValue,
-                Id = category.Id,
                 Filter = category.Filter?.ToDto(),
                 IsExlusive = category.IsExlusive,
-                Name = category.Name,
                 Parent = category.Parent?.ToDbo(),
                 Target = category.Target,
             };
@@ -52,15 +42,10 @@ namespace Moneyes.Data
         public static AccountDbo ToDbo(this AccountDetails account,
             DateTime? createdAt = null, DateTime? updatedAt = null, bool isDeleted = false)
         {
-            return new()
-            {
-                IsDeleted = isDeleted,
-                CreatedAt = createdAt ?? DateTime.MinValue,
-                UpdatedAt = updatedAt ?? DateTime.MinValue,
-                Id = account.Id,
+            return new(account.Id, account.Number, createdAt, updatedAt, isDeleted)
+            {           
                 Bank = account.BankDetails.ToDbo(),
-                IBAN = account.IBAN,
-                Number = account.Number,
+                IBAN = account.IBAN,                
                 OwnerName = account.OwnerName,
                 Type = account.Type,
                 Permissions = account.Permissions?.ToList()
@@ -70,14 +55,9 @@ namespace Moneyes.Data
         public static BankDbo ToDbo(this BankDetails bankDetails,
             DateTime? createdAt = null, DateTime? updatedAt = null, bool isDeleted = false)
         {
-            return new()
+            return new(bankDetails.Id, bankDetails.BankCode, createdAt, updatedAt, isDeleted)
             {
-                IsDeleted = isDeleted,
-                CreatedAt = createdAt ?? DateTime.MinValue,
-                UpdatedAt = updatedAt ?? DateTime.MinValue,
-                Id = bankDetails.Id,
-                Name = bankDetails.Name,
-                BankCode = bankDetails.BankCode,
+                Name = bankDetails.Name,                
                 BIC = bankDetails.BIC,
                 HbciVersion = bankDetails.HbciVersion,
                 Server = bankDetails.Server,
@@ -89,14 +69,8 @@ namespace Moneyes.Data
         public static BalanceDbo ToDbo(this Balance balance,
             DateTime? createdAt = null, DateTime? updatedAt = null, bool isDeleted = false)
         {
-            return new()
-            {
-                IsDeleted = isDeleted,
-                CreatedAt = createdAt ?? DateTime.MinValue,
-                UpdatedAt = updatedAt ?? DateTime.MinValue,
-                Id = balance.Id,
-                Date = balance.Date,
-                Amount = balance.Amount,
+            return new(balance.Id, balance.Date, balance.Amount, createdAt, updatedAt, isDeleted)
+            {                
                 Currency = balance.Currency,
                 Account = balance.Account.ToDbo(),
             };

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Moneyes.Data
@@ -39,10 +40,39 @@ namespace Moneyes.Data
         {
             return other is not null &&
                    left.Number == other.Number &&
-                   left.Bank.Id.Equals(other.Bank.Id) &&
+                   left.Bank?.Id == other.Bank?.Id &&
                    left.OwnerName == other.OwnerName &&
                    left.Type == other.Type &&
-                   left.Permissions.SequenceEqual(other.Permissions);
+                   (left?.Permissions.SequenceEqual(other?.Permissions) ?? other.Permissions is null);
+        }
+
+        public override bool ContentEquals(UniqueEntity other)
+        {
+            return other is AccountDbo otherAccount 
+                && ContentEquals(this, otherAccount);
+        }
+
+        public AccountDbo(
+            Guid id, 
+            string number, 
+            DateTime? createdAt = null,
+            DateTime? updatedAt = null,
+            bool isDeleted = false) 
+            : base(id, createdAt, updatedAt, isDeleted)
+        {
+            Number = number;
+        }
+
+        public AccountDbo(
+            AccountDbo other,
+            string number = null,
+            Guid? id = null,
+            DateTime? createdAt = null,
+            DateTime? updatedAt = null,
+            bool? isDeleted = null) 
+            : base(other, id, createdAt, updatedAt, isDeleted)
+        {
+            Number = number ?? other.Number;
         }
     }
 }

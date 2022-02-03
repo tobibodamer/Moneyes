@@ -53,6 +53,8 @@ namespace Moneyes.Data
             return _keySelector(entity);
         }
     }
+
+    public delegate ConflictResolutionAction ConflictResolutionDelegate<T>(ConstraintViolation<T> violation);
     public partial class CachedRepository<T> : ICachedRepository<T>
     {
         private readonly Lazy<ILiteCollection<T>> _collectionLazy;
@@ -60,6 +62,7 @@ namespace Moneyes.Data
         private readonly ReaderWriterLock _cacheLock = new();
         public bool IsAutoId { get; }
         public string CollectionName => Options.CollectionName;
+        public Func<RepositoryOperation, ConflictResolutionDelegate<T>>? DefaultConflictHandler { get; set; }
         protected ILiteDatabase Database { get; }
         protected ILiteCollection<T> Collection => _collectionLazy.Value;
         protected IEnumerable<IRepositoryDependency<T>> RepositoryDependencies { get; set; }
@@ -471,8 +474,11 @@ namespace Moneyes.Data
                 uniqueConstraints: UniqueConstraints,
                 onViolation: v =>
                 {
+                    // Call default conflict resolution delegate if provided
+                    var defaultConflictResolution = DefaultConflictHandler(RepositoryOperation.Create)?.Invoke(v);
+
                     // Use the constraint violation handler to handle this violation
-                    return constraintViolationHandler.Handle(v, null);
+                    return constraintViolationHandler.Handle(v, defaultConflictResolution);
                 });
 
             _cacheLock.AcquireWriterLock(CacheTimeout);
@@ -512,7 +518,7 @@ namespace Moneyes.Data
         {
             return Create(entities, null);
         }
-        public virtual int Create(IEnumerable<T> entities, Func<ConstraintViolation<T>, ConflictResolutionAction> onConflict)
+        public virtual int Create(IEnumerable<T> entities, ConflictResolutionDelegate<T> onConflict)
         {
             // Get the primary keys of the entities to upsert
             var keys = entities.Select(GetKey).ToHashSet();
@@ -532,7 +538,8 @@ namespace Moneyes.Data
                 onViolation: v =>
                 {
                     // Call user conflict resolution delegate if provided
-                    var userConflictResolution = onConflict?.Invoke(v);
+                    var userConflictResolution = (onConflict ?? 
+                        DefaultConflictHandler(RepositoryOperation.Create))?.Invoke(v);
 
                     // Use the constraint violation handler to handle this violation
                     return constraintViolationHandler.Handle(v, userConflictResolution);
@@ -654,8 +661,8 @@ namespace Moneyes.Data
 
             return ids.Any(id => Cache.ContainsKey(id));
         }
-
-        public virtual bool Set(T entity, Func<ConstraintViolation<T>, ConflictResolutionAction>? onConflict)
+        
+        public virtual bool Set(T entity, ConflictResolutionDelegate<T> onConflict)
         {
             ArgumentNullException.ThrowIfNull(entity);
 
@@ -677,7 +684,7 @@ namespace Moneyes.Data
                 onViolation: v =>
                 {
                     // Call user conflict resolution delegate if provided
-                    var userConflictResolution = onConflict?.Invoke(v);
+                    var userConflictResolution = (onConflict ?? DefaultConflictHandler(RepositoryOperation.Upsert))?.Invoke(v);
 
                     // Use the constraint violation handler to handle this violation
                     return constraintViolationHandler.Handle(v, userConflictResolution);
@@ -732,7 +739,7 @@ namespace Moneyes.Data
         {
             return Set(entity, null);
         }
-        public virtual int Set(IEnumerable<T> entities, Func<ConstraintViolation<T>, ConflictResolutionAction>? onConflict)
+        public virtual int Set(IEnumerable<T> entities, ConflictResolutionDelegate<T> onConflict)
         {
             // Get the primary keys of the entities to upsert
             var keys = entities.Select(GetKey).ToHashSet();
@@ -753,7 +760,8 @@ namespace Moneyes.Data
                 onViolation: v =>
                 {
                     // Call user conflict resolution delegate if provided
-                    var userConflictResolution = onConflict?.Invoke(v);
+                    var userConflictResolution = (onConflict ?? 
+                        DefaultConflictHandler(RepositoryOperation.Upsert))?.Invoke(v);
 
                     // Use the constraint violation handler to handle this violation
                     return constraintViolationHandler.Handle(v, userConflictResolution);
@@ -862,8 +870,11 @@ namespace Moneyes.Data
                 uniqueConstraints: UniqueConstraints,
                 onViolation: v =>
                 {
+                    // Call default conflict resolution delegate if provided
+                    var defaultConflictResolution = DefaultConflictHandler(RepositoryOperation.Update)?.Invoke(v);
+
                     // Use the constraint violation handler to handle this violation
-                    return constraintViolationHandler.Handle(v, null);
+                    return constraintViolationHandler.Handle(v, defaultConflictResolution);
                 });
 
             bool updated = false;
@@ -939,8 +950,11 @@ namespace Moneyes.Data
                 uniqueConstraints: UniqueConstraints,
                 onViolation: v =>
                 {
+                    // Call default conflict resolution delegate if provided
+                    var defaultConflictResolution = DefaultConflictHandler(RepositoryOperation.Update)?.Invoke(v);
+
                     // Use the constraint violation handler to handle this violation
-                    return constraintViolationHandler.Handle(v, null);
+                    return constraintViolationHandler.Handle(v, defaultConflictResolution);
                 });
 
             bool updated = false;
@@ -999,8 +1013,11 @@ namespace Moneyes.Data
                 uniqueConstraints: UniqueConstraints,
                 onViolation: v =>
                 {
+                    // Call default conflict resolution delegate if provided
+                    var defaultConflictResolution = DefaultConflictHandler(RepositoryOperation.Update)?.Invoke(v);
+
                     // Use the constraint violation handler to handle this violation
-                    return constraintViolationHandler.Handle(v, null);
+                    return constraintViolationHandler.Handle(v, defaultConflictResolution);
                 });
 
             // Validate unique constraints -> get all valid entities

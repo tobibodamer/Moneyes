@@ -57,6 +57,11 @@ namespace Moneyes.Data
             return HashCode.Combine(Name, Filter, Target);
         }
 
+        /// <summary>
+        /// For deserialization only.
+        /// </summary>
+        protected CategoryDbo() { }
+
         public CategoryDbo(
             Guid id,
             string name,

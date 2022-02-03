@@ -52,6 +52,11 @@ namespace Moneyes.Data
                 && ContentEquals(this, otherAccount);
         }
 
+        /// <summary>
+        /// For deserialization only.
+        /// </summary>
+        protected AccountDbo() { }
+
         public AccountDbo(
             Guid id, 
             string number, 

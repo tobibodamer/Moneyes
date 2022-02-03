@@ -24,6 +24,11 @@ namespace Moneyes.Data
                 && ContentEquals(this, otherBalance);
         }
 
+        /// <summary>
+        /// For deserialization only.
+        /// </summary>
+        protected BalanceDbo() { }
+
         public BalanceDbo(
             Guid id,
             DateTime date,

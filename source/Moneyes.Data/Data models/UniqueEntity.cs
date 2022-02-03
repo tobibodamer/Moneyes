@@ -48,6 +48,11 @@ namespace Moneyes.Data
         public abstract bool ContentEquals(UniqueEntity other);
 
         /// <summary>
+        /// For deserialization only.
+        /// </summary>
+        protected UniqueEntity() { }
+
+        /// <summary>
         /// Creates a new instance of <see cref="UniqueEntity"/> with the given parameters.
         /// </summary>
         /// <param name="id"></param>

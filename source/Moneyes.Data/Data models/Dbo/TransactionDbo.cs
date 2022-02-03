@@ -95,6 +95,11 @@ namespace Moneyes.Data
                 && ContentEquals(this, transaction);
         }
 
+        /// <summary>
+        /// For deserialization only.
+        /// </summary>
+        protected TransactionDbo() { }
+
         public TransactionDbo(
             Guid id,
             string uid,            

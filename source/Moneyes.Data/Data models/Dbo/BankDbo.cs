@@ -49,6 +49,11 @@ namespace Moneyes.Data
                 HbciVersion == otherBank.HbciVersion;
         }
 
+        /// <summary>
+        /// For deserialization only.
+        /// </summary>
+        protected BankDbo() { }
+
         public BankDbo(
             Guid id,
             int bankCode,

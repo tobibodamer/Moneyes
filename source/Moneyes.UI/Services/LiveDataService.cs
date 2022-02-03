@@ -231,10 +231,35 @@ namespace Moneyes.UI
         {
             List<Transaction> transactions = new();
             List<Balance> balances = new();
+            List<Result> results = new();
 
             foreach (var account in accounts)
             {
                 var bankDetails = account.BankDetails;
+                                
+                if (!_onlineBankingService.CanFetchTransactions(account))
+                {
+                    // Account has no transaction permission -> fetch balances directly
+
+                    BankingResult<Balance> balanceResult = await EnsurePassword(bankDetails,
+                        async (password) =>
+                        {
+                            return await _onlineBankingService.Balance(
+                                onlineBankingDetails: CreateOnlineBankingDetails(bankDetails, password),
+                                account: account);
+                        });
+
+                    results.Add(balanceResult);
+
+                    if (!balanceResult.IsSuccessful)
+                    {
+                        continue;
+                    }
+
+                    balances.Add(balanceResult.Data);
+
+                    continue;
+                }
 
                 BankingResult<TransactionData> result = await EnsurePassword(bankDetails,
                     async (password) =>
@@ -246,10 +271,11 @@ namespace Moneyes.UI
                             endDate: DateTime.Now);
                     });
 
+                results.Add(result);
+
                 if (!result.IsSuccessful)
                 {
                     continue;
-                    //return Result.Failed<int>();
                 }
 
                 // Transactions and Balances
@@ -257,7 +283,7 @@ namespace Moneyes.UI
                 balances.AddRange(result.Data.Balances);
             }
 
-            if (!transactions.Any())
+            if (results.All(r => !r.IsSuccessful))
             {
                 return Result.Failed<int>();
             }

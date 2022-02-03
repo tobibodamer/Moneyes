@@ -19,5 +19,6 @@ namespace Moneyes.LiveData
             AccountDetails account, 
             DateTime? startDate = null, 
             DateTime? endDate = null);
+        bool CanFetchTransactions(AccountDetails account);
     }
 }

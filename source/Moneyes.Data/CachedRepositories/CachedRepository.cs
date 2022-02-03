@@ -298,37 +298,8 @@ namespace Moneyes.Data
             return entities;
         }
 
-        #endregion
-
-        #region Validation
-
-        /// <summary>
-        /// Encapsulates information about the violation of a <see cref="IUniqueConstraint{T}"/>.
-        /// </summary>
-        public class ConstraintViolation
-        {
-            public ConstraintViolation(IUniqueConstraint<T> violatedConstraint, T existingEntity, T newEntity)
-            {
-                Constraint = violatedConstraint;
-                ExistingEntity = existingEntity;
-                NewEntity = newEntity;
-            }
-
-            /// <summary>
-            /// The constraint that is violated.
-            /// </summary>
-            public IUniqueConstraint<T> Constraint { get; init; }
-
-            /// <summary>
-            /// The existing entity involved.
-            /// </summary>
-            public T ExistingEntity { get; init; }
-
-            /// <summary>
-            /// The new entity that caused the violation.
-            /// </summary>
-            public T NewEntity { get; init; }
-        }
+#endregion
+#region Validation
 
         /// <summary>
         /// Exception when a constraint is violated and <see cref="ConflictResolution.Fail"/> is chosen.
@@ -365,7 +336,7 @@ namespace Moneyes.Data
         protected virtual Func<T, bool> CreateUniqueConstraintValidator(
             IEnumerable<T> existingEntities,
             IEnumerable<IUniqueConstraint<T>> uniqueConstraints,
-            Func<ConstraintViolation, (bool continueValidation, bool ignore)> onViolation)
+            Func<ConstraintViolation<T>, (bool continueValidation, bool ignore)> onViolation)
         {
             Dictionary<IUniqueConstraint<T>, Dictionary<object, T>> constraintMap = new();
 
@@ -400,7 +371,7 @@ namespace Moneyes.Data
                         Logger.LogWarning("Unique constraint violation of '{Property}' (Entity ID: {id})",
                                                 constraint.PropertyName, GetKey(entity));
 
-                        ConstraintViolation violation = new
+                        ConstraintViolation<T> violation = new
                         (
                             constraint,
                             existingEntity,
@@ -541,7 +512,7 @@ namespace Moneyes.Data
         {
             return Create(entities, null);
         }
-        public virtual int Create(IEnumerable<T> entities, Func<ConstraintViolation, ConflictResolutionAction> onConflict)
+        public virtual int Create(IEnumerable<T> entities, Func<ConstraintViolation<T>, ConflictResolutionAction> onConflict)
         {
             // Get the primary keys of the entities to upsert
             var keys = entities.Select(GetKey).ToHashSet();
@@ -684,7 +655,7 @@ namespace Moneyes.Data
             return ids.Any(id => Cache.ContainsKey(id));
         }
 
-        public virtual bool Set(T entity, Func<ConstraintViolation, ConflictResolutionAction>? onConflict)
+        public virtual bool Set(T entity, Func<ConstraintViolation<T>, ConflictResolutionAction>? onConflict)
         {
             ArgumentNullException.ThrowIfNull(entity);
 
@@ -761,7 +732,7 @@ namespace Moneyes.Data
         {
             return Set(entity, null);
         }
-        public virtual int Set(IEnumerable<T> entities, Func<ConstraintViolation, ConflictResolutionAction>? onConflict)
+        public virtual int Set(IEnumerable<T> entities, Func<ConstraintViolation<T>, ConflictResolutionAction>? onConflict)
         {
             // Get the primary keys of the entities to upsert
             var keys = entities.Select(GetKey).ToHashSet();

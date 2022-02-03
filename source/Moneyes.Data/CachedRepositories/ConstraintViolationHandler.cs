@@ -21,7 +21,7 @@ namespace Moneyes.Data
                 _logger = logger;
             }
 
-            public (bool continueValidation, bool ignore) Handle(ConstraintViolation violation, ConflictResolutionAction? userAction)
+            public (bool continueValidation, bool ignore) Handle(ConstraintViolation<T> violation, ConflictResolutionAction? userAction)
             {
                 var conflictResolution = violation.Constraint.ConflictResolution; // default resolution
 

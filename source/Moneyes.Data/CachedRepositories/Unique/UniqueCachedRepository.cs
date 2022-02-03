@@ -278,7 +278,7 @@ namespace Moneyes.Data
         protected override Func<T, bool> CreateUniqueConstraintValidator(
             IEnumerable<T> existingEntities,
             IEnumerable<IUniqueConstraint<T>> uniqueConstraints,
-            Func<ConstraintViolation, (bool continueValidation, bool ignore)> onViolation)
+            Func<ConstraintViolation<T>, (bool continueValidation, bool ignore)> onViolation)
         {
             var validateAgainstSoftDeleted = base.CreateUniqueConstraintValidator(
                 existingEntities.Where(e => e.IsDeleted), uniqueConstraints, onViolation);

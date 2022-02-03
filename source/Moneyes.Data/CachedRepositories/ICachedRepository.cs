@@ -32,9 +32,9 @@ namespace Moneyes.Data
         /// <param name="entities"></param>
         void RenewCacheFor(IEnumerable<T> entities);
 
-        bool Set(T entity, Func<CachedRepository<T>.ConstraintViolation, ConflictResolutionAction> onConflict);
+        bool Set(T entity, Func<ConstraintViolation<T>, ConflictResolutionAction> onConflict);
 
-        int Set(IEnumerable<T> entities, Func<CachedRepository<T>.ConstraintViolation, ConflictResolutionAction> onConflict);
+        int Set(IEnumerable<T> entities, Func<ConstraintViolation<T>, ConflictResolutionAction> onConflict);
 
         /// <summary>
         /// Updates the entity with the given <paramref name="id"/>.
@@ -79,7 +79,7 @@ namespace Moneyes.Data
         /// <param name="entities">The entities to insert.</param>
         /// <param name="onConflict">A delegate that is invoked when a constraint violation occurs.</param>
         /// <returns>The number of inserted entities.</returns>
-        int Create(IEnumerable<T> entities, Func<CachedRepository<T>.ConstraintViolation, ConflictResolutionAction> onConflict);
+        int Create(IEnumerable<T> entities, Func<ConstraintViolation<T>, ConflictResolutionAction> onConflict);
 
         /// <summary>
         /// Raised when the repository changed.

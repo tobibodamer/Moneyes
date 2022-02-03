@@ -49,6 +49,9 @@
     <Compile Update="View\Controls\BankContactsView.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Update="View\Dialogs\CreateFilterDialog.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Update="View\Dialogs\AddCategoryDialog.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -81,6 +84,10 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Update="View\Controls\BankContactsView.xaml">
+      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="View\Dialogs\CreateFilterDialog.xaml">
       <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
       <SubType>Designer</SubType>
     </Page>

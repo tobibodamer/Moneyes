@@ -2,6 +2,7 @@
 using Moneyes.Core.Filters;
 using Moneyes.Data;
 using Moneyes.UI.Services;
+using Moneyes.UI.ViewModels.Dialogs;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
@@ -51,6 +52,10 @@ namespace Moneyes.UI.ViewModels
 
         public ICommand AddToNewCategory { get; set; }
 
+        public ICommand CreateFilter { get; }
+
+        
+
         public ObservableCollection<Transaction> SelectedTransactions { get; set; } = new();
 
         public TransactionsViewModel(ITransactionService transactionService, ICategoryService categoryService,
@@ -99,6 +104,11 @@ namespace Moneyes.UI.ViewModels
                 };
             });
 
+            CreateFilter = new RelayCommand(() =>
+            {
+                CreateFilterViewModel = new(SelectedTransactions.First());
+            });
+
         }
 
         private EditCategoryViewModel _addCategoryViewModel;
@@ -111,6 +121,20 @@ namespace Moneyes.UI.ViewModels
             set
             {
                 _addCategoryViewModel = value;
+                OnPropertyChanged();
+            }
+        }
+
+        private CreateFilterViewModel _createFilterViewModel;
+        public CreateFilterViewModel CreateFilterViewModel
+        {
+            get
+            {
+                return _createFilterViewModel;
+            }
+            set
+            {
+                _createFilterViewModel = value;
                 OnPropertyChanged();
             }
         }

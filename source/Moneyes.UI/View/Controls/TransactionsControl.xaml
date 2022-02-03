@@ -55,6 +55,9 @@
         <local:DialogBehavior ViewModel="{Binding AddCategoryViewModel}"
                               Dialog="{x:Type local:AddCategoryDialog}"/>
 
+        <local:DialogBehavior ViewModel="{Binding CreateFilterViewModel}"
+                              Dialog="{x:Type local:CreateFilterDialog}"/>
+
         <ListView Name="transactionsListView" ItemsSource="{Binding Transactions}" 
                       HorizontalContentAlignment="Stretch" Margin="5,5,5,5"
                       SelectionMode="Extended" local:ListViewExtensions.SelectedValues="{Binding SelectedTransactions}">
@@ -100,11 +103,13 @@
                 <!--<Style TargetType="MenuItem" BasedOn="{StaticResource MaterialDesignMenuItem}">
                     <Setter Property="Padding" Value="10,4,10,4"/>
                 </Style>-->
-                <ContextMenu Name="ItemContextMenu" x:Key="ItemContextMenu" Opened="ItemContextMenu_Opened">
+                <ContextMenu Name="ItemContextMenu" x:Key="ItemContextMenu" Opened="ItemContextMenu_Opened">                    
                     <MenuItem Header="Remove from category"
                                   Command="{Binding DataContext.RemoveFromCategory, RelativeSource={RelativeSource AncestorType=ListView}}"
-                                  CommandParameter="{Binding SelectedItems, RelativeSource={RelativeSource AncestorType=ListView}}"/>
+                                  CommandParameter="{Binding SelectedItems, RelativeSource={RelativeSource AncestorType=ListView}}"/>                    
                     <MenuItem Header="Select category" Name="AddToCategoryItem"/>
+                    <MenuItem Header="Create filter..."
+                                  Command="{Binding DataContext.CreateFilter, RelativeSource={RelativeSource AncestorType=ListView}}"/>
                 </ContextMenu>
             </ListView.Resources>
             <ListView.ItemContainerStyle>

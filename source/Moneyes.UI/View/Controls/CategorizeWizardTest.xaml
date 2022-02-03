@@ -1,0 +1,152 @@
+﻿<UserControl
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:Moneyes.UI.View.Controls"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes" xmlns:dialogs="clr-namespace:Moneyes.UI.ViewModels.Dialogs" d:DataContext="{d:DesignInstance Type=dialogs:CreateFilterViewModel}" x:Class="Moneyes.UI.View.Controls.CategorizeWizardTest"
+             d:Background="{StaticResource MaterialDesignPaper}"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <StackPanel Orientation="Horizontal" Height="20" VerticalAlignment="Top">
+            <!--<TextBlock Text="Name contains" Margin="5,0" VerticalAlignment="Center" FontSize="13"/>-->
+            <TextBlock Text="Name" VerticalAlignment="Center" FontSize="15" FontWeight="Bold"/>
+            <!--<TextBox Style="{StaticResource MaterialDesignOutlinedTextBox}" 
+                     Padding="5" Height="30" Width="300"
+                     materialDesign:HintAssist.Hint="'VIELEN DANK EDEKA BAISCH'" />-->
+        </StackPanel>
+
+        <WrapPanel Grid.Row="1" VerticalAlignment="Top" Margin="0,5" Width="500" HorizontalAlignment="Left">
+            <ItemsControl ItemsSource="{Binding NameSuggestions}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <CheckBox Style="{StaticResource MaterialDesignFilterChipPrimaryCheckBox}" Content="{Binding }" Margin="5"/>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <!--<RadioButton Style="{StaticResource MaterialDesignChoiceChipPrimaryOutlineRadioButton}" IsChecked="True" Margin="5">
+               Anything
+            </RadioButton>-->            
+        </WrapPanel>
+
+        <!--<WrapPanel Grid.Row="1" VerticalAlignment="Top" Margin="0,5" Width="500" HorizontalAlignment="Left">
+            --><!--<RadioButton Style="{StaticResource MaterialDesignChoiceChipPrimaryOutlineRadioButton}" IsChecked="True" Margin="5">
+               Anything
+            </RadioButton>--><!--            
+            <CheckBox Style="{StaticResource MaterialDesignFilterChipPrimaryCheckBox}" IsChecked="True" Content="'EDEKA'" Margin="5"/>
+            <CheckBox Style="{StaticResource MaterialDesignFilterChipPrimaryCheckBox}" IsChecked="False" Content="'EDEKA BAISCH'" Margin="5"/>
+            <CheckBox Style="{StaticResource MaterialDesignFilterChipPrimaryCheckBox}" IsChecked="False" Content="'BAISCH'" Margin="5"/>
+            <CheckBox Style="{StaticResource MaterialDesignFilterChipPrimaryCheckBox}" IsChecked="False" Content="'VIELEN DANK EDEKA BAISCH'" Margin="5"/>            
+        </WrapPanel>-->
+
+        <!--<StackPanel Orientation="Horizontal" Height="20" VerticalAlignment="Top" Grid.Row="2">
+            <TextBlock Text="Is from" Margin="5,00" VerticalAlignment="Center" FontSize="13"/>
+        </StackPanel>-->
+
+        <!--<WrapPanel Grid.Row="3" VerticalAlignment="Top" Margin="0,5" Width="500" HorizontalAlignment="Left">
+            <CheckBox Style="{StaticResource MaterialDesignFilterChipPrimaryCheckBox}" IsChecked="True" Content="From 'DE2366650085007886000'" Margin="5"/>
+            <CheckBox Style="{StaticResource MaterialDesignFilterChipPrimaryCheckBox}" IsChecked="True" Content="Sunday Natural" Margin="5"/>
+            <CheckBox Style="{StaticResource MaterialDesignFilterChipPrimaryCheckBox}" IsChecked="False" Content="Natural" Margin="5"/>
+            <CheckBox Style="{StaticResource MaterialDesignFilterChipPrimaryCheckBox}" IsChecked="False" Content="Sunday Natural Products" Margin="5"/>
+            <TextBox Width="300" Style="{StaticResource MaterialDesignOutlinedTextBox}" materialDesign:HintAssist.Hint="Enter your own keywords..." Height="30" Padding="5" />
+        </WrapPanel>-->
+
+        <StackPanel Orientation="Horizontal" Height="20" VerticalAlignment="Top" Grid.Row="4">
+            <!--<TextBlock Text="Purpose contains" Margin="5,00" VerticalAlignment="Center" FontSize="13"/>-->
+            <TextBlock Text="Purpose" VerticalAlignment="Center" FontSize="15" FontWeight="Bold"/>
+        </StackPanel>
+
+        <ItemsControl ItemsSource="{Binding PurposeSuggestions}" Grid.Row="5">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <WrapPanel/>
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <CheckBox Style="{StaticResource MaterialDesignFilterChipPrimaryCheckBox}" Content="{Binding }" Margin="5"/>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+
+        <ItemsControl ItemsSource="{Binding Keywords}" Grid.Row="9" MaxWidth="500" Margin="4">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <WrapPanel/>
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <materialDesign:Chip Content="{Binding Value }" 
+                                         IsDeletable="True" 
+                                         DeleteCommand="{Binding DeleteCommand}" Margin="0 0 5 5"/>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+
+        <TextBox Width="300" Style="{StaticResource MaterialDesignOutlinedTextBox}" Grid.Row="11" HorizontalAlignment="Left"
+                 materialDesign:HintAssist.Hint="Enter your own keywords..." Height="30" Padding="5" Name="KeywordTextBox"
+                 KeyDown="KeywordTextBox_KeyDown">
+            <!--<TextBox.InputBindings>
+                <KeyBinding Key="Return" 
+                           
+                    Command="{Binding AddKeywordCommand}"
+                    CommandParameter="{Binding ElementName=KeywordTextBox, Path=Text}"/>
+            </TextBox.InputBindings>-->
+        </TextBox>
+
+        <!--<WrapPanel Grid.Row="5" VerticalAlignment="Top" Margin="0,5" Width="500" HorizontalAlignment="Left">            
+            <CheckBox Style="{StaticResource MaterialDesignFilterChipPrimaryCheckBox}" IsChecked="True" Content="Sunday" Margin="5"/>
+            <CheckBox Style="{StaticResource MaterialDesignFilterChipPrimaryCheckBox}" IsChecked="True" Content="Sunday Natural" Margin="5"/>
+            <CheckBox Style="{StaticResource MaterialDesignFilterChipPrimaryCheckBox}" IsChecked="False" Content="Natural" Margin="5"/>
+            <CheckBox Style="{StaticResource MaterialDesignFilterChipPrimaryCheckBox}" IsChecked="False" Content="Sunday Natural Products" Margin="5"/>
+            <TextBox Width="300" Style="{StaticResource MaterialDesignOutlinedTextBox}" materialDesign:HintAssist.Hint="Enter your own keywords..." Height="30" Padding="5" />
+        </WrapPanel>-->
+
+        <StackPanel Orientation="Horizontal" Grid.Row="7" Margin="0 10">
+            <RadioButton IsChecked="True" Style="{StaticResource MaterialDesignChoiceChipAccentRadioButton}" 
+                         FontWeight="SemiBold">
+                <StackPanel Orientation="Horizontal">
+                    <materialDesign:PackIcon Kind="WindowMinimize" Margin="0 0 3 0"/>
+                    <TextBlock Text="All" VerticalAlignment="Center"/>
+                </StackPanel>
+            </RadioButton>
+            <RadioButton Style="{StaticResource MaterialDesignChoiceChipAccentRadioButton}">
+                <StackPanel Orientation="Horizontal">
+                    <materialDesign:PackIcon Kind="CallMade" Foreground="#CC0000" Margin="0 0 3 0"/>
+                    <TextBlock Text="Expense" VerticalAlignment="Center"/>
+                </StackPanel>
+            </RadioButton>
+            <RadioButton Style="{StaticResource MaterialDesignChoiceChipAccentRadioButton}">
+                <StackPanel Orientation="Horizontal">
+                    <materialDesign:PackIcon Kind="CallReceived" Foreground="#00CC00" Margin="0 0 3 0"/>
+                    <TextBlock Text="Income" VerticalAlignment="Center"/>
+                </StackPanel>
+            </RadioButton>
+        </StackPanel>
+        
+
+    </Grid>
+</UserControl>

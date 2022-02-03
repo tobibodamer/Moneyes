@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace Moneyes.Data
 {
-    public static class Extensions
+    public static class DboConversionExtensions
     {
         public static TransactionDbo ToDbo(this Transaction transaction,
             DateTime? createdAt = null, DateTime? updatedAt = null, bool isDeleted = false)

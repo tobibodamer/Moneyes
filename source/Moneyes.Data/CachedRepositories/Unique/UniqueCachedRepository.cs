@@ -300,37 +300,3 @@ public class UniqueCachedRepository<T> : CachedRepository<T, Guid>, IUniqueCache
 
     #endregion
 }
-
-public class UniqueConflictResolutionAction
-{
-    /// <summary>
-    /// Updating an existing entity while keeping the existing id and creation timestamp.
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <param name="v"></param>
-    /// <returns></returns>
-    public static ConflictResolutionAction Update<T>(ConstraintViolation<T> v) where T : UniqueEntity
-    {
-        // Apply existing id and creation date to update existing entity
-        v.NewEntity.Id = v.ExistingEntity.Id;
-        v.NewEntity.CreatedAt = v.ExistingEntity.CreatedAt;
-
-        return ConflictResolutionAction.Update(v.NewEntity);
-    }
-
-    public static ConflictResolutionAction UpdateContent<T>(ConstraintViolation<T> v,
-        ConflictResolution? defaultResolution = null) where T : UniqueEntity
-    {
-        if (v.ExistingEntity.ContentEquals(v.NewEntity))
-        {
-            return defaultResolution != null
-                ? new(defaultResolution.Value)
-                : ConflictResolutionAction.Default();
-        }
-
-        return Update(v);
-    }
-
-    public static ConflictResolutionAction UpdateContentOrIgnore<T>(ConstraintViolation<T> v) where T : UniqueEntity
-        => UpdateContent(v, ConflictResolution.Ignore);
-}

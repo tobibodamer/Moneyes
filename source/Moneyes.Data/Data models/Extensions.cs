@@ -63,6 +63,7 @@ namespace Moneyes.Data
                 Number = account.Number,
                 OwnerName = account.OwnerName,
                 Type = account.Type,
+                Permissions = account.Permissions?.ToList()
             };
         }
 

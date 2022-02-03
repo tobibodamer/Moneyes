@@ -141,7 +141,8 @@ namespace Moneyes.LiveData
                     {
                         IBAN = accInfo.AccountIban,
                         OwnerName = accInfo.AccountOwner,
-                        Type = accInfo.AccountType
+                        Type = accInfo.AccountType,
+                        Permissions = accInfo.AccountPermissions?.Select(p => p.Segment)?.ToList()
                     };
                 }));
             }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace Moneyes.Core
 {
@@ -36,6 +37,8 @@ namespace Moneyes.Core
         /// Gets the bank entry this account belongs to.
         /// </summary>
         public BankDetails BankDetails { get; init; }
+
+        public IReadOnlyList<string> Permissions { get; init; } 
 
         public AccountDetails(Guid id, string number, BankDetails bankDetails)
         {

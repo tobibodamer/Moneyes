@@ -141,7 +141,8 @@ namespace Moneyes.LiveData
                     {
                         IBAN = accInfo.AccountIban,
                         OwnerName = accInfo.AccountOwner,
-                        Type = accInfo.AccountType
+                        Type = accInfo.AccountType,
+                        Permissions = accInfo.AccountPermissions?.Select(p => p.Segment)?.ToList()
                     };
                 }));
             }
@@ -260,12 +261,18 @@ namespace Moneyes.LiveData
                     Account = account,
                     Date = DateTime.Now,
                     Amount = result.Data.Balance,
+                    Currency = result.Data.AccountType.AccountCurrency
                 };
             }
             finally
             {
                 ClearConnectionDetails();
             }
+        }
+
+        public bool CanFetchTransactions(AccountDetails account)
+        {
+            return account.Permissions != null && account.Permissions.Contains("HKSAL");
         }
 
         private static IEnumerable<MTransaction> ParseFromSwift(SwiftStatement swiftStatement, AccountDetails account)

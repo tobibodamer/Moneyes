@@ -1,4 +1,5 @@
 ﻿using Moneyes.Core;
+using System.Linq;
 
 namespace Moneyes.Data
 {
@@ -21,6 +22,7 @@ namespace Moneyes.Data
                 IBAN = accountDbo.IBAN,
                 OwnerName = accountDbo.OwnerName,
                 Type = accountDbo.Type,
+                Permissions = accountDbo.Permissions?.ToList()
             };
         }
     }

@@ -84,20 +84,24 @@ namespace Moneyes.UI
                     return ConflictResolutionAction.Ignore();
                 }
 
-                var updateAccount = new AccountDbo()
-                {
-                    Id = v.ExistingEntity.Id,
-                    CreatedAt = v.ExistingEntity.CreatedAt,
-                    UpdatedAt = DateTime.Now,
-                    IsDeleted = v.NewEntity.IsDeleted,
-                    IBAN = v.NewEntity.IBAN,
-                    Number = v.NewEntity.Number,
-                    OwnerName = v.NewEntity.OwnerName,
-                    Type = v.NewEntity.Type,
-                    Bank = v.NewEntity.Bank
-                };
+                // Apply existing id and creation date to override existing
+                v.NewEntity.Id = v.ExistingEntity.Id;
+                v.NewEntity.CreatedAt = v.ExistingEntity.CreatedAt;
 
-                return ConflictResolutionAction.Update(updateAccount);
+                //var updateAccount = new AccountDbo()
+                //{
+                //    Id = v.ExistingEntity.Id,
+                //    CreatedAt = v.ExistingEntity.CreatedAt,
+                //    UpdatedAt = DateTime.Now,
+                //    IsDeleted = v.NewEntity.IsDeleted,
+                //    IBAN = v.NewEntity.IBAN,
+                //    Number = v.NewEntity.Number,
+                //    OwnerName = v.NewEntity.OwnerName,
+                //    Type = v.NewEntity.Type,
+                //    Bank = v.NewEntity.Bank
+                //};
+
+                return ConflictResolutionAction.Update(v.NewEntity);
             });
 
             if (numAccountsAdded > 0)

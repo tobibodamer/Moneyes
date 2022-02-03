@@ -1,4 +1,7 @@
-﻿namespace Moneyes.Data
+﻿using System.Collections.Generic;
+using System.Linq;
+
+namespace Moneyes.Data
 {
     public class AccountDbo : UniqueEntity
     {
@@ -27,13 +30,19 @@
         /// </summary>
         public string Type { get; init; }
 
+        /// <summary>
+        /// Gets the FinTS account permissions.
+        /// </summary>
+        public IReadOnlyList<string> Permissions { get; init; }
+
         public static bool ContentEquals(AccountDbo left, AccountDbo other)
         {
             return other is not null &&
                    left.Number == other.Number &&
                    left.Bank.Id.Equals(other.Bank.Id) &&
                    left.OwnerName == other.OwnerName &&
-                   left.Type == other.Type;
+                   left.Type == other.Type &&
+                   left.Permissions.SequenceEqual(other.Permissions);
         }
     }
 }

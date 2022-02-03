@@ -10,12 +10,12 @@ namespace Moneyes.Data
         /// <summary>
         /// A unique identifier for this entity.
         /// </summary>
-        public Guid Id { get; init; } = Guid.NewGuid();
+        public Guid Id { get; set; } = Guid.NewGuid();
 
         /// <summary>
         /// The date and time of creation.
         /// </summary>
-        public DateTime CreatedAt { get; init; }
+        public DateTime CreatedAt { get; set; }
 
         /// <summary>
         /// The timestamp of the last database update.

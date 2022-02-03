@@ -42,15 +42,6 @@ namespace Moneyes.Data
         int Set(IEnumerable<T> entities, ConflictResolutionDelegate<T> onConflict);
 
         /// <summary>
-        /// Updates the entity with the given <paramref name="id"/>.
-        /// </summary>
-        /// <param name="id">The key of the entity to update.</param>
-        /// <param name="updateFactory">A factory function that receives the existing entity 
-        /// and returns the entity to insert.</param>
-        /// <returns></returns>
-        bool Update(object id, Func<T, T> updateFactory);
-
-        /// <summary>
         /// Checks if the repostory contains any entities with the given <paramref name="ids"/>.
         /// </summary>
         /// <param name="ids">The entity keys.</param>
@@ -85,6 +76,18 @@ namespace Moneyes.Data
         /// <param name="onConflict">A delegate that is invoked when a constraint violation occurs.</param>
         /// <returns>The number of inserted entities.</returns>
         int Create(IEnumerable<T> entities, ConflictResolutionDelegate<T> onConflict);
+        bool Set(object id, Func<object, T> addEntityFactory, Func<object, T, T> updateEntityFactory, ConflictResolutionDelegate<T> onConflict = null);
+        int Set(IEnumerable<object> ids, Func<object, T> addEntityFactory, Func<object, T, T> updateEntityFactory, ConflictResolutionDelegate<T> onConflict = null);
+
+        /// <summary>
+        /// Updates the entity with the given <paramref name="id"/>.
+        /// </summary>
+        /// <param name="id">The key of the entity to update.</param>
+        /// <param name="updateEntityFactory">A factory function that receives the existing entity and key
+        /// and returns the entity to insert.</param>
+        /// <returns></returns>
+        bool Update(object id, Func<object, T, T> updateEntityFactory, ConflictResolutionDelegate<T> onConflict = null);
+        int Update(IEnumerable<object> ids, Func<object, T, T> updateEntityFactory, ConflictResolutionDelegate<T> onConflict = null);
 
         /// <summary>
         /// Raised when the repository changed.

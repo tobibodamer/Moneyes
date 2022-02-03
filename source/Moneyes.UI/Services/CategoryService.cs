@@ -303,7 +303,7 @@ namespace Moneyes.UI
                 return AddCategory(category);
             }
 
-            _categoryRepo.Update(category.Id, (existing) =>
+            _categoryRepo.Update(category.Id, (id, existing) =>
             {
                 return category.ToDbo(
                     createdAt: existing.CreatedAt,
@@ -369,7 +369,7 @@ namespace Moneyes.UI
             }
 
             // Update transaction in repo
-            return _transactionRepo.Update(transaction.Id, (existing) =>
+            return _transactionRepo.Update(transaction.Id, (id, existing) =>
             {
                 return transaction.ToDbo(
                      createdAt: existing.CreatedAt,

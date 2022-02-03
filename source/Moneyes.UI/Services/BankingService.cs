@@ -149,19 +149,13 @@ namespace Moneyes.UI
 
         public int ImportBalances(IEnumerable<Balance> balances)
         {
-            var dbos = balances.Select(b =>
-            {
-                if (!_balanceRepository.Contains(b.Id))
-                {
-                    return b.ToDbo(createdAt: DateTime.Now, updatedAt: DateTime.Now);
-                }
-                else
-                {
-                    return b.ToDbo(updatedAt: DateTime.Now);
-                }
-            }).ToList();
+            Dictionary<object, Balance> keyValueMap = balances.ToDictionary(x => (object)x.Id, x => x);
 
-            return _balanceRepository.Set(dbos, onConflict: UniqueConflictResolutionAction.UpdateContentOrIgnore);
+            return _balanceRepository.Set(
+                ids: keyValueMap.Keys,
+                addEntityFactory: (id) => keyValueMap[(Guid)id].ToDbo(),
+                updateEntityFactory: (id, existing) => keyValueMap[(Guid)id].ToDbo(createdAt: existing.CreatedAt),
+                onConflict: UniqueConflictResolutionAction.UpdateContentOrIgnore);
         }
 
         public void AddBankConnection(BankDetails bankDetails)
@@ -189,7 +183,7 @@ namespace Moneyes.UI
         {
             ArgumentNullException.ThrowIfNull(bankDetails, nameof(bankDetails));
 
-            _bankDetailsRepository.Update(bankDetails.Id, (existing) =>
+            _bankDetailsRepository.Update(bankDetails.Id, (id, existing) =>
             {
                 return bankDetails.ToDbo(
                     createdAt: existing.CreatedAt,

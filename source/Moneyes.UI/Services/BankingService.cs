@@ -9,9 +9,9 @@ namespace Moneyes.UI
 {
     public class BankingService : IBankingService
     {
-        private readonly ICachedRepository<BankDbo> _bankDetailsRepository;
-        private readonly ICachedRepository<AccountDbo> _accountRepository;
-        private readonly ICachedRepository<BalanceDbo> _balanceRepository;
+        private readonly IUniqueCachedRepository<BankDbo> _bankDetailsRepository;
+        private readonly IUniqueCachedRepository<AccountDbo> _accountRepository;
+        private readonly IUniqueCachedRepository<BalanceDbo> _balanceRepository;
         private readonly ITransactionService _transactionService;
         private readonly ICategoryService _categoryService;
 
@@ -20,9 +20,9 @@ namespace Moneyes.UI
         private readonly IBankDetailsFactory _bankDetailsFactory;
 
         public BankingService(
-            ICachedRepository<BankDbo> bankDetailsRepository,
-            ICachedRepository<AccountDbo> accountRepository,
-            ICachedRepository<BalanceDbo> balanceRepository,
+            IUniqueCachedRepository<BankDbo> bankDetailsRepository,
+            IUniqueCachedRepository<AccountDbo> accountRepository,
+            IUniqueCachedRepository<BalanceDbo> balanceRepository,
             ITransactionService transactionService,
             ICategoryService categoryService,
             IAccountFactory accountFactory,
@@ -65,19 +65,9 @@ namespace Moneyes.UI
 
         public int ImportAccounts(IEnumerable<AccountDetails> accounts)
         {
-            var dbos = accounts.Select(b =>
-            {
-                if (!_accountRepository.Contains(b.Id))
-                {
-                    return b.ToDbo(createdAt: DateTime.Now, updatedAt: DateTime.Now);
-                }
-                else
-                {
-                    return b.ToDbo(updatedAt: DateTime.Now);
-                }
-            }).ToList();
-
-            int numAccountsAdded = _accountRepository.Set(dbos, onConflict: UniqueConflictResolutionAction.UpdateContentOrIgnore);
+            int numAccountsAdded = _accountRepository.Set(
+                entities: accounts.Select(acc => acc.ToDbo()),
+                onConflict: UniqueConflictResolutionAction.UpdateContentOrIgnore);
 
             if (numAccountsAdded > 0)
             {
@@ -149,12 +139,8 @@ namespace Moneyes.UI
 
         public int ImportBalances(IEnumerable<Balance> balances)
         {
-            Dictionary<object, Balance> keyValueMap = balances.ToDictionary(x => (object)x.Id, x => x);
-
             return _balanceRepository.Set(
-                ids: keyValueMap.Keys,
-                addEntityFactory: (id) => keyValueMap[(Guid)id].ToDbo(),
-                updateEntityFactory: (id, existing) => keyValueMap[(Guid)id].ToDbo(createdAt: existing.CreatedAt),
+                entities: balances.Select(x => x.ToDbo()),
                 onConflict: UniqueConflictResolutionAction.UpdateContentOrIgnore);
         }
 
@@ -183,13 +169,8 @@ namespace Moneyes.UI
         {
             ArgumentNullException.ThrowIfNull(bankDetails, nameof(bankDetails));
 
-            _bankDetailsRepository.Update(bankDetails.Id, (id, existing) =>
-            {
-                return bankDetails.ToDbo(
-                    createdAt: existing.CreatedAt,
-                    updatedAt: DateTime.Now,
-                    isDeleted: existing.IsDeleted);
-            });
+            _bankDetailsRepository.Update(bankDetails.ToDbo(), 
+                onConflict: v => ConflictResolutionAction.Fail());
         }
 
         

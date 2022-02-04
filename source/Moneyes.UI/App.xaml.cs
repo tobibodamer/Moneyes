@@ -109,7 +109,11 @@ namespace Moneyes.UI
             IServiceCollection services = new ServiceCollection();
 
             // Database
-            services.AddLiteDb<UIDatabaseProvider>(config => config.DatabasePath = InitDatabasePath())
+            services.AddLiteDb<UIDatabaseProvider>(config =>
+                {
+                    config.DatabasePath = InitDatabasePath();
+                    config.BsonMapper.TrimWhitespace = false;
+                })
                 .AddCachedRepositories(options =>
                 {
                     options.AddUniqueRepository<TransactionDbo>("Transaction")
@@ -129,7 +133,7 @@ namespace Moneyes.UI
                         .WithUniqueProperty(b => new { b.Date, b.Account.Id });
 
                     options.AddUniqueRepository<BankDbo>("BankDetails")
-                        .WithUniqueProperty(b => new { b.BankCode, b.UserId } );
+                        .WithUniqueProperty(b => new { b.BankCode, b.UserId });
                 });
 
 
@@ -512,8 +516,8 @@ namespace Moneyes.UI
                 foreach (var document in balanceDocuments)
                 {
                     balances.Delete(document["_id"]);
-                    document["Account"]["$ref"] = new BsonValue("Accounts");                    
-                }                
+                    document["Account"]["$ref"] = new BsonValue("Accounts");
+                }
 
                 balances.Insert(balanceDocuments);
 
@@ -537,10 +541,10 @@ namespace Moneyes.UI
                 var categoryIdMap = new Dictionary<Guid, BsonDocument>();
 
                 foreach (var document in categoryDocuments)
-                {                    
-                    categoryIdMap.Add(document["_id"], document);                    
+                {
+                    categoryIdMap.Add(document["_id"], document);
                 }
-                
+
 
                 logger.LogInformation("Migrating Transactions...");
 
@@ -570,7 +574,7 @@ namespace Moneyes.UI
                     if (firstWithParent is null)
                     {
                         var firstCategoryId = categoryIds.FirstOrDefault();
-                        document["Category"] = new BsonDocument {["$id"] = firstCategoryId, ["$ref"] = "Category" };
+                        document["Category"] = new BsonDocument { ["$id"] = firstCategoryId, ["$ref"] = "Category" };
                     }
                     else
                     {
@@ -582,7 +586,7 @@ namespace Moneyes.UI
                 }
 
                 transactions.Insert(transactionDocuments);
-            
+
 
                 logger.LogInformation("Migration successful");
 
@@ -600,7 +604,7 @@ namespace Moneyes.UI
                 logger.LogInformation("Migrating bank details...");
 
                 var banks = database.GetCollection("BankDetails");
-                var bankDocuments = banks.FindAll().ToList();                
+                var bankDocuments = banks.FindAll().ToList();
 
                 foreach (var document in bankDocuments)
                 {

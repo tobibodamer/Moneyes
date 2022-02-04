@@ -30,6 +30,8 @@ namespace Moneyes.Data
                 {
                     if (userAction is UpdateConflicResolutionAction<T> updateAction)
                     {
+                        _logger.LogInformation("Choosing advanced conflic resolution 'Update'.");
+
                         _toUpdate.Add(updateAction.EntityToUpdate);
 
                         // not include, continue

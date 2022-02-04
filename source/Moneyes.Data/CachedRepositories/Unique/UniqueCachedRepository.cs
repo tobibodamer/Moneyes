@@ -22,6 +22,14 @@ public interface IUniqueCachedRepository<T> : ICachedRepository<T, Guid>
     bool ContainsAll(bool includeSoftDeleted = false, params object[] ids);
     bool Contains(object id, bool includeSoftDeleted = false);
     IReadOnlyList<T> FindAllById(bool includeSoftDeleted = false, params object[] ids);
+    int Set(IEnumerable<T> entities, bool keepCreationTimestamp = true);
+    int Set(IEnumerable<T> entities, ConflictResolutionDelegate<T> onConflict, bool keepCreationTimestamp = true);
+    bool Set(T entity, bool keepCreationTimestamp = true);
+    bool Set(T entity, ConflictResolutionDelegate<T> onConflict, bool keepCreationTimestamp = true);
+    int Update(IEnumerable<T> entities, ConflictResolutionDelegate<T> onConflict, bool keepCreationTimestamp = true);
+    bool Update(T entity, bool keepCreationTimestamp = true);
+    bool Update(T entity, ConflictResolutionDelegate<T> onConflict, bool keepCreationTimestamp = true);
+    int Update(IEnumerable<T> entities, bool keepCreationTimestamp = true);
 }
 
 public class UniqueCachedRepository<T> : CachedRepository<T, Guid>, IUniqueCachedRepository<T>
@@ -179,9 +187,133 @@ public class UniqueCachedRepository<T> : CachedRepository<T, Guid>, IUniqueCache
         });
     }
 
-    public override bool ContainsAny(params object[] ids)
+    public int Set(IEnumerable<T> entities, bool keepCreationTimestamp = true)
     {
-        return ContainsAny(false, ids);
+        if (keepCreationTimestamp)
+        {
+            return Set(entities, addEntityFactory: AddEntityFactory, updateEntityFactory: UpdateEntityFactory);
+        }
+
+        return base.Set(entities);
+    }
+    public override int Set(IEnumerable<T> entities)
+    {
+        return Set(entities, keepCreationTimestamp: true);
+    }
+
+    public int Set(IEnumerable<T> entities, ConflictResolutionDelegate<T> onConflict, bool keepCreationTimestamp = true)
+    {
+        if (keepCreationTimestamp)
+        {
+            return Set(entities, addEntityFactory: AddEntityFactory, updateEntityFactory: UpdateEntityFactory, onConflict);
+        }
+
+        return base.Set(entities, onConflict);
+    }
+
+    public override int Set(IEnumerable<T> entities, ConflictResolutionDelegate<T> onConflict)
+    {
+        return Set(entities, onConflict, keepCreationTimestamp: true);
+    }
+
+    public bool Set(T entity, bool keepCreationTimestamp = true)
+    {
+        if (keepCreationTimestamp)
+        {
+            return Set(entity, addEntityFactory: AddEntityFactory, updateEntityFactory: UpdateEntityFactory);
+        }
+
+        return base.Set(entity);
+    }
+
+    public override bool Set(T entity)
+    {
+        return Set(entity, keepCreationTimestamp: true);
+    }
+
+    public bool Set(T entity, ConflictResolutionDelegate<T> onConflict, bool keepCreationTimestamp = true)
+    {
+        if (keepCreationTimestamp)
+        {
+            return Set(entity, addEntityFactory: AddEntityFactory, updateEntityFactory: UpdateEntityFactory, onConflict);
+        }
+
+        return base.Set(entity, onConflict);
+    }
+
+    public override bool Set(T entity, ConflictResolutionDelegate<T> onConflict)
+    {
+        return Set(entity, onConflict, keepCreationTimestamp: true);
+    }
+
+    public int Update(IEnumerable<T> entities, bool keepCreationTimestamp = true)
+    {
+        if (keepCreationTimestamp)
+        {
+            return Update(entities, updateEntityFactory: UpdateEntityFactory);
+        }
+
+        return base.Update(entities);
+    }
+    public override int Update(IEnumerable<T> entities)
+    {
+        return Update(entities, keepCreationTimestamp: true);
+    }
+
+    public int Update(IEnumerable<T> entities, ConflictResolutionDelegate<T> onConflict, bool keepCreationTimestamp = true)
+    {
+        if (keepCreationTimestamp)
+        {
+            return Update(entities, updateEntityFactory: UpdateEntityFactory, onConflict);
+        }
+
+        return base.Update(entities, onConflict);
+    }
+
+    public override int Update(IEnumerable<T> entities, ConflictResolutionDelegate<T> onConflict)
+    {
+        return Update(entities, onConflict, keepCreationTimestamp: true);
+    }
+
+    public bool Update(T entity, bool keepCreationTimestamp = true)
+    {
+        if (keepCreationTimestamp)
+        {
+            return Update(entity, updateEntityFactory: UpdateEntityFactory);
+        }
+
+        return base.Update(entity);
+    }
+
+    public override bool Update(T entity)
+    {
+        return Update(entity, keepCreationTimestamp: true);
+    }
+
+    public bool Update(T entity, ConflictResolutionDelegate<T> onConflict, bool keepCreationTimestamp = true)
+    {
+        if (keepCreationTimestamp)
+        {
+            return Update(entity, updateEntityFactory: UpdateEntityFactory, onConflict);
+        }
+
+        return base.Update(entity, onConflict);
+    }
+
+    public override bool Update(T entity, ConflictResolutionDelegate<T> onConflict)
+    {
+        return Update(entity, onConflict, keepCreationTimestamp: true);
+    }
+
+    protected virtual T AddEntityFactory(T newEntity)
+    {
+        return newEntity;
+    }
+    protected virtual T UpdateEntityFactory(T existingEntity, T newEntity)
+    {
+        newEntity.CreatedAt = existingEntity.CreatedAt;
+
+        return newEntity;
     }
 
     /// <summary>
@@ -280,16 +412,18 @@ public class UniqueCachedRepository<T> : CachedRepository<T, Guid>, IUniqueCache
         IEnumerable<IUniqueConstraint<T>> uniqueConstraints,
         Func<ConstraintViolation<T>, (bool continueValidation, bool ignore)> onViolation)
     {
+        var existingEntitiesCopy = existingEntities.ToList();
+
         var validateAgainstSoftDeleted = base.CreateUniqueConstraintValidator(
-            existingEntities.Where(e => e.IsDeleted), uniqueConstraints, onViolation);
+            existingEntitiesCopy.Where(e => e.IsDeleted), uniqueConstraints, onViolation);
 
         var validateAgainstNotDeleted = base.CreateUniqueConstraintValidator(
-            existingEntities.Where(e => !e.IsDeleted), uniqueConstraints, onViolation);
+            existingEntitiesCopy.Where(e => !e.IsDeleted), uniqueConstraints, onViolation);
 
         return (entity) =>
         {
-                // return the specific validation function, based on if the entity is deleted
-                if (entity.IsDeleted)
+            // return the specific validation function, based on if the entity is deleted
+            if (entity.IsDeleted)
             {
                 return validateAgainstSoftDeleted(entity);
             }

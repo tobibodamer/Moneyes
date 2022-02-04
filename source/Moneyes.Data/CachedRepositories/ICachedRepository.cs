@@ -88,6 +88,12 @@ namespace Moneyes.Data
         /// <returns></returns>
         bool Update(object id, Func<object, T, T> updateEntityFactory, ConflictResolutionDelegate<T> onConflict = null);
         int Update(IEnumerable<object> ids, Func<object, T, T> updateEntityFactory, ConflictResolutionDelegate<T> onConflict = null);
+        int Update(IEnumerable<T> entities, Func<T, T, T> updateEntityFactory, ConflictResolutionDelegate<T> onConflict = null);
+        int Set(IEnumerable<T> entities, Func<T, T> addEntityFactory, Func<T, T, T> updateEntityFactory, ConflictResolutionDelegate<T> onConflict = null);
+        bool Set(T entity, Func<T, T> addEntityFactory, Func<T, T, T> updateEntityFactory, ConflictResolutionDelegate<T> onConflict = null);
+        bool Update(T entity, Func<T, T, T> updateEntityFactory, ConflictResolutionDelegate<T> onConflict = null);
+        bool Update(T entity, ConflictResolutionDelegate<T> onConflict);
+        int Update(IEnumerable<T> entities, ConflictResolutionDelegate<T> onConflict);
 
         /// <summary>
         /// Raised when the repository changed.

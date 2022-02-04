@@ -100,9 +100,9 @@ namespace Moneyes.Data
             return Collection.DeleteAll();
         }
 
-        public void Update(T entity)
+        public bool Update(T entity)
         {
-            Collection.Update(entity);
+            return Collection.Update(entity);
         }
 
         public int Update(IEnumerable<T> entities)

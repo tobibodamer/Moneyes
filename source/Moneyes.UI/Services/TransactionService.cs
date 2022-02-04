@@ -229,6 +229,7 @@ namespace Moneyes.UI
         public bool ImportTransaction(Transaction transaction)
         {
             var transactionDbo = transaction.ToDbo();
+
             return _transactionRepository.Set(transactionDbo, onConflict: UniqueConflictResolutionAction.UpdateContentOrIgnore);
         }
 
@@ -242,19 +243,8 @@ namespace Moneyes.UI
         {
             // TODO: Validate if duplicate categories and all categories exist, maybe in repo?
 
-            var dbos = transactions.Select(b =>
-            {
-                if (!_transactionRepository.Contains(b.Id))
-                {
-                    return b.ToDbo(createdAt: DateTime.Now, updatedAt: DateTime.Now);
-                }
-                else
-                {
-                    return b.ToDbo(updatedAt: DateTime.Now);
-                }
-            }).ToList();
-
-            return _transactionRepository.Set(dbos, onConflict: UniqueConflictResolutionAction.UpdateContentOrIgnore);
+            return _transactionRepository.Set(transactions.Select(x => x.ToDbo()),
+                onConflict: UniqueConflictResolutionAction.UpdateContentOrIgnore);
         }
     }
 }

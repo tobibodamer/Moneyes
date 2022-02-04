@@ -43,7 +43,8 @@ namespace Moneyes.Data
                    left.Bank?.Id == other.Bank?.Id &&
                    left.OwnerName == other.OwnerName &&
                    left.Type == other.Type &&
-                   (left?.Permissions.SequenceEqual(other?.Permissions) ?? other.Permissions is null);
+                   ((left.Permissions is null && other.Permissions is null) ||
+                   (other.Permissions != null && ((left?.Permissions.SetwiseEquivalentTo(other.Permissions)) ?? false)));
         }
 
         public override bool ContentEquals(UniqueEntity other)

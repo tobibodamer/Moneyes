@@ -9,7 +9,7 @@ namespace Moneyes.Data
         T Create(T entity);
         IEnumerable<T> GetAll();
         T FindById(object id);
-        void Update(T entity);
+        bool Update(T entity);
         int Update(IEnumerable<T> entities);
         bool Set(T entity);
         int Set(IEnumerable<T> entities);

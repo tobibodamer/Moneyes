@@ -4,7 +4,8 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net6.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
-    <ApplicationIcon>icons8-love-for-money-64.ico</ApplicationIcon>
+    <ApplicationIcon>Resources\Icon.ico</ApplicationIcon>
+	<SatelliteResourceLanguages>en</SatelliteResourceLanguages>
   </PropertyGroup>
 
   <ItemGroup>
@@ -12,8 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Remove="Resources\Icon.png" />
-    <None Remove="Resources\icons8-love-for-money-64.ico" />
+    <None Remove="Resources\Icon.ico" />
   </ItemGroup>
 
   <ItemGroup>
@@ -38,8 +38,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Resource Include="Resources\Icon.png" />
-    <Resource Include="Resources\icons8-love-for-money-64.ico" />
+    <Resource Include="Resources\Icon.ico" />
   </ItemGroup>
 
   <ItemGroup>

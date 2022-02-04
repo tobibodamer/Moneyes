@@ -731,7 +731,7 @@ namespace Moneyes.Data
             {
                 // Upsert in db
                 inserted = Collection.Upsert(validatedEntity);
-
+                
                 // Upsert in cache
                 AddOrUpdateCache(validatedEntity);
             }

@@ -323,43 +323,43 @@ public class UniqueCachedRepository<T> : CachedRepository<T, Guid>, IUniqueCache
     /// <returns></returns>
     public override bool DeleteById(object id)
     {
-        if (Cache.TryGetValue(id, out T entity))
-        {
-            entity.IsDeleted = true;
-
-            Update(entity);
-
-            return true;
-        }
-
-        return false;
+        return DeleteById((Guid)id, softDelete: true);
     }
 
     public bool DeleteById(Guid id, bool softDelete = true)
     {
         if (softDelete)
         {
-            return base.DeleteById(id);
+            if (Cache.TryGetValue(id, out T entity))
+            {
+                entity.IsDeleted = true;
+
+                Update(entity);
+
+                return true;
+            }
+
+            return false;
         }
 
         return base.DeleteById(id);
     }
     public override int DeleteAll()
     {
-        var entities = GetAll(includeSoftDeleted: false).ToList();
-
-        foreach (var entity in entities)
-        {
-            entity.IsDeleted = true;
-        }
-
-        return Update(entities);
+        return DeleteAll(softDelete: true);
     }
     public int DeleteAll(bool softDelete = true)
     {
         if (softDelete)
         {
-            return DeleteAll();
+            var entities = GetAll(includeSoftDeleted: false).ToList();
+
+            foreach (var entity in entities)
+            {
+                entity.IsDeleted = true;
+            }
+
+            return Update(entities);
         }
 
         return base.DeleteAll();

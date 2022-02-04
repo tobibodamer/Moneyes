@@ -628,6 +628,24 @@ namespace Moneyes.UI
 
                 logger.LogInformation("Migrated to version 4");
             }
+
+            if (database.UserVersion == 4)
+            {
+                logger.LogInformation("Database version is 4. Migrating to version 5...");
+
+                logger.LogInformation("Dropping old indeces...");
+
+                database.GetCollection("Category").DropIndex("Name");
+                database.GetCollection("Transaction").DropIndex("UID");
+
+                logger.LogInformation("Migration successful");
+
+                database.UserVersion = 5;
+
+                database.Checkpoint();
+
+                logger.LogInformation("Migrated to version 5");
+            }            
         }
 
         /// <summary>

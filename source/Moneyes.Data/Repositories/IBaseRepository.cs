@@ -10,9 +10,9 @@ namespace Moneyes.Data
         IEnumerable<T> GetAll();
         T FindById(object id);
         bool Update(T entity);
-        int Update(IEnumerable<T> entities);
+        int UpdateMany(IEnumerable<T> entities);
         bool Set(T entity);
-        int Set(IEnumerable<T> entities);
+        int SetMany(IEnumerable<T> entities);
         bool DeleteById(object id);
         int DeleteAll();
         int DeleteMany(Expression<Func<T, bool>> predicate);

@@ -65,7 +65,7 @@ namespace Moneyes.UI
 
         public int ImportAccounts(IEnumerable<AccountDetails> accounts)
         {
-            int numAccountsAdded = _accountRepository.Set(
+            int numAccountsAdded = _accountRepository.SetMany(
                 entities: accounts.Select(acc => acc.ToDbo()),
                 onConflict: UniqueConflictResolutionAction.UpdateContentOrIgnore);
 
@@ -139,7 +139,7 @@ namespace Moneyes.UI
 
         public int ImportBalances(IEnumerable<Balance> balances)
         {
-            return _balanceRepository.Set(
+            return _balanceRepository.SetMany(
                 entities: balances.Select(x => x.ToDbo()),
                 onConflict: UniqueConflictResolutionAction.UpdateContentOrIgnore);
         }

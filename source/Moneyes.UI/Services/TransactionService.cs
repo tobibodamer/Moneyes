@@ -243,7 +243,7 @@ namespace Moneyes.UI
         {
             // TODO: Validate if duplicate categories and all categories exist, maybe in repo?
 
-            return _transactionRepository.Set(transactions.Select(x => x.ToDbo()),
+            return _transactionRepository.SetMany(transactions.Select(x => x.ToDbo()),
                 onConflict: UniqueConflictResolutionAction.UpdateContentOrIgnore);
         }
     }

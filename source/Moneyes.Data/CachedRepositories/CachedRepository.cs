@@ -503,11 +503,11 @@ namespace Moneyes.Data
             return createdEntity;
         }
 
-        public virtual int Create(IEnumerable<T> entities)
+        public virtual int CreateMany(IEnumerable<T> entities)
         {
-            return Create(entities, null);
+            return CreateMany(entities, null);
         }
-        public virtual int Create(IEnumerable<T> entities, ConflictResolutionDelegate<T> onConflict)
+        public virtual int CreateMany(IEnumerable<T> entities, ConflictResolutionDelegate<T> onConflict)
         {
             // Get the primary keys of the entities to upsert
             var keys = entities.Select(GetKey).ToHashSet();
@@ -687,7 +687,8 @@ namespace Moneyes.Data
 
             return Set(entity, onConflict);
         }
-        public virtual bool Set(T entity,
+
+        protected virtual bool Set(T entity,
            Func<T, T> addEntityFactory,
            Func<T, T, T> updateEntityFactory,
            ConflictResolutionDelegate<T> onConflict = null)
@@ -722,6 +723,7 @@ namespace Moneyes.Data
 
             return SetInternal(entity, constraintViolationHandler);
         }
+
         private bool SetInternal(T validatedEntity, ConstraintViolationHandler constraintViolationHandler)
         {
             bool inserted;
@@ -760,11 +762,11 @@ namespace Moneyes.Data
             return inserted;
         }
 
-        public virtual int Set(IEnumerable<T> entities)
+        public virtual int SetMany(IEnumerable<T> entities)
         {
-            return Set(entities, null);
+            return SetMany(entities, null);
         }
-        public virtual int Set(IEnumerable<T> entities, ConflictResolutionDelegate<T> onConflict)
+        public virtual int SetMany(IEnumerable<T> entities, ConflictResolutionDelegate<T> onConflict)
         {
             // Get the primary keys of the entities to upsert
             var keys = entities.Select(GetKey).ToHashSet();
@@ -791,7 +793,7 @@ namespace Moneyes.Data
             return SetInternal(entitiesToUpsert, constraintViolationHandler);
         }
 
-        public virtual int Set(IEnumerable<object> ids,
+        public virtual int SetMany(IEnumerable<object> ids,
             Func<object, T> addEntityFactory,
             Func<object, T, T> updateEntityFactory,
             ConflictResolutionDelegate<T> onConflict = null)
@@ -823,7 +825,7 @@ namespace Moneyes.Data
             return SetInternal(entitiesToUpsert, constraintViolationHandler);
         }
 
-        public virtual int Set(IEnumerable<T> entities,
+        protected virtual int SetMany(IEnumerable<T> entities,
            Func<T, T> addEntityFactory,
            Func<T, T, T> updateEntityFactory,
            ConflictResolutionDelegate<T> onConflict = null)
@@ -1051,11 +1053,11 @@ namespace Moneyes.Data
             return true;
         }
 
-        public virtual int Update(IEnumerable<T> entities)
+        public virtual int UpdateMany(IEnumerable<T> entities)
         {
-            return Update(entities, onConflict: null);
+            return UpdateMany(entities, onConflict: null);
         }
-        public virtual int Update(IEnumerable<T> entities, ConflictResolutionDelegate<T> onConflict)
+        public virtual int UpdateMany(IEnumerable<T> entities, ConflictResolutionDelegate<T> onConflict)
         {
             var keys = entities.Select(GetKey).ToHashSet();
 
@@ -1083,7 +1085,7 @@ namespace Moneyes.Data
 
             return UpdateInternal(entitiesToUpdate, constraintViolationHandler);
         }
-        public virtual int Update(IEnumerable<object> ids, Func<object, T, T> updateEntityFactory,
+        public virtual int UpdateMany(IEnumerable<object> ids, Func<object, T, T> updateEntityFactory,
             ConflictResolutionDelegate<T> onConflict = null)
         {
             ArgumentNullException.ThrowIfNull(ids);
@@ -1112,7 +1114,7 @@ namespace Moneyes.Data
 
             return UpdateInternal(entitiesToUpdate, constraintViolationHandler);
         }
-        public virtual int Update(IEnumerable<T> entities, Func<T, T, T> updateEntityFactory,
+        public virtual int UpdateMany(IEnumerable<T> entities, Func<T, T, T> updateEntityFactory,
             ConflictResolutionDelegate<T> onConflict = null)
         {
             ArgumentNullException.ThrowIfNull(entities);

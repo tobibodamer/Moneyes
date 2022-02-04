@@ -14,22 +14,27 @@ public interface IUniqueCachedRepository<T> : ICachedRepository<T, Guid>
     where T : UniqueEntity
 {
     IEnumerable<T> GetAll(bool includeSoftDeleted = false);
+    IReadOnlyList<T> FindAllById(bool includeSoftDeleted = false, params object[] ids);
     T? FindById(Guid id, bool includeSoftDeleted = false);
-    bool DeleteById(Guid id, bool softDelete = true);
-    int DeleteAll(bool softDelete = true);
-    int DeleteMany(Expression<Func<T, bool>> predicate, bool softDelete = true);
+    
     bool ContainsAny(bool includeSoftDeleted = false, params object[] ids);
     bool ContainsAll(bool includeSoftDeleted = false, params object[] ids);
     bool Contains(object id, bool includeSoftDeleted = false);
-    IReadOnlyList<T> FindAllById(bool includeSoftDeleted = false, params object[] ids);
-    int Set(IEnumerable<T> entities, bool keepCreationTimestamp = true);
-    int Set(IEnumerable<T> entities, ConflictResolutionDelegate<T> onConflict, bool keepCreationTimestamp = true);
+    
+
     bool Set(T entity, bool keepCreationTimestamp = true);
     bool Set(T entity, ConflictResolutionDelegate<T> onConflict, bool keepCreationTimestamp = true);
-    int Update(IEnumerable<T> entities, ConflictResolutionDelegate<T> onConflict, bool keepCreationTimestamp = true);
+    int SetMany(IEnumerable<T> entities, bool keepCreationTimestamp = true);
+    int SetMany(IEnumerable<T> entities, ConflictResolutionDelegate<T> onConflict, bool keepCreationTimestamp = true);
+    
     bool Update(T entity, bool keepCreationTimestamp = true);
     bool Update(T entity, ConflictResolutionDelegate<T> onConflict, bool keepCreationTimestamp = true);
-    int Update(IEnumerable<T> entities, bool keepCreationTimestamp = true);
+    int UpdateMany(IEnumerable<T> entities, bool keepCreationTimestamp = true);
+    int UpdateMany(IEnumerable<T> entities, ConflictResolutionDelegate<T> onConflict, bool keepCreationTimestamp = true);
+
+    bool DeleteById(Guid id, bool softDelete = true);
+    int DeleteAll(bool softDelete = true);
+    int DeleteMany(Expression<Func<T, bool>> predicate, bool softDelete = true);
 }
 
 public class UniqueCachedRepository<T> : CachedRepository<T, Guid>, IUniqueCachedRepository<T>
@@ -187,33 +192,33 @@ public class UniqueCachedRepository<T> : CachedRepository<T, Guid>, IUniqueCache
         });
     }
 
-    public int Set(IEnumerable<T> entities, bool keepCreationTimestamp = true)
+    public int SetMany(IEnumerable<T> entities, bool keepCreationTimestamp = true)
     {
         if (keepCreationTimestamp)
         {
-            return Set(entities, addEntityFactory: AddEntityFactory, updateEntityFactory: UpdateEntityFactory);
+            return SetMany(entities, addEntityFactory: AddEntityFactory, updateEntityFactory: UpdateEntityFactory);
         }
 
-        return base.Set(entities);
+        return base.SetMany(entities);
     }
-    public override int Set(IEnumerable<T> entities)
+    public override int SetMany(IEnumerable<T> entities)
     {
-        return Set(entities, keepCreationTimestamp: true);
+        return SetMany(entities, keepCreationTimestamp: true);
     }
 
-    public int Set(IEnumerable<T> entities, ConflictResolutionDelegate<T> onConflict, bool keepCreationTimestamp = true)
+    public int SetMany(IEnumerable<T> entities, ConflictResolutionDelegate<T> onConflict, bool keepCreationTimestamp = true)
     {
         if (keepCreationTimestamp)
         {
-            return Set(entities, addEntityFactory: AddEntityFactory, updateEntityFactory: UpdateEntityFactory, onConflict);
+            return SetMany(entities, addEntityFactory: AddEntityFactory, updateEntityFactory: UpdateEntityFactory, onConflict);
         }
 
-        return base.Set(entities, onConflict);
+        return base.SetMany(entities, onConflict);
     }
 
-    public override int Set(IEnumerable<T> entities, ConflictResolutionDelegate<T> onConflict)
+    public override int SetMany(IEnumerable<T> entities, ConflictResolutionDelegate<T> onConflict)
     {
-        return Set(entities, onConflict, keepCreationTimestamp: true);
+        return SetMany(entities, onConflict, keepCreationTimestamp: true);
     }
 
     public bool Set(T entity, bool keepCreationTimestamp = true)
@@ -246,33 +251,33 @@ public class UniqueCachedRepository<T> : CachedRepository<T, Guid>, IUniqueCache
         return Set(entity, onConflict, keepCreationTimestamp: true);
     }
 
-    public int Update(IEnumerable<T> entities, bool keepCreationTimestamp = true)
+    public int UpdateMany(IEnumerable<T> entities, bool keepCreationTimestamp = true)
     {
         if (keepCreationTimestamp)
         {
-            return Update(entities, updateEntityFactory: UpdateEntityFactory);
+            return UpdateMany(entities, updateEntityFactory: UpdateEntityFactory);
         }
 
-        return base.Update(entities);
+        return base.UpdateMany(entities);
     }
-    public override int Update(IEnumerable<T> entities)
+    public override int UpdateMany(IEnumerable<T> entities)
     {
-        return Update(entities, keepCreationTimestamp: true);
+        return UpdateMany(entities, keepCreationTimestamp: true);
     }
 
-    public int Update(IEnumerable<T> entities, ConflictResolutionDelegate<T> onConflict, bool keepCreationTimestamp = true)
+    public int UpdateMany(IEnumerable<T> entities, ConflictResolutionDelegate<T> onConflict, bool keepCreationTimestamp = true)
     {
         if (keepCreationTimestamp)
         {
-            return Update(entities, updateEntityFactory: UpdateEntityFactory, onConflict);
+            return UpdateMany(entities, updateEntityFactory: UpdateEntityFactory, onConflict);
         }
 
-        return base.Update(entities, onConflict);
+        return base.UpdateMany(entities, onConflict);
     }
 
-    public override int Update(IEnumerable<T> entities, ConflictResolutionDelegate<T> onConflict)
+    public override int UpdateMany(IEnumerable<T> entities, ConflictResolutionDelegate<T> onConflict)
     {
-        return Update(entities, onConflict, keepCreationTimestamp: true);
+        return UpdateMany(entities, onConflict, keepCreationTimestamp: true);
     }
 
     public bool Update(T entity, bool keepCreationTimestamp = true)
@@ -359,7 +364,7 @@ public class UniqueCachedRepository<T> : CachedRepository<T, Guid>, IUniqueCache
                 entity.IsDeleted = true;
             }
 
-            return Update(entities);
+            return UpdateMany(entities);
         }
 
         return base.DeleteAll();
@@ -378,7 +383,7 @@ public class UniqueCachedRepository<T> : CachedRepository<T, Guid>, IUniqueCache
             entity.IsDeleted = true;
         }
 
-        return Update(entities);
+        return UpdateMany(entities);
     }
 
     public int DeleteMany(Expression<Func<T, bool>> predicate, bool softDelete = true)

@@ -91,7 +91,7 @@ namespace Moneyes.Data
                     return;
                 }
 
-                _repository.Update(_toUpdate);
+                _repository.UpdateMany(_toUpdate);
             }
         }
     }

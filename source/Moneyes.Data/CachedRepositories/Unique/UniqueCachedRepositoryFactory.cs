@@ -28,7 +28,7 @@ namespace Moneyes.Data
             var logger = ServiceProvider.GetService<ILogger<UniqueCachedRepository<T>>>();
 
             return new UniqueCachedRepository<T>(
-                databaseProvider, keySelector, options, refreshHandler, autoId, repositoryDependencies, uniqueConstraints, logger);
+                databaseProvider, keySelector, options, refreshHandler, repositoryDependencies, uniqueConstraints, logger);
         }
 
         public override ICachedRepository<T> CreateRepository(CachedRepositoryOptions options, bool autoId)
@@ -41,7 +41,7 @@ namespace Moneyes.Data
             var refreshHandler = ServiceProvider.GetService<DependencyRefreshHandler>();
             var logger = ServiceProvider.GetService<ILogger<UniqueCachedRepository<T>>>();
 
-            return new UniqueCachedRepository<T>(databaseProvider, x => x.Id, options, refreshHandler, autoId, repositoryDependencies, uniqueConstraints, logger);
+            return new UniqueCachedRepository<T>(databaseProvider, x => x.Id, options, refreshHandler, repositoryDependencies, uniqueConstraints, logger);
         }
     }
 }

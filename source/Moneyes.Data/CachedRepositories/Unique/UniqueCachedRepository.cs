@@ -14,12 +14,14 @@ public interface IUniqueCachedRepository<T> : ICachedRepository<T, Guid>
     where T : UniqueEntity
 {
     IEnumerable<T> GetAll(bool includeSoftDeleted = false);
-    IReadOnlyList<T> FindAllById(bool includeSoftDeleted = false, params object[] ids);
+    IReadOnlyList<T> FindAllById(bool includeSoftDeleted = false, params Guid[] ids);
+#nullable enable
     T? FindById(Guid id, bool includeSoftDeleted = false);
-    
-    bool ContainsAny(bool includeSoftDeleted = false, params object[] ids);
-    bool ContainsAll(bool includeSoftDeleted = false, params object[] ids);
-    bool Contains(object id, bool includeSoftDeleted = false);
+#nullable disable
+
+    bool ContainsAny(bool includeSoftDeleted = false, params Guid[] ids);
+    bool ContainsAll(bool includeSoftDeleted = false, params Guid[] ids);
+    bool Contains(Guid id, bool includeSoftDeleted = false);
     
 
     bool Set(T entity, bool keepCreationTimestamp = true);
@@ -45,11 +47,10 @@ public class UniqueCachedRepository<T> : CachedRepository<T, Guid>, IUniqueCache
         Func<T, Guid> keySelector,
         CachedRepositoryOptions options,
         DependencyRefreshHandler refreshHandler,
-        bool autoId = false,
         IEnumerable<IRepositoryDependency<T>> repositoryDependencies = null,
         IEnumerable<IUniqueConstraint<T>> uniqueConstraints = null,
         ILogger<UniqueCachedRepository<T>> logger = null)
-        : base(databaseProvider, keySelector, options, refreshHandler, autoId, repositoryDependencies, uniqueConstraints, logger)
+        : base(databaseProvider, options, refreshHandler, keySelector, repositoryDependencies, uniqueConstraints, logger)
     {
     }
 
@@ -106,7 +107,7 @@ public class UniqueCachedRepository<T> : CachedRepository<T, Guid>, IUniqueCache
         return result;
     }
 
-    public IReadOnlyList<T> FindAllById(bool includeSoftDeleted = false, params object[] ids)
+    public IReadOnlyList<T> FindAllById(bool includeSoftDeleted = false, params Guid[] ids)
     {
         if (includeSoftDeleted)
         {
@@ -126,12 +127,12 @@ public class UniqueCachedRepository<T> : CachedRepository<T, Guid>, IUniqueCache
             .ToList();
     }
 
-    public override IReadOnlyList<T> FindAllById(params object[] ids)
+    public override IReadOnlyList<T> FindAllById(params Guid[] ids)
     {
         return base.FindAllById(ids);
     }
 
-    public bool Contains(object id, bool includeSoftDeleted = false)
+    public bool Contains(Guid id, bool includeSoftDeleted = false)
     {
         if (includeSoftDeleted)
         {
@@ -146,16 +147,16 @@ public class UniqueCachedRepository<T> : CachedRepository<T, Guid>, IUniqueCache
         return false;
     }
 
-    public override bool Contains(object id)
+    public override bool Contains(Guid id)
     {
         return Contains(id, includeSoftDeleted: false);
     }
 
-    public bool ContainsAll(bool includeSoftDeleted = false, params object[] ids)
+    public bool ContainsAll(bool includeSoftDeleted = false, params Guid[] ids)
     {
         if (includeSoftDeleted)
         {
-            return base.Contains(ids);
+            return base.ContainsAll(ids);
         }
 
         return ids.All(id =>
@@ -169,12 +170,12 @@ public class UniqueCachedRepository<T> : CachedRepository<T, Guid>, IUniqueCache
         });
     }
 
-    public override bool ContainsAll(params object[] ids)
+    public override bool ContainsAll(params Guid[] ids)
     {
         return ContainsAll(false, ids);
     }
 
-    public bool ContainsAny(bool includeSoftDeleted = false, params object[] ids)
+    public bool ContainsAny(bool includeSoftDeleted = false, params Guid[] ids)
     {
         if (includeSoftDeleted)
         {
@@ -326,9 +327,9 @@ public class UniqueCachedRepository<T> : CachedRepository<T, Guid>, IUniqueCache
     /// </summary>
     /// <param name="id"></param>
     /// <returns></returns>
-    public override bool DeleteById(object id)
+    public override bool DeleteById(Guid id)
     {
-        return DeleteById((Guid)id, softDelete: true);
+        return DeleteById(id, softDelete: true);
     }
 
     public bool DeleteById(Guid id, bool softDelete = true)

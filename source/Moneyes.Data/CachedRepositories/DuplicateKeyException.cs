@@ -10,7 +10,9 @@ namespace Moneyes.Data
         /// <summary>
         /// The primary key value.
         /// </summary>
+#nullable enable
         public object? Key { get; }
+#nullable disable
 
         public DuplicateKeyException(string message, object key = null) : base(message)
         {

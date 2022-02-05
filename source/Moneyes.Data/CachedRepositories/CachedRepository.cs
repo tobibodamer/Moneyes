@@ -12,53 +12,11 @@ using Moneyes.Core.Filters;
 
 namespace Moneyes.Data
 {
-    public class CachedRepository<T, TKey> : CachedRepository<T>, ICachedRepository<T, TKey>
+    public partial class CachedRepository<T, TKey> : ICachedRepository<T, TKey>
         where TKey : struct
     {
-        private readonly Func<T, TKey> _keySelector;
-
-        public CachedRepository(
-            IDatabaseProvider<ILiteDatabase> databaseProvider,
-            Func<T, TKey> keySelector,
-            CachedRepositoryOptions options,
-            DependencyRefreshHandler refreshHandler,
-            bool autoId = false,
-            IEnumerable<IRepositoryDependency<T>> repositoryDependencies = null,
-            IEnumerable<IUniqueConstraint<T>> uniqueConstraints = null,
-            ILogger<CachedRepository<T, TKey>> logger = null)
-            : base(databaseProvider, options, refreshHandler, null, autoId, repositoryDependencies, uniqueConstraints, logger)
-        {
-            ArgumentNullException.ThrowIfNull(keySelector);
-
-            _keySelector = keySelector;
-        }
-
-        public virtual bool DeleteById(TKey id)
-        {
-            return base.DeleteById(id);
-        }
-
-        public virtual T? FindById(TKey id)
-        {
-            return base.FindById(id);
-        }
-
-        public override object GetKey(T entity)
-        {
-            return _keySelector(entity);
-        }
-
-        TKey ICachedRepository<T, TKey>.GetKey(T entity)
-        {
-            return _keySelector(entity);
-        }
-    }
-
-    public delegate ConflictResolutionAction ConflictResolutionDelegate<T>(ConstraintViolation<T> violation);
-    public partial class CachedRepository<T> : ICachedRepository<T>
-    {
         private readonly Lazy<ILiteCollection<T>> _collectionLazy;
-        private readonly Func<T, object> _keySelector;
+        private readonly Func<T, TKey> _keySelector;
         private readonly ReaderWriterLock _cacheLock = new();
         public bool IsAutoId { get; }
         public string CollectionName => Options.CollectionName;
@@ -69,9 +27,9 @@ namespace Moneyes.Data
         protected IEnumerable<IUniqueConstraint<T>> UniqueConstraints { get; set; }
         protected CachedRepositoryOptions Options { get; }
         protected DependencyRefreshHandler DependencyRefreshHandler { get; }
-        protected Dictionary<object, T> Cache { get; } = new();
+        protected Dictionary<TKey, T> Cache { get; } = new();
 
-        protected ILogger<CachedRepository<T>> Logger { get; }
+        protected ILogger<CachedRepository<T, TKey>> Logger { get; }
 
         public event Action<T> EntityAdded;
         public event Action<T> EntityUpdated;
@@ -83,11 +41,10 @@ namespace Moneyes.Data
             IDatabaseProvider<ILiteDatabase> databaseProvider,
             CachedRepositoryOptions options,
             DependencyRefreshHandler refreshHandler,
-            Func<T, object> keySelector = null,
-            bool autoId = false,
+            Func<T, TKey> keySelector = null,
             IEnumerable<IRepositoryDependency<T>> repositoryDependencies = null,
             IEnumerable<IUniqueConstraint<T>> uniqueConstraints = null,
-            ILogger<CachedRepository<T>> logger = null)
+            ILogger<CachedRepository<T, TKey>> logger = null)
         {
             ArgumentNullException.ThrowIfNull(databaseProvider);
 
@@ -173,6 +130,10 @@ namespace Moneyes.Data
 
         #endregion
 
+        public virtual TKey GetKey(T entity)
+        {
+            return _keySelector(entity);
+        }
 
         #region Cache
 
@@ -273,13 +234,13 @@ namespace Moneyes.Data
 
         protected void AddOrUpdateCache(T entity)
         {
-            object key = GetKey(entity);
+            TKey key = GetKey(entity);
 
             Cache[key] = entity;
         }
         protected bool AddToCache(T entity)
         {
-            object key = GetKey(entity);
+            TKey key = GetKey(entity);
 
             return Cache.TryAdd(key, entity);
         }
@@ -301,27 +262,9 @@ namespace Moneyes.Data
             return entities;
         }
 
-        #endregion
-        #region Validation
+#endregion
 
-        /// <summary>
-        /// Exception when a constraint is violated and <see cref="ConflictResolution.Fail"/> is chosen.
-        /// </summary>
-        public class ConstraintViolationException : Exception
-        {
-            public string PropertyName { get; }
-            public object NewValue { get; }
-            public object ExistingValue { get; }
-
-            public ConstraintViolationException(
-                string message, string propertyName, object newValue, object existingValue)
-                : base(message)
-            {
-                PropertyName = propertyName;
-                NewValue = newValue;
-                ExistingValue = existingValue;
-            }
-        }
+#region Validation
 
         protected virtual ConstraintViolationHandler CreateConstraintViolationHandler()
         {
@@ -398,7 +341,7 @@ namespace Moneyes.Data
             };
         }
 
-        protected virtual void ValidatePrimaryKey(object key, IEnumerable<T> existingEntities = null)
+        protected virtual void ValidatePrimaryKey(TKey key, IEnumerable<T> existingEntities = null)
         {
             existingEntities ??= GetFromCache().ToArray();
 
@@ -413,7 +356,7 @@ namespace Moneyes.Data
             }
         }
 
-        protected virtual void ValidatePrimaryKeys(IReadOnlySet<object> keys, IEnumerable<T> existingEntities = null)
+        protected virtual void ValidatePrimaryKeys(IReadOnlySet<TKey> keys, IEnumerable<T> existingEntities = null)
         {
             if (!IsUnique(keys))
             {
@@ -444,15 +387,12 @@ namespace Moneyes.Data
 
         #endregion
 
-        public virtual object GetKey(T entity)
-        {
-            return _keySelector?.Invoke(entity) ?? null;
-        }
+
 
         #region CRUD
         public virtual T Create(T entity)
         {
-            object key;
+            TKey key;
 
             if (!IsAutoId)
             {
@@ -480,8 +420,6 @@ namespace Moneyes.Data
                 {
                     var bsonKey = Collection.Insert(entity);
                     createdEntity = Collection.FindById(bsonKey);
-
-                    key = bsonKey.RawValue;
 
                     // Update cache with created entity
                     AddOrUpdateCache(createdEntity);
@@ -542,7 +480,7 @@ namespace Moneyes.Data
 
                 foreach (T entity in entitiesToInsert)
                 {
-                    object id = GetKey(entity);
+                    TKey id = GetKey(entity);
 
                     if (AddToCache(entity))
                     {
@@ -581,7 +519,7 @@ namespace Moneyes.Data
         }
 
 #nullable enable
-        public virtual T? FindById(object id)
+        public virtual T? FindById(TKey id)
 #nullable disable
         {
             ArgumentNullException.ThrowIfNull(id);
@@ -608,7 +546,7 @@ namespace Moneyes.Data
             return default;
         }
 
-        public virtual IReadOnlyList<T> FindAllById(params object[] ids)
+        public virtual IReadOnlyList<T> FindAllById(params TKey[] ids)
         {
             ArgumentNullException.ThrowIfNull(ids);
 
@@ -617,27 +555,34 @@ namespace Moneyes.Data
                 return new List<T>();
             }
 
-            return ids
-                .Select(id => Cache.GetValueOrDefault(id))
-                .Where(x => x != null)
-                .ToList();
+            List<T> result = new();
+
+            foreach (var id in ids)
+            {
+                if (Cache.TryGetValue(id, out var entity))
+                {
+                    result.Add(entity);
+                }
+            }
+
+            return result.AsReadOnly();
         }
 
-        public virtual bool Contains(object id)
+        public virtual bool Contains(TKey id)
         {
             ArgumentNullException.ThrowIfNull(id);
 
             return Cache.ContainsKey(id);
         }
 
-        public virtual bool ContainsAll(params object[] ids)
+        public virtual bool ContainsAll(params TKey[] ids)
         {
             ArgumentNullException.ThrowIfNull(ids);
 
             return ids.All(id => Cache.ContainsKey(id));
         }
 
-        public virtual bool ContainsAny(params object[] ids)
+        public virtual bool ContainsAny(params TKey[] ids)
         {
             ArgumentNullException.ThrowIfNull(ids);
 
@@ -653,7 +598,7 @@ namespace Moneyes.Data
         {
             ArgumentNullException.ThrowIfNull(entity);
 
-            object key = GetKey(entity);
+            TKey key = GetKey(entity);
 
             // Dont validate primary key, because might be update            
 
@@ -677,9 +622,9 @@ namespace Moneyes.Data
 
             return SetInternal(entity, constraintViolationHandler);
         }
-        public virtual bool Set(object id,
-            Func<object, T> addEntityFactory,
-            Func<object, T, T> updateEntityFactory,
+        public virtual bool Set(TKey id,
+            Func<TKey, T> addEntityFactory,
+            Func<TKey, T, T> updateEntityFactory,
             ConflictResolutionDelegate<T> onConflict = null)
         {
             // Create entity using add and update entity factories
@@ -697,7 +642,7 @@ namespace Moneyes.Data
             ArgumentNullException.ThrowIfNull(addEntityFactory);
             ArgumentNullException.ThrowIfNull(updateEntityFactory);
 
-            object key = GetKey(entity);
+            TKey key = GetKey(entity);
 
             entity = CreateEntityFromFactory(KeyValuePair.Create(key, entity), addEntityFactory, updateEntityFactory);
 
@@ -733,7 +678,7 @@ namespace Moneyes.Data
             {
                 // Upsert in db
                 inserted = Collection.Upsert(validatedEntity);
-                
+
                 // Upsert in cache
                 AddOrUpdateCache(validatedEntity);
             }
@@ -793,9 +738,9 @@ namespace Moneyes.Data
             return SetInternal(entitiesToUpsert, constraintViolationHandler);
         }
 
-        public virtual int SetMany(IEnumerable<object> ids,
-            Func<object, T> addEntityFactory,
-            Func<object, T, T> updateEntityFactory,
+        public virtual int SetMany(IEnumerable<TKey> ids,
+            Func<TKey, T> addEntityFactory,
+            Func<TKey, T, T> updateEntityFactory,
             ConflictResolutionDelegate<T> onConflict = null)
         {
             var keys = ids.ToHashSet();
@@ -929,7 +874,7 @@ namespace Moneyes.Data
         {
             ArgumentNullException.ThrowIfNull(entity);
 
-            object key = GetKey(entity);
+            TKey key = GetKey(entity);
 
             _cacheLock.AcquireReaderLock(CacheTimeout);
             try
@@ -966,7 +911,7 @@ namespace Moneyes.Data
 
             return UpdateInternal(entity, constraintViolationHandler);
         }
-        public virtual bool Update(object id, Func<object, T, T> updateEntityFactory,
+        public virtual bool Update(TKey id, Func<TKey, T, T> updateEntityFactory,
             ConflictResolutionDelegate<T> onConflict = null)
         {
             ArgumentNullException.ThrowIfNull(id);
@@ -1085,7 +1030,7 @@ namespace Moneyes.Data
 
             return UpdateInternal(entitiesToUpdate, constraintViolationHandler);
         }
-        public virtual int UpdateMany(IEnumerable<object> ids, Func<object, T, T> updateEntityFactory,
+        public virtual int UpdateMany(IEnumerable<TKey> ids, Func<TKey, T, T> updateEntityFactory,
             ConflictResolutionDelegate<T> onConflict = null)
         {
             ArgumentNullException.ThrowIfNull(ids);
@@ -1220,7 +1165,7 @@ namespace Moneyes.Data
         /// <param name="updateEntityFactory"></param>
         /// <returns></returns>
         /// <exception cref="KeyNotFoundException"></exception>
-        private T CheckKeyAndCreateEntity(object key, Func<object, T, T> updateEntityFactory)
+        private T CheckKeyAndCreateEntity(TKey key, Func<TKey, T, T> updateEntityFactory)
         {
             return CreateEntityFromFactory(key, addEntityFactory: key => throw new KeyNotFoundException(), updateEntityFactory);
         }
@@ -1232,7 +1177,7 @@ namespace Moneyes.Data
         /// <param name="updateEntityFactory"></param>
         /// <returns></returns>
         /// <exception cref="KeyNotFoundException"></exception>
-        private T CheckKeyAndCreateEntity(KeyValuePair<object, T> kvp, Func<T, T, T> updateEntityFactory)
+        private T CheckKeyAndCreateEntity(KeyValuePair<TKey, T> kvp, Func<T, T, T> updateEntityFactory)
         {
             return CreateEntityFromFactory(kvp, addEntityFactory: e => throw new KeyNotFoundException(), updateEntityFactory);
         }
@@ -1244,7 +1189,7 @@ namespace Moneyes.Data
         /// <param name="addEntityFactory"></param>
         /// <param name="updateEntityFactory"></param>
         /// <returns></returns>
-        private T CreateEntityFromFactory(object key, Func<object, T> addEntityFactory, Func<object, T, T> updateEntityFactory)
+        private T CreateEntityFromFactory(TKey key, Func<TKey, T> addEntityFactory, Func<TKey, T, T> updateEntityFactory)
         {
             if (!Cache.TryGetValue(key, out T existing))
             {
@@ -1254,7 +1199,7 @@ namespace Moneyes.Data
             return updateEntityFactory(key, existing);
         }
 
-        private T CreateEntityFromFactory(KeyValuePair<object, T> kvp, Func<T, T> addEntityFactory, Func<T, T, T> updateEntityFactory)
+        private T CreateEntityFromFactory(KeyValuePair<TKey, T> kvp, Func<T, T> addEntityFactory, Func<T, T, T> updateEntityFactory)
         {
             if (Cache.TryGetValue(kvp.Key, out var existing))
             {
@@ -1266,11 +1211,11 @@ namespace Moneyes.Data
 
         public virtual bool Delete(T entity)
         {
-            object key = GetKey(entity);
+            TKey key = GetKey(entity);
 
             return DeleteById(key);
         }
-        public virtual bool DeleteById(object id)
+        public virtual bool DeleteById(TKey id)
         {
             ArgumentNullException.ThrowIfNull(id);
 
@@ -1321,7 +1266,7 @@ namespace Moneyes.Data
 
             foreach (var kvp in Cache.Where(kvp => compiledPredicate(kvp.Value)).ToList())
             {
-                object id = kvp.Key;
+                TKey id = kvp.Key;
 
                 if (Cache.Remove(id, out var entity))
                 {
@@ -1414,5 +1359,56 @@ namespace Moneyes.Data
         }
 
         #endregion
+
+        #region Explicit implementations
+
+        object ICachedRepository<T>.GetKey(T entity)
+        {
+            return GetKey(entity);
+        }
+
+        IReadOnlyList<T> ICachedRepository<T>.FindAllById(params object[] ids)
+        {
+            return FindAllById(ids.Cast<TKey>().ToArray());
+        }
+
+        bool ICachedRepository<T>.ContainsAny(params object[] ids)
+        {
+            return ContainsAny(ids.Cast<TKey>().ToArray());
+        }
+
+        bool ICachedRepository<T>.ContainsAll(params object[] ids)
+        {
+            return ContainsAll(ids.Cast<TKey>().ToArray());
+        }
+
+        bool ICachedRepository<T>.Contains(object id)
+        {
+            return Contains((TKey)id);
+        }
+
+        bool ICachedRepository<T>.Set(object id, Func<object, T> addEntityFactory, Func<object, T, T> updateEntityFactory, ConflictResolutionDelegate<T> onConflict)
+        {
+            return Set((TKey)id, x => addEntityFactory(x), (x, e) => updateEntityFactory(x, e), onConflict);
+        }
+
+        int ICachedRepository<T>.SetMany(IEnumerable<object> ids, Func<object, T> addEntityFactory, Func<object, T, T> updateEntityFactory, ConflictResolutionDelegate<T> onConflict)
+        {
+            return SetMany(ids.Cast<TKey>(), x => addEntityFactory(x), (x, e) => updateEntityFactory(x, e), onConflict);
+        }
+
+        bool ICachedRepository<T>.Update(object id, Func<object, T, T> updateEntityFactory, ConflictResolutionDelegate<T> onConflict)
+        {
+            return Update((TKey)id, (x, e) => updateEntityFactory(x, e), onConflict);
+        }
+
+        int ICachedRepository<T>.UpdateMany(IEnumerable<object> ids, Func<object, T, T> updateEntityFactory, ConflictResolutionDelegate<T> onConflict)
+        {
+            return UpdateMany(ids.Cast<TKey>(), (x, e) => updateEntityFactory(x, e), onConflict);
+        }
+
+        #endregion
     }
+
+    public delegate ConflictResolutionAction ConflictResolutionDelegate<T>(ConstraintViolation<T> violation);
 }

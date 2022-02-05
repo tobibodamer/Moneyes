@@ -152,7 +152,7 @@ namespace Moneyes.UI
 
                 _bankDetailsRepository.Create(dbo);
             }
-            catch (CachedRepository<CategoryDbo>.ConstraintViolationException ex)
+            catch (ConstraintViolationException ex)
             {
                 if (ex.PropertyName.Equals(nameof(CategoryDbo.Name)))
                 {

@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace Moneyes.Data
 {
-    partial class CachedRepository<T>
+    partial class CachedRepository<T, TKey>
     {
         protected class ConstraintViolationHandler
         {

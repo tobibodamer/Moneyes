@@ -8,17 +8,21 @@ namespace Moneyes.Data
     {        
         T Create(T entity);
         IEnumerable<T> GetAll();
-        T FindById(object id);
         bool Update(T entity);
         int UpdateMany(IEnumerable<T> entities);
         bool Set(T entity);
         int SetMany(IEnumerable<T> entities);
-        bool DeleteById(object id);
         int DeleteAll();
         int DeleteMany(Expression<Func<T, bool>> predicate);
 
         event Action<T> EntityAdded;
         event Action<T> EntityUpdated;
         event Action<T> EntityDeleted;
+    }
+
+    public interface IBaseRepository<T, TKey> : IBaseRepository<T>
+    {
+        T FindById(TKey id);
+        bool DeleteById(TKey id);
     }
 }

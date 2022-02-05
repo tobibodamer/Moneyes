@@ -15,8 +15,10 @@ public interface IUniqueCachedRepository<T> : ICachedRepository<T, Guid>
 {
     IEnumerable<T> GetAll(bool includeSoftDeleted = false);
     IReadOnlyList<T> FindAllById(bool includeSoftDeleted = false, params Guid[] ids);
+#nullable enable
     T? FindById(Guid id, bool includeSoftDeleted = false);
-    
+#nullable disable
+
     bool ContainsAny(bool includeSoftDeleted = false, params Guid[] ids);
     bool ContainsAll(bool includeSoftDeleted = false, params Guid[] ids);
     bool Contains(Guid id, bool includeSoftDeleted = false);

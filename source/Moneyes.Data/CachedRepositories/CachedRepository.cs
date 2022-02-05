@@ -20,7 +20,9 @@ namespace Moneyes.Data
         private readonly ReaderWriterLock _cacheLock = new();
         public bool IsAutoId { get; }
         public string CollectionName => Options.CollectionName;
+#nullable enable
         public Func<RepositoryOperation, ConflictResolutionDelegate<T>>? DefaultConflictHandler { get; set; }
+#nullable disable
         protected ILiteDatabase Database { get; }
         protected ILiteCollection<T> Collection => _collectionLazy.Value;
         protected IEnumerable<IRepositoryDependency<T>> RepositoryDependencies { get; set; }

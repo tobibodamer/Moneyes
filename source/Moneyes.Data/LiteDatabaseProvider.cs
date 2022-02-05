@@ -8,7 +8,7 @@ namespace Moneyes.Data
 {
     public class LiteDatabaseProvider : IDatabaseProvider<ILiteDatabase>
     {
-        private Func<SecureString?> _createMasterPasswordFunc;
+        private Func<SecureString> _createMasterPasswordFunc;
         private Func<SecureString> _requestMasterPasswordFunc;
 
         private LiteDbConfig _dbConfig;
@@ -84,7 +84,7 @@ namespace Moneyes.Data
 
                 return true;
             }
-            catch (LiteException ex)
+            catch (LiteException)
             {
                 // Failed to open without master password
             }
@@ -109,7 +109,7 @@ namespace Moneyes.Data
 
                     return true;
                 }
-                catch (Exception ex)
+                catch
                 {
                     //MessageBox.Show(ex.Message, "Could not open database", MessageBoxButton.OK, MessageBoxImage.Error);
                 }

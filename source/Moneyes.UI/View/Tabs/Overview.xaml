@@ -8,7 +8,7 @@
              xmlns:vm="clr-namespace:Moneyes.UI.ViewModels"
              xmlns:m="clr-namespace:Moneyes.Core;assembly=Moneyes.Core"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-             xmlns:lvc="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
+             xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.WPF;assembly=LiveChartsCore.SkiaSharpView.WPF"
              Name="overviewPage"
              d:DataContext="{d:DesignInstance Type=vm:OverviewViewModel}"
              mc:Ignorable="d" 
@@ -306,14 +306,43 @@
             </ItemsControl>
         </DockPanel>
 
-        <lvc:PieChart Grid.Row="3" Height="250" Width="350" DataTooltip="{x:Null}" Margin="20"
-                      Series="{Binding ExpenseCategories.Categories, Converter={StaticResource CategoryPieSeriesConverter}}" 
-                      InnerRadius="0">
-            <lvc:PieChart.ChartLegend>
-                <local:CategoryExpenseLegend/>
-            </lvc:PieChart.ChartLegend>
+        <lvc:PieChart Grid.Row="3" Height="250" Width="450" Margin="20" LegendPosition="Right" UseLayoutRounding="True"
+                      Series="{Binding ExpenseCategories.Categories, Converter={StaticResource CategoryPieSeriesConverter}}">
+            <lvc:PieChart.LegendTemplate>
+                <DataTemplate>
+                    <ItemsControl ItemsSource="{Binding Series, RelativeSource={RelativeSource AncestorType=lvc:DefaultLegend}}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel HorizontalAlignment="Center" VerticalAlignment="Center" 
+                                    Orientation="{Binding Orientation, RelativeSource={RelativeSource AncestorType=lvc:DefaultLegend}}" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Padding="15 4" Background="#eee">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock VerticalAlignment="Center">
+                                            <TextBlock.Text>
+                                                <MultiBinding StringFormat="{}{0} ({1} €)">
+                                                    <Binding Path="Name" />
+                                                    <Binding Path="Values[0]"/>
+                                                </MultiBinding>
+                                            </TextBlock.Text>
+                                        </TextBlock>
+                                        <lvc:MotionCanvas
+                                            Margin="8 0 0 0"
+                                            PaintTasks="{Binding CanvasSchedule.PaintSchedules}"
+                                            Width="{Binding CanvasSchedule.Width}"
+                                            Height="{Binding CanvasSchedule.Height}"
+                                            VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </DataTemplate>
+            </lvc:PieChart.LegendTemplate>
         </lvc:PieChart>
-
 
         <!--<WrapPanel>
             <ItemsControl ItemsSource="{Binding Categories}">

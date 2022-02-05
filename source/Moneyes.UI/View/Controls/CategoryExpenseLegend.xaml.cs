@@ -1,4 +1,5 @@
-﻿using LiveCharts.Wpf;
+﻿using LiveChartsCore.SkiaSharpView;
+using LiveChartsCore;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -21,7 +22,7 @@ namespace Moneyes.UI.View
     /// <summary>
     /// Interaktionslogik für CategoryExpenseLegend.xaml
     /// </summary>
-    public partial class CategoryExpenseLegend : UserControl, IChartLegend
+    public partial class CategoryExpenseLegend : UserControl
     {
         public CategoryExpenseLegend()
         {
@@ -29,8 +30,8 @@ namespace Moneyes.UI.View
             DataContext = this;
         }
 
-        private List<SeriesViewModel> _series;
-        public List<SeriesViewModel> Series
+        private List<ISeries<double>> _series;
+        public List<ISeries<double>> Series
         {
             get => _series;
             set

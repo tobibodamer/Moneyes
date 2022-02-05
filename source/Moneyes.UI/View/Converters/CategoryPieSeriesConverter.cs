@@ -1,8 +1,12 @@
-﻿using LiveCharts;
-using LiveCharts.Wpf;
+﻿using LiveChartsCore;
+using LiveChartsCore.Measure;
+using LiveChartsCore.SkiaSharpView;
+using LiveChartsCore.SkiaSharpView.Painting;
 using Moneyes.UI.ViewModels;
+using SkiaSharp;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Drawing;
 using System.Linq;
 using System.Windows;
@@ -19,7 +23,7 @@ namespace Moneyes.UI.View
             {
                 //var mapper = Mappers.Pie<CategoryExpenseViewModel>().Value(c => (double)c.TotalExpense);
 
-                SeriesCollection col = new SeriesCollection();
+                List<ISeries> col = new();
 
                 var totalExpense = collection
                     //.Where(c => !c.IsNoCategory)
@@ -32,35 +36,40 @@ namespace Moneyes.UI.View
 
                 var biggestExpenses = collection
                         .Where(c => (c.TotalExpense / totalExpense) > 0.02m);
-                        //.Where(c => !c.IsNoCategory);
+                //.Where(c => !c.IsNoCategory);
 
                 var restAmount = totalExpense - biggestExpenses.Sum(c => c.TotalExpense);
+
+                decimal calcPercentage(decimal value)
+                {
+                    return Math.Round((value / totalExpense) * 100);
+                }
 
                 col.AddRange(
                     biggestExpenses
                         .OrderByDescending(c => c.TotalExpense)
-                        .Select(v => new PieSeries()
+                        .Select(v => new PieSeries<decimal>()
                         {
-                            Values = new ChartValues<double>(new double[] { (double)v.TotalExpense }),
-                            Title = v.Name,
-                            DataLabels = true,
-                            LabelPosition = (v.TotalExpense / totalExpense) > 0.11m ? PieLabelPosition.InsideSlice :
-                                                PieLabelPosition.OutsideSlice,
-                            Foreground = (v.TotalExpense / totalExpense) > 0.11m ? new SolidColorBrush(Colors.White) :
-                                new SolidColorBrush(Colors.Black),
-                            LabelPoint = p => v.Name + $"\n{Math.Round(p.Participation * 100)} %"
+                            HoverPushout = 5,
+                            Values = new ObservableCollection<decimal>(new decimal[] { v.TotalExpense }),
+                            Name = v.Name,
+                            DataLabelsPosition = PolarLabelsPosition.Middle,
+                            //DataLabelsPaint = new SolidColorPaint(SKColors.White),
+                            DataLabelsSize = 10,
+                            DataLabelsFormatter = p => $"{calcPercentage(p.Model)} %",
+                            TooltipLabelFormatter = p => v.Name + $" {Math.Round(p.Model)} € ({calcPercentage(p.Model)} %)"
                         })
-                        .Concat(new PieSeries[] {
-                            new PieSeries() {
-                                Values = new ChartValues<double>(new double[] { (double)restAmount }),
-                                Title = "Other",
-                                DataLabels = true,
-                                Foreground = (restAmount / totalExpense) > 0.11m ? new SolidColorBrush(Colors.White) :
-                                     new SolidColorBrush(Colors.Black),
-                                LabelPosition = (restAmount / totalExpense) > 0.11m ? PieLabelPosition.InsideSlice :
-                                                PieLabelPosition.OutsideSlice,
-                                LabelPoint = p => "Other" + $"\n{Math.Round(p.Participation * 100)} %"
-                            } }));
+                        .Concat(new PieSeries<decimal>[] {
+                            new PieSeries<decimal>() {
+                                HoverPushout = 5,
+                                Values = new ObservableCollection<decimal>(new decimal[] { restAmount }),
+                                Name = "Other",
+                                //DataLabelsPaint = new SolidColorPaint(SKColors.White),
+                                DataLabelsSize = 10,
+                                DataLabelsPosition = PolarLabelsPosition.Middle,
+                                DataLabelsFormatter = p => "Other" + $" {calcPercentage(p.Model)} %",
+                                TooltipLabelFormatter = p => "Other" + $" {Math.Round(p.Model)} € ({calcPercentage(p.Model)} %)"
+                        } }));
 
                 return col;
             }

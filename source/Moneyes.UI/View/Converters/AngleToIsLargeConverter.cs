@@ -1,5 +1,4 @@
-﻿using LiveCharts.Configurations;
-using System;
+﻿using System;
 using System.Collections;
 using System.Globalization;
 using System.Text;

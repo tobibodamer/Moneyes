@@ -79,8 +79,8 @@ namespace Moneyes.UI.View
         public static Color ColorFromName(string colorName)
         {
             return (Color)ColorConverter.ConvertFromString(colorName);
-            System.Drawing.Color systemColor = System.Drawing.Color.FromName(colorName);
-            return Color.FromArgb(systemColor.A, systemColor.R, systemColor.G, systemColor.B);
+            //System.Drawing.Color systemColor = System.Drawing.Color.FromName(colorName);
+            //return Color.FromArgb(systemColor.A, systemColor.R, systemColor.G, systemColor.B);
         }
     }
 }

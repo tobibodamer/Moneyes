@@ -3,10 +3,9 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:i="clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity"            
+             xmlns:i="http://schemas.microsoft.com/xaml/behaviors"       
              xmlns:vm="clr-namespace:Moneyes.UI.ViewModels"
              xmlns:m="clr-namespace:Moneyes.Core;assembly=Moneyes.Core"
-             xmlns:controls="clr-namespace:System.Windows.Controls;assembly=MultiSelectTreeView"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              TextElement.Foreground="{DynamicResource MaterialDesignBody}"
              xmlns:local="clr-namespace:Moneyes.UI.View"
@@ -66,8 +65,9 @@
                 </Style>
             </TreeView.ItemContainerStyle>
             <i:Interaction.Behaviors>
+
                 <local:TreeViewSelectionBehavior SelectedItem="{Binding SelectedCategory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                 HierarchyPredicate="GetHierarchyPredicate"/>                
+                                                 HierarchyPredicate="GetHierarchyPredicate"/>
             </i:Interaction.Behaviors>
             <TreeView.ItemTemplate>
                 <HierarchicalDataTemplate ItemsSource="{Binding SubCatgeories}" DataType="{x:Type vm:CategoryExpenseViewModel}">

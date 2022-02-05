@@ -212,8 +212,9 @@ namespace Moneyes.UI
         //        .Where(x => !onlyDiffering || !TransactionEquals(x.e, x.Item2))
         //        .ToList();
         //}
-
+#nullable enable
         public Transaction? GetByUID(string uid)
+#nullable disable
         {
             var transactionDbo = _transactionRepository.GetAll()
                 .FirstOrDefault(t => t.UID.Equals(uid));

@@ -10,7 +10,9 @@ namespace Moneyes.UI.Services
     {
         void ShowMessage(string messageText, string actionText = null, Action action = null);
 
+#nullable enable
         event Action<string, string?, Action?> NewMessage;
+#nullable disable
     }
 
     class StatusMessageService : IStatusMessageService

@@ -54,7 +54,7 @@ namespace Moneyes.UI.ViewModels
 
         public ObservableCollection<IWizardStepViewModel> Steps { get; }
 
-        public AsyncCommand ApplyCommand { get; }
+        public RelayCommand ApplyCommand { get; }
 
         public ICommand CancelCommand { get; }
 
@@ -85,7 +85,7 @@ namespace Moneyes.UI.ViewModels
             Steps.Add(accountImport);
             Steps.Add(finishedStep);
 
-            ApplyCommand = new AsyncCommand(async ct =>
+            ApplyCommand = new RelayCommand(() =>
             {
                 RequestClose?.Invoke(this, new() { Result = true });
             });
@@ -100,9 +100,11 @@ namespace Moneyes.UI.ViewModels
                 await PreviousStep();
             });
 
-            FinishCommand = new AsyncCommand(async ct =>
+            FinishCommand = new AsyncCommand(ct =>
             {
-                await ApplyCommand.ExecuteAsync();
+                ApplyCommand.Execute(null);
+
+                return Task.CompletedTask;
             });
 
             NextStep().FireAndForgetSafeAsync();

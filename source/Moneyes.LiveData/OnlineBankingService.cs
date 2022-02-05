@@ -132,6 +132,12 @@ namespace Moneyes.LiveData
                     return ParseHBCIError(result.Messages).Item1;
                 }
 
+
+                foreach (var accInfo in result.Data)
+                {
+                    _logger?.LogDebug("Account permissions: {@permissions}", accInfo.AccountPermissions.Select(x => x.Segment));
+                }
+
                 return BankingResult.Successful(result.Data.Select(accInfo =>
                 {
                     return new AccountDetails(
@@ -236,7 +242,7 @@ namespace Moneyes.LiveData
             ValidateBankingDetails(onlineBankingDetails);
             UpdateConnectionDetails(onlineBankingDetails, account);
 
-            _logger?.LogInformation("Fetching balance for account {Account} ({AccNumber})}...",
+            _logger?.LogInformation("Fetching balance for account {Account} ({AccNumber})...",
                 account.Type,
                 account.Number);
 

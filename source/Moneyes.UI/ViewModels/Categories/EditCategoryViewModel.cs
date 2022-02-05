@@ -31,7 +31,7 @@ namespace Moneyes.UI.ViewModels
                 RequestClose?.Invoke(this, new() { Result = true });
             };
 
-            CancelCommand = new AsyncCommand(async ct =>
+            CancelCommand = new RelayCommand(() =>
             {
                 RequestClose?.Invoke(this, new() { Result = false });
             });

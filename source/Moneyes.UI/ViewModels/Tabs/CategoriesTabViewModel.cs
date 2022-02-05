@@ -86,7 +86,7 @@ namespace Moneyes.UI.ViewModels
 
         public void Refresh()
         {
-            UpdateCategories().ContinueWith(async t =>
+            UpdateCategories().ContinueWith(t =>
                 {
                     NeedsUpdate = false;
                 })

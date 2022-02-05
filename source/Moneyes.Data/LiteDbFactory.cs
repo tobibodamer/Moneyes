@@ -1,6 +1,8 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq.Expressions;
+using System.Runtime.Versioning;
 using System.Security;
 using System.Threading.Tasks;
 using LiteDB;
@@ -37,7 +39,7 @@ namespace Moneyes.Data
                 if (_config.Value.EncryptSecureStrings)
                 {
                     SecureString securePassword = password.ToSecuredString();
-                    
+
                     bsonMapper.RegisterType<SecureString>
                     (
                         serialize: str => SymmetricEncryptor.EncryptString(
@@ -52,16 +54,26 @@ namespace Moneyes.Data
             {
                 if (_config.Value.EncryptSecureStrings)
                 {
-                    bsonMapper.RegisterType<SecureString>
-                    (
-                        serialize: str => EncryptionMethods.EncryptString(str.ToUnsecuredString()),
-                        deserialize: value => value.IsString ?
-                            EncryptionMethods.DecryptString(value.AsString).ToSecuredString() : null
-                    );
+                    if (OperatingSystem.IsWindows())
+                    {
+                        bsonMapper.RegisterType<SecureString>
+                        (
+                            serialize: SerializeSecureStringWindows,
+                            deserialize: DeserializeSecureStringWindows
+                        );
+                    }
                 }
             }
 
             return new LiteDatabase(connectionString, bsonMapper);
         }
+
+        [SupportedOSPlatform("windows")]
+        private BsonValue SerializeSecureStringWindows(SecureString str) => EncryptionMethods.EncryptString(str.ToUnsecuredString());
+
+        [SupportedOSPlatform("windows")]
+        private SecureString DeserializeSecureStringWindows(BsonValue value) => value.IsString ?
+                                EncryptionMethods.DecryptString(value.AsString).ToSecuredString() : null;
+
     }
 }

@@ -121,7 +121,9 @@ namespace Moneyes.Core
         /// <summary>
         /// Gets the category of this transaction.
         /// </summary>
+#nullable enable
         public Category? Category { get; set; }
+#nullable disable
 
         /// <summary>
         /// Gets the index of this transactions. For identical transactions only!

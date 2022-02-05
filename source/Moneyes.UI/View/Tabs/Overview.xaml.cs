@@ -26,7 +26,7 @@ namespace Moneyes.UI.View
 
             CategoryItems.SourceUpdated += CategoryItems_SourceUpdated;
 
-            SwapCommand = new AsyncCommand<int[]>(async (indeces, ct) =>
+            SwapCommand = new RelayCommand<int[]>((indeces) =>
             {
                 (CategoryItems.ItemsSource as ObservableCollection<CategoryExpenseViewModel>)
                     .Move(indeces[0], indeces[1]);

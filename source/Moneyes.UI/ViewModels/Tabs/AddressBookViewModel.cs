@@ -55,7 +55,7 @@ namespace Moneyes.UI.ViewModels
             }
         }
 
-        private Dictionary<string, List<Transaction>> _accountTransactionsMap;
+        private Dictionary<string, List<Transaction>> _accountTransactionsMap = new();
 
         public AddressBookViewModel(
             LiveDataService liveDataService,

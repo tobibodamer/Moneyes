@@ -123,6 +123,8 @@ namespace Test
             //PrintSales("Total", expenseSales, printFull: false);
             //filteredByCategory.ToList().ForEach(c => PrintSales(c.category.Name, c.filtered, expenseSales, true));
             //PrintSales("Other", restSales, expenseSales);
+
+            await Task.CompletedTask;
         }
 
         public static void Main(string[] args)

@@ -294,35 +294,6 @@ namespace Moneyes.UI
             return numTransactionsAdded;
         }
 
-        public async Task<Result> FetchAndImportAccounts(BankDetails bankDetails)
-        {
-            try
-            {
-
-                var result = await FetchAccounts(bankDetails);
-
-                if (!result.IsSuccessful)
-                {
-                    return result;
-                }
-
-                var accounts = result.Data;
-
-                if (accounts != null)
-                {
-                    int numAccountsAdded = _bankingService.ImportAccounts(accounts);
-
-                    return Result.Successful(accounts);
-                }
-            }
-            catch (Exception ex)
-            {
-                //TODO: Log
-            }
-
-            return Result.Failed();
-        }
-
         public async Task<Result<IEnumerable<AccountDetails>>> FetchAccounts(BankDetails bankDetails)
         {
             try
@@ -347,7 +318,7 @@ namespace Moneyes.UI
             }
             catch (Exception ex)
             {
-                //TODO: Log
+                _logger.LogError(ex, "Error while fetching accounts");
             }
 
             return Result.Failed<IEnumerable<AccountDetails>>();

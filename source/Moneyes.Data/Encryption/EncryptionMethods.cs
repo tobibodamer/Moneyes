@@ -1,10 +1,11 @@
 ﻿using System;
+using System.Runtime.Versioning;
 using System.Security.Cryptography;
 using System.Text;
 
 namespace Moneyes.Data
 {
-
+    [SupportedOSPlatform("windows")]
     static class EncryptionMethods
     {
         public static string EncryptString(string str)

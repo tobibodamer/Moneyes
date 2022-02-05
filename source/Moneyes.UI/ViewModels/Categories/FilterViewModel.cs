@@ -99,7 +99,7 @@ namespace Moneyes.UI.ViewModels
                 AddChildFilters(filterGroup);
             }
 
-            AddCommand = new AsyncCommand(async ct =>
+            AddCommand = new RelayCommand(() =>
             {
                 AddChildFilterViewModel();
             });
@@ -141,7 +141,7 @@ namespace Moneyes.UI.ViewModels
             FilterViewModel filterViewModel = childFilter == null ? new() : new(childFilter);
 
             // Set delete command for child filters
-            filterViewModel.DeleteCommand = new AsyncCommand(async ct =>
+            filterViewModel.DeleteCommand = new RelayCommand(() =>
             {
                 ChildFilters.Remove(filterViewModel);
             },
@@ -164,13 +164,13 @@ namespace Moneyes.UI.ViewModels
         {
             ConditionFilterViewModel conditionViewModel = c is not null ? new(c) : new();
 
-            conditionViewModel.AddCommand = new AsyncCommand(async ct =>
+            conditionViewModel.AddCommand = new RelayCommand(() =>
             {
                 _conditionFilters.Add(CreateConditionViewModel());
                 OnPropertyChanged(nameof(Conditions));
             });
 
-            conditionViewModel.DeleteCommand = new AsyncCommand(async ct =>
+            conditionViewModel.DeleteCommand = new RelayCommand(() =>
             {
                 if (_conditionFilters.Remove(conditionViewModel))
                 {

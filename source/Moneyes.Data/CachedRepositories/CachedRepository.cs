@@ -41,7 +41,7 @@ namespace Moneyes.Data
             IDatabaseProvider<ILiteDatabase> databaseProvider,
             CachedRepositoryOptions options,
             DependencyRefreshHandler refreshHandler,
-            Func<T, TKey> keySelector = null,
+            Func<T, TKey> keySelector,
             IEnumerable<IRepositoryDependency<T>> repositoryDependencies = null,
             IEnumerable<IUniqueConstraint<T>> uniqueConstraints = null,
             ILogger<CachedRepository<T, TKey>> logger = null)

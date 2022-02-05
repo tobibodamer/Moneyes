@@ -416,7 +416,7 @@ public class UniqueCachedRepository<T> : CachedRepository<T, Guid>, IUniqueCache
     protected override Func<T, bool> CreateUniqueConstraintValidator(
         IEnumerable<T> existingEntities,
         IEnumerable<IUniqueConstraint<T>> uniqueConstraints,
-        Func<ConstraintViolation<T>, (bool continueValidation, bool ignore)> onViolation)
+        Func<ConstraintViolation<T>, (bool continueValidation, bool ignoreViolation)> onViolation)
     {
         var existingEntitiesCopy = existingEntities.ToList();
 

@@ -85,32 +85,40 @@ namespace Moneyes.UI.ViewModels
 
             FetchOnlineCommand = new AsyncCommand(async ct =>
             {
-                Result<int> result;
+                try
+                {
+                    Result<int> result;
 
-                if (CurrentAccount != null)
-                {
-                    result = await _liveDataService.FetchTransactionsAndBalances(CurrentAccount);
-                }
-                else
-                {
-                    result = await _liveDataService.FetchTransactionsAndBalances(_bankingService.GetAllAccounts().ToArray());
-                }
-
-                if (result.IsSuccessful)
-                {
-                    if (result.Data == 0)
+                    if (CurrentAccount != null)
                     {
-                        statusMessageService.ShowMessage($"No new transactions available");
-                        return;
+                        result = await _liveDataService.FetchTransactionsAndBalances(CurrentAccount);
+                    }
+                    else
+                    {
+                        result = await _liveDataService.FetchTransactionsAndBalances(_bankingService.GetAllAccounts().ToArray());
                     }
 
-                    statusMessageService.ShowMessage($"Fetched {result.Data} new transaction(s)");
+                    if (result.IsSuccessful)
+                    {
+                        if (result.Data == 0)
+                        {
+                            statusMessageService.ShowMessage($"No new transactions available");
+                            return;
+                        }
+
+                        statusMessageService.ShowMessage($"Fetched {result.Data} new transaction(s)");
+                    }
+
+                    return;
                 }
-                else
+                catch
                 {
-                    statusMessageService.ShowMessage($"Fetching transactions failed", "Retry",
-                        () => FetchOnlineCommand.Execute(null));
+
                 }
+
+                statusMessageService.ShowMessage($"Fetching transactions failed", "Retry",
+                    () => FetchOnlineCommand.Execute(null));
+
             }, () => CurrentAccount != null || _bankingService.GetAllAccounts().Any());
 
             ApplyDateCommand = new RelayCommand(() =>

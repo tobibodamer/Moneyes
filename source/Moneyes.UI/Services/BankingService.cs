@@ -1,4 +1,5 @@
-﻿using Moneyes.Core;
+﻿using Microsoft.Extensions.Logging;
+using Moneyes.Core;
 using Moneyes.Data;
 using Moneyes.LiveData;
 using System;
@@ -19,6 +20,8 @@ namespace Moneyes.UI
         private readonly IBalanceFactory _balanceFactory;
         private readonly IBankDetailsFactory _bankDetailsFactory;
 
+        private readonly ILogger<BankingService> _logger;
+
         public BankingService(
             IUniqueCachedRepository<BankDbo> bankDetailsRepository,
             IUniqueCachedRepository<AccountDbo> accountRepository,
@@ -27,7 +30,8 @@ namespace Moneyes.UI
             ICategoryService categoryService,
             IAccountFactory accountFactory,
             IBalanceFactory balanceFactory,
-            IBankDetailsFactory bankDetailsFactory)
+            IBankDetailsFactory bankDetailsFactory,
+            ILogger<BankingService> logger)
         {
             _bankDetailsRepository = bankDetailsRepository;
             _accountRepository = accountRepository;
@@ -37,6 +41,7 @@ namespace Moneyes.UI
             _accountFactory = accountFactory;
             _balanceFactory = balanceFactory;
             _bankDetailsFactory = bankDetailsFactory;
+            _logger = logger;
         }
 
         public event Action NewAccountsImported;
@@ -65,16 +70,26 @@ namespace Moneyes.UI
 
         public int ImportAccounts(IEnumerable<AccountDetails> accounts)
         {
-            int numAccountsAdded = _accountRepository.SetMany(
-                entities: accounts.Select(acc => acc.ToDbo()),
-                onConflict: UniqueConflictResolutionAction.UpdateContentOrIgnore);
-
-            if (numAccountsAdded > 0)
+            try
             {
-                NewAccountsImported?.Invoke();
-            }
+                _logger.LogInformation("Importing accounts...");
 
-            return numAccountsAdded;
+                int numAccountsAdded = _accountRepository.SetMany(
+                    entities: accounts.Select(acc => acc.ToDbo()),
+                    onConflict: UniqueConflictResolutionAction.UpdateContentOrIgnore);
+
+                if (numAccountsAdded > 0)
+                {
+                    NewAccountsImported?.Invoke();
+                }
+
+                return numAccountsAdded;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while importing accounts:");
+                throw;
+            }
         }
 
         public Balance GetBalance(DateTime date, AccountDetails account)
@@ -88,7 +103,7 @@ namespace Moneyes.UI
             return GetAllAccounts()
                 .Select(acc => GetBalanceByDate(date, acc))
                 .Where(x => x != null)
-                .Sum(b => b.Amount);            
+                .Sum(b => b.Amount);
         }
 
         /// <summary>
@@ -169,10 +184,10 @@ namespace Moneyes.UI
         {
             ArgumentNullException.ThrowIfNull(bankDetails, nameof(bankDetails));
 
-            _bankDetailsRepository.Update(bankDetails.ToDbo(), 
+            _bankDetailsRepository.Update(bankDetails.ToDbo(),
                 onConflict: v => ConflictResolutionAction.Fail());
         }
 
-        
+
     }
 }

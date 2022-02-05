@@ -236,28 +236,28 @@ namespace Moneyes.UI
             foreach (var account in accounts)
             {
                 var bankDetails = account.BankDetails;
-                                
+
+                // Account has no transaction permission -> fetch balances directly
+
+                BankingResult<Balance> balanceResult = await EnsurePassword(bankDetails,
+                    async (password) =>
+                    {
+                        return await _onlineBankingService.Balance(
+                            onlineBankingDetails: CreateOnlineBankingDetails(bankDetails, password),
+                            account: account);
+                    });
+
+                results.Add(balanceResult);
+
+                if (!balanceResult.IsSuccessful)
+                {
+                    continue;
+                }
+
+                balances.Add(balanceResult.Data);
+
                 if (!_onlineBankingService.CanFetchTransactions(account))
                 {
-                    // Account has no transaction permission -> fetch balances directly
-
-                    BankingResult<Balance> balanceResult = await EnsurePassword(bankDetails,
-                        async (password) =>
-                        {
-                            return await _onlineBankingService.Balance(
-                                onlineBankingDetails: CreateOnlineBankingDetails(bankDetails, password),
-                                account: account);
-                        });
-
-                    results.Add(balanceResult);
-
-                    if (!balanceResult.IsSuccessful)
-                    {
-                        continue;
-                    }
-
-                    balances.Add(balanceResult.Data);
-
                     continue;
                 }
 
@@ -288,10 +288,19 @@ namespace Moneyes.UI
                 return Result.Failed<int>();
             }
 
-            int numTransactionsAdded = _bankingService.ImportTransactions(transactions, categoryAssignMethod);
-            int numBalancesAdded = _bankingService.ImportBalances(balances);
+            try
+            {
+                int numTransactionsAdded = _bankingService.ImportTransactions(transactions, categoryAssignMethod);
+                int numBalancesAdded = _bankingService.ImportBalances(balances);
 
-            return numTransactionsAdded;
+                return numTransactionsAdded;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Importing transactions or balances failed:");
+            }
+
+            return Result.Failed<int>();
         }
 
         public async Task<Result<IEnumerable<AccountDetails>>> FetchAccounts(BankDetails bankDetails)
@@ -318,7 +327,7 @@ namespace Moneyes.UI
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error while fetching accounts");
+                _logger.LogError(ex, "Error while fetching accounts:");
             }
 
             return Result.Failed<IEnumerable<AccountDetails>>();

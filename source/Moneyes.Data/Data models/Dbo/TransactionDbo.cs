@@ -65,7 +65,9 @@ namespace Moneyes.Data
         /// <summary>
         /// Gets the category of this transaction.
         /// </summary>
+#nullable enable
         public CategoryDbo? Category { get; set; }
+#nullable disable
 
         /// <summary>
         /// Gets the index of this transactions. For identical transactions only!
@@ -85,6 +87,38 @@ namespace Moneyes.Data
                    left.Currency == transaction.Currency &&
                    left.UID == transaction.UID &&
                    left.Category?.Id == transaction.Category?.Id;
+        }
+
+        public override bool ContentEquals(UniqueEntity other)
+        {
+            return other is TransactionDbo transaction 
+                && ContentEquals(this, transaction);
+        }
+
+        /// <summary>
+        /// For deserialization only.
+        /// </summary>
+        protected TransactionDbo() { }
+
+        public TransactionDbo(
+            Guid id,
+            string uid,            
+            DateTime? createdAt = null,
+            DateTime? updatedAt = null,
+            bool isDeleted = false)
+            : base(id, createdAt, updatedAt, isDeleted)
+        {
+            UID = uid;
+        }
+
+        public TransactionDbo(
+            TransactionDbo other,
+            Guid? id = null,
+            DateTime? createdAt = null,
+            DateTime? updatedAt = null,
+            bool? isDeleted = null)
+            : base(other, id, createdAt, updatedAt, isDeleted)
+        {
         }
     }
 }

@@ -229,7 +229,8 @@ namespace Moneyes.UI
         public bool ImportTransaction(Transaction transaction)
         {
             var transactionDbo = transaction.ToDbo();
-            return _transactionRepository.Set(transactionDbo, onConflict: UpdateTransactionIfChanged);
+
+            return _transactionRepository.Set(transactionDbo, onConflict: UniqueConflictResolutionAction.UpdateContentOrIgnore);
         }
 
         /// <summary>
@@ -242,52 +243,8 @@ namespace Moneyes.UI
         {
             // TODO: Validate if duplicate categories and all categories exist, maybe in repo?
 
-            var dbos = transactions.Select(b =>
-            {
-                if (!_transactionRepository.Contains(b.Id))
-                {
-                    return b.ToDbo(createdAt: DateTime.Now, updatedAt: DateTime.Now);
-                }
-                else
-                {
-                    return b.ToDbo(updatedAt: DateTime.Now);
-                }
-            }).ToList();
-
-            return _transactionRepository.Set(dbos, onConflict: UpdateTransactionIfChanged);
-        }
-
-        private static ConflictResolutionAction UpdateTransactionIfChanged(
-            CachedRepository<TransactionDbo>.ConstraintViolation v)
-        {
-            if (TransactionDbo.ContentEquals(v.ExistingEntity, v.NewEntity))
-            {
-                return ConflictResolutionAction.Ignore();
-            }
-
-            var updateTransaction = new TransactionDbo()
-            {
-                Id = v.ExistingEntity.Id,
-                CreatedAt = v.ExistingEntity.CreatedAt,
-                UpdatedAt = DateTime.Now,
-                Category = v.NewEntity.Category,
-                ValueDate = v.NewEntity.ValueDate,
-                Currency = v.NewEntity.Currency,
-                AltName = v.NewEntity.AltName,
-                Amount = v.NewEntity.Amount,
-                IBAN = v.NewEntity.IBAN,
-                BookingDate = v.NewEntity.BookingDate,
-                IsDeleted = v.NewEntity.IsDeleted,
-                UID = v.NewEntity.UID,
-                BIC = v.NewEntity.BIC,
-                BookingType = v.NewEntity.BookingType,
-                Index = v.NewEntity.Index,
-                Name = v.NewEntity.Name,
-                PartnerIBAN = v.NewEntity.PartnerIBAN,
-                Purpose = v.NewEntity.Purpose
-            };
-
-            return ConflictResolutionAction.Update(updateTransaction);
+            return _transactionRepository.SetMany(transactions.Select(x => x.ToDbo()),
+                onConflict: UniqueConflictResolutionAction.UpdateContentOrIgnore);
         }
     }
 }

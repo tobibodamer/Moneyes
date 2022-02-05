@@ -13,9 +13,18 @@
         {
             Resolution = null;
         }
-        private ConflictResolutionAction(ConflictResolution conflictResolution)
+        public ConflictResolutionAction(ConflictResolution conflictResolution)
         {
             Resolution = conflictResolution;
+        }
+
+        /// <summary>
+        /// Creates an empty conflict resolution action, meaning the default resolution will be used.
+        /// </summary>
+        /// <returns></returns>
+        public static ConflictResolutionAction Default()
+        {
+            return new();
         }
 
         /// <summary>

@@ -272,11 +272,7 @@ namespace Moneyes.UI
         {
             try
             {
-                var dbo = category.ToDbo(
-                    createdAt: DateTime.Now,
-                    updatedAt: DateTime.Now);
-
-                return _categoryRepo.Create(dbo) != null;
+                return _categoryRepo.Create(category.ToDbo()) != null;
             }
             catch (CachedRepository<CategoryDbo>.ConstraintViolationException ex)
             {
@@ -297,21 +293,7 @@ namespace Moneyes.UI
         {
             ArgumentNullException.ThrowIfNull(category, nameof(category));
 
-            if (category.IsNoCategory() || category.IsAllCategory()
-                && !_categoryRepo.Contains(category.Id))
-            {
-                return AddCategory(category);
-            }
-
-            _categoryRepo.Update(category.Id, (existing) =>
-            {
-                return category.ToDbo(
-                    createdAt: existing.CreatedAt,
-                    updatedAt: DateTime.Now,
-                    isDeleted: existing.IsDeleted);
-            });
-
-            return false;
+            return _categoryRepo.Set(category.ToDbo());
         }
 
         public bool DeleteCategory(Category category, bool deleteSubCategories = true)
@@ -358,7 +340,7 @@ namespace Moneyes.UI
                 throw new ArgumentNullException(nameof(category));
             }
 
-            if (category.IsAllCategory()) { return false; }            
+            if (category.IsAllCategory()) { return false; }
             if (transaction.Category?.Id == category.Id) { return false; }
 
             transaction.Category = null;
@@ -369,13 +351,7 @@ namespace Moneyes.UI
             }
 
             // Update transaction in repo
-            return _transactionRepo.Update(transaction.Id, (existing) =>
-            {
-                return transaction.ToDbo(
-                     createdAt: existing.CreatedAt,
-                     updatedAt: DateTime.Now,
-                     isDeleted: existing.IsDeleted);
-            });
+            return _transactionRepo.Update(transaction.ToDbo());
         }
 
 

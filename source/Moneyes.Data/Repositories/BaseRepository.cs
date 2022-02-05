@@ -60,7 +60,7 @@ namespace Moneyes.Data
             return false;
         }
 
-        public virtual int Set(IEnumerable<T> entities)
+        public virtual int SetMany(IEnumerable<T> entities)
         {
             return Collection.Upsert(entities);
         }
@@ -100,12 +100,12 @@ namespace Moneyes.Data
             return Collection.DeleteAll();
         }
 
-        public void Update(T entity)
+        public bool Update(T entity)
         {
-            Collection.Update(entity);
+            return Collection.Update(entity);
         }
 
-        public int Update(IEnumerable<T> entities)
+        public int UpdateMany(IEnumerable<T> entities)
         {
             return Collection.Update(entities);
         }

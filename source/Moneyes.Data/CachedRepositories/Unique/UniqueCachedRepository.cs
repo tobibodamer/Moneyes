@@ -7,189 +7,333 @@ using System.Threading.Tasks;
 using LiteDB;
 using Microsoft.Extensions.Logging;
 using Moneyes.Core;
+using Moneyes.Data;
 
-namespace Moneyes.Data
+namespace Moneyes.Data;
+public interface IUniqueCachedRepository<T> : ICachedRepository<T, Guid>
+    where T : UniqueEntity
 {
-    public interface IUniqueCachedRepository<T> : ICachedRepository<T, Guid>
-        where T : UniqueEntity
+    IEnumerable<T> GetAll(bool includeSoftDeleted = false);
+    IReadOnlyList<T> FindAllById(bool includeSoftDeleted = false, params object[] ids);
+    T? FindById(Guid id, bool includeSoftDeleted = false);
+    
+    bool ContainsAny(bool includeSoftDeleted = false, params object[] ids);
+    bool ContainsAll(bool includeSoftDeleted = false, params object[] ids);
+    bool Contains(object id, bool includeSoftDeleted = false);
+    
+
+    bool Set(T entity, bool keepCreationTimestamp = true);
+    bool Set(T entity, ConflictResolutionDelegate<T> onConflict, bool keepCreationTimestamp = true);
+    int SetMany(IEnumerable<T> entities, bool keepCreationTimestamp = true);
+    int SetMany(IEnumerable<T> entities, ConflictResolutionDelegate<T> onConflict, bool keepCreationTimestamp = true);
+    
+    bool Update(T entity, bool keepCreationTimestamp = true);
+    bool Update(T entity, ConflictResolutionDelegate<T> onConflict, bool keepCreationTimestamp = true);
+    int UpdateMany(IEnumerable<T> entities, bool keepCreationTimestamp = true);
+    int UpdateMany(IEnumerable<T> entities, ConflictResolutionDelegate<T> onConflict, bool keepCreationTimestamp = true);
+
+    bool DeleteById(Guid id, bool softDelete = true);
+    int DeleteAll(bool softDelete = true);
+    int DeleteMany(Expression<Func<T, bool>> predicate, bool softDelete = true);
+}
+
+public class UniqueCachedRepository<T> : CachedRepository<T, Guid>, IUniqueCachedRepository<T>
+    where T : UniqueEntity
+{
+    public UniqueCachedRepository(
+        IDatabaseProvider<ILiteDatabase> databaseProvider,
+        Func<T, Guid> keySelector,
+        CachedRepositoryOptions options,
+        DependencyRefreshHandler refreshHandler,
+        bool autoId = false,
+        IEnumerable<IRepositoryDependency<T>> repositoryDependencies = null,
+        IEnumerable<IUniqueConstraint<T>> uniqueConstraints = null,
+        ILogger<UniqueCachedRepository<T>> logger = null)
+        : base(databaseProvider, keySelector, options, refreshHandler, autoId, repositoryDependencies, uniqueConstraints, logger)
     {
-        IEnumerable<T> GetAll(bool includeSoftDeleted = false);
-        T? FindById(Guid id, bool includeSoftDeleted = false);
-        bool DeleteById(Guid id, bool softDelete = true);
-        int DeleteAll(bool softDelete = true);
-        int DeleteMany(Expression<Func<T, bool>> predicate, bool softDelete = true);
-        bool ContainsAny(bool includeSoftDeleted = false, params object[] ids);
-        bool ContainsAll(bool includeSoftDeleted = false, params object[] ids);
-        bool Contains(object id, bool includeSoftDeleted = false);
-        IReadOnlyList<T> FindAllById(bool includeSoftDeleted = false, params object[] ids);
     }
 
-    public class UniqueCachedRepository<T> : CachedRepository<T, Guid>, IUniqueCachedRepository<T>
-        where T : UniqueEntity
+    protected override T PostQueryTransform(T entity)
     {
-        public UniqueCachedRepository(
-            IDatabaseProvider<ILiteDatabase> databaseProvider,
-            Func<T, Guid> keySelector,
-            CachedRepositoryOptions options,
-            DependencyRefreshHandler refreshHandler,
-            bool autoId = false,
-            IEnumerable<IRepositoryDependency<T>> repositoryDependencies = null,
-            IEnumerable<IUniqueConstraint<T>> uniqueConstraints = null,
-            ILogger<UniqueCachedRepository<T>> logger = null)
-            : base(databaseProvider, keySelector, options, refreshHandler, autoId, repositoryDependencies, uniqueConstraints, logger)
+        // Dont include soft deleted dependents
+        foreach (var dependency in RepositoryDependencies)
         {
-        }
+            var softDeletedDependents = dependency.GetDependentsOf(entity)
+                .OfType<UniqueEntity>()
+                .Where(x => x.IsDeleted)
+                .Select(x => x.Id as object)
+                .ToArray();
 
-        protected override T PostQueryTransform(T entity)
-        {
-            // Dont include soft deleted dependents
-            foreach (var dependency in RepositoryDependencies)
+            if (softDeletedDependents.Length == 0)
             {
-                var softDeletedDependents = dependency.GetDependentsOf(entity)
-                    .OfType<UniqueEntity>()
-                    .Where(x => x.IsDeleted)
-                    .Select(x => x.Id as object)
-                    .ToArray();
-
-                if (softDeletedDependents.Length == 0)
-                {
-                    continue;
-                }
-
-                dependency.RemoveDependents(entity, softDeletedDependents);
+                continue;
             }
 
-            return entity;
+            dependency.RemoveDependents(entity, softDeletedDependents);
         }
 
-        public override IEnumerable<T> GetAll()
+        return entity;
+    }
+
+    public override IEnumerable<T> GetAll()
+    {
+        return GetAll(includeSoftDeleted: false);
+    }
+    public IEnumerable<T> GetAll(bool includeSoftDeleted = false)
+    {
+        if (!includeSoftDeleted)
         {
-            return GetAll(includeSoftDeleted: false);
+            return base.GetAll().Where(x => !x.IsDeleted);
         }
-        public IEnumerable<T> GetAll(bool includeSoftDeleted = false)
+
+        return base.GetAll();
+    }
+
+    public override T FindById(Guid id)
+    {
+        return FindById(id, includeSoftDeleted: false);
+    }
+
+    public T FindById(Guid id, bool includeSoftDeleted = false)
+    {
+        var result = base.FindById(id);
+
+        if (includeSoftDeleted || (result?.IsDeleted ?? true))
         {
-            if (!includeSoftDeleted)
-            {
-                return base.GetAll().Where(x => !x.IsDeleted);
-            }
-
-            return base.GetAll();
+            return null;
         }
 
-        public override T FindById(Guid id)
-        {
-            return FindById(id, includeSoftDeleted: false);
-        }
+        return result;
+    }
 
-        public T FindById(Guid id, bool includeSoftDeleted = false)
-        {
-            var result = base.FindById(id);
-
-            if (includeSoftDeleted || (result?.IsDeleted ?? true))
-            {
-                return null;
-            }
-
-            return result;
-        }
-
-        public IReadOnlyList<T> FindAllById(bool includeSoftDeleted = false, params object[] ids)
-        {
-            if (includeSoftDeleted)
-            {
-                return base.FindAllById(ids);
-            }
-
-            ArgumentNullException.ThrowIfNull(ids);
-
-            if (ids.Length == 0)
-            {
-                return new List<T>();
-            }
-
-            return ids
-                .Select(id => Cache.GetValueOrDefault(id))
-                .Where(x => !x?.IsDeleted ?? false)
-                .ToList();
-        }
-
-        public override IReadOnlyList<T> FindAllById(params object[] ids)
+    public IReadOnlyList<T> FindAllById(bool includeSoftDeleted = false, params object[] ids)
+    {
+        if (includeSoftDeleted)
         {
             return base.FindAllById(ids);
         }
 
-        public bool Contains(object id, bool includeSoftDeleted = false)
-        {
-            if (includeSoftDeleted)
-            {
-                return base.Contains(id);
-            }
+        ArgumentNullException.ThrowIfNull(ids);
 
+        if (ids.Length == 0)
+        {
+            return new List<T>();
+        }
+
+        return ids
+            .Select(id => Cache.GetValueOrDefault(id))
+            .Where(x => !x?.IsDeleted ?? false)
+            .ToList();
+    }
+
+    public override IReadOnlyList<T> FindAllById(params object[] ids)
+    {
+        return base.FindAllById(ids);
+    }
+
+    public bool Contains(object id, bool includeSoftDeleted = false)
+    {
+        if (includeSoftDeleted)
+        {
+            return base.Contains(id);
+        }
+
+        if (Cache.TryGetValue(id, out var entity))
+        {
+            return !entity.IsDeleted;
+        }
+
+        return false;
+    }
+
+    public override bool Contains(object id)
+    {
+        return Contains(id, includeSoftDeleted: false);
+    }
+
+    public bool ContainsAll(bool includeSoftDeleted = false, params object[] ids)
+    {
+        if (includeSoftDeleted)
+        {
+            return base.Contains(ids);
+        }
+
+        return ids.All(id =>
+        {
             if (Cache.TryGetValue(id, out var entity))
             {
                 return !entity.IsDeleted;
             }
 
             return false;
+        });
+    }
+
+    public override bool ContainsAll(params object[] ids)
+    {
+        return ContainsAll(false, ids);
+    }
+
+    public bool ContainsAny(bool includeSoftDeleted = false, params object[] ids)
+    {
+        if (includeSoftDeleted)
+        {
+            return base.ContainsAny(ids);
         }
 
-        public override bool Contains(object id)
+        return ids.Any(id =>
         {
-            return Contains(id, includeSoftDeleted: false);
-        }
-
-        public bool ContainsAll(bool includeSoftDeleted = false, params object[] ids)
-        {
-            if (includeSoftDeleted)
+            if (Cache.TryGetValue(id, out var entity))
             {
-                return base.Contains(ids);
+                return !entity.IsDeleted;
             }
 
-            return ids.All(id =>
-            {
-                if (Cache.TryGetValue(id, out var entity))
-                {
-                    return !entity.IsDeleted;
-                }
+            return false;
+        });
+    }
 
-                return false;
-            });
-        }
-
-        public override bool ContainsAll(params object[] ids)
+    public int SetMany(IEnumerable<T> entities, bool keepCreationTimestamp = true)
+    {
+        if (keepCreationTimestamp)
         {
-            return ContainsAll(false, ids);
+            return SetMany(entities, addEntityFactory: AddEntityFactory, updateEntityFactory: UpdateEntityFactory);
         }
 
-        public bool ContainsAny(bool includeSoftDeleted = false, params object[] ids)
+        return base.SetMany(entities);
+    }
+    public override int SetMany(IEnumerable<T> entities)
+    {
+        return SetMany(entities, keepCreationTimestamp: true);
+    }
+
+    public int SetMany(IEnumerable<T> entities, ConflictResolutionDelegate<T> onConflict, bool keepCreationTimestamp = true)
+    {
+        if (keepCreationTimestamp)
         {
-            if (includeSoftDeleted)
-            {
-                return base.ContainsAny(ids);
-            }
-
-            return ids.Any(id =>
-            {
-                if (Cache.TryGetValue(id, out var entity))
-                {
-                    return !entity.IsDeleted;
-                }
-
-                return false;
-            });
+            return SetMany(entities, addEntityFactory: AddEntityFactory, updateEntityFactory: UpdateEntityFactory, onConflict);
         }
 
-        public override bool ContainsAny(params object[] ids)
+        return base.SetMany(entities, onConflict);
+    }
+
+    public override int SetMany(IEnumerable<T> entities, ConflictResolutionDelegate<T> onConflict)
+    {
+        return SetMany(entities, onConflict, keepCreationTimestamp: true);
+    }
+
+    public bool Set(T entity, bool keepCreationTimestamp = true)
+    {
+        if (keepCreationTimestamp)
         {
-            return ContainsAny(false, ids);
+            return Set(entity, addEntityFactory: AddEntityFactory, updateEntityFactory: UpdateEntityFactory);
         }
 
-        /// <summary>
-        /// Soft deletes an entity by its id.
-        /// </summary>
-        /// <param name="id"></param>
-        /// <returns></returns>
-        public override bool DeleteById(object id)
+        return base.Set(entity);
+    }
+
+    public override bool Set(T entity)
+    {
+        return Set(entity, keepCreationTimestamp: true);
+    }
+
+    public bool Set(T entity, ConflictResolutionDelegate<T> onConflict, bool keepCreationTimestamp = true)
+    {
+        if (keepCreationTimestamp)
+        {
+            return Set(entity, addEntityFactory: AddEntityFactory, updateEntityFactory: UpdateEntityFactory, onConflict);
+        }
+
+        return base.Set(entity, onConflict);
+    }
+
+    public override bool Set(T entity, ConflictResolutionDelegate<T> onConflict)
+    {
+        return Set(entity, onConflict, keepCreationTimestamp: true);
+    }
+
+    public int UpdateMany(IEnumerable<T> entities, bool keepCreationTimestamp = true)
+    {
+        if (keepCreationTimestamp)
+        {
+            return UpdateMany(entities, updateEntityFactory: UpdateEntityFactory);
+        }
+
+        return base.UpdateMany(entities);
+    }
+    public override int UpdateMany(IEnumerable<T> entities)
+    {
+        return UpdateMany(entities, keepCreationTimestamp: true);
+    }
+
+    public int UpdateMany(IEnumerable<T> entities, ConflictResolutionDelegate<T> onConflict, bool keepCreationTimestamp = true)
+    {
+        if (keepCreationTimestamp)
+        {
+            return UpdateMany(entities, updateEntityFactory: UpdateEntityFactory, onConflict);
+        }
+
+        return base.UpdateMany(entities, onConflict);
+    }
+
+    public override int UpdateMany(IEnumerable<T> entities, ConflictResolutionDelegate<T> onConflict)
+    {
+        return UpdateMany(entities, onConflict, keepCreationTimestamp: true);
+    }
+
+    public bool Update(T entity, bool keepCreationTimestamp = true)
+    {
+        if (keepCreationTimestamp)
+        {
+            return Update(entity, updateEntityFactory: UpdateEntityFactory);
+        }
+
+        return base.Update(entity);
+    }
+
+    public override bool Update(T entity)
+    {
+        return Update(entity, keepCreationTimestamp: true);
+    }
+
+    public bool Update(T entity, ConflictResolutionDelegate<T> onConflict, bool keepCreationTimestamp = true)
+    {
+        if (keepCreationTimestamp)
+        {
+            return Update(entity, updateEntityFactory: UpdateEntityFactory, onConflict);
+        }
+
+        return base.Update(entity, onConflict);
+    }
+
+    public override bool Update(T entity, ConflictResolutionDelegate<T> onConflict)
+    {
+        return Update(entity, onConflict, keepCreationTimestamp: true);
+    }
+
+    protected virtual T AddEntityFactory(T newEntity)
+    {
+        return newEntity;
+    }
+    protected virtual T UpdateEntityFactory(T existingEntity, T newEntity)
+    {
+        newEntity.CreatedAt = existingEntity.CreatedAt;
+
+        return newEntity;
+    }
+
+    /// <summary>
+    /// Soft deletes an entity by its id.
+    /// </summary>
+    /// <param name="id"></param>
+    /// <returns></returns>
+    public override bool DeleteById(object id)
+    {
+        return DeleteById((Guid)id, softDelete: true);
+    }
+
+    public bool DeleteById(Guid id, bool softDelete = true)
+    {
+        if (softDelete)
         {
             if (Cache.TryGetValue(id, out T entity))
             {
@@ -203,16 +347,15 @@ namespace Moneyes.Data
             return false;
         }
 
-        public bool DeleteById(Guid id, bool softDelete = true)
-        {
-            if (softDelete)
-            {
-                return base.DeleteById(id);
-            }
-
-            return base.DeleteById(id);
-        }
-        public override int DeleteAll()
+        return base.DeleteById(id);
+    }
+    public override int DeleteAll()
+    {
+        return DeleteAll(softDelete: true);
+    }
+    public int DeleteAll(bool softDelete = true)
+    {
+        if (softDelete)
         {
             var entities = GetAll(includeSoftDeleted: false).ToList();
 
@@ -221,83 +364,78 @@ namespace Moneyes.Data
                 entity.IsDeleted = true;
             }
 
-            return Update(entities);
-        }
-        public int DeleteAll(bool softDelete = true)
-        {
-            if (softDelete)
-            {
-                return DeleteAll();
-            }
-
-            return base.DeleteAll();
+            return UpdateMany(entities);
         }
 
-        public override int DeleteMany(Expression<Func<T, bool>> predicate)
-        {
-            var compiledPredicate = predicate.Compile();
-
-            var entities = GetAll(includeSoftDeleted: false)
-                .Where(compiledPredicate)
-                .ToList();
-
-            foreach (var entity in entities)
-            {
-                entity.IsDeleted = true;
-            }
-
-            return Update(entities);
-        }
-
-        public int DeleteMany(Expression<Func<T, bool>> predicate, bool softDelete = true)
-        {
-            if (softDelete)
-            {
-                return DeleteMany(predicate);
-            }
-
-            return base.DeleteMany(predicate);
-        }
-        protected override void OnEntityUpdated(T entity, bool notifyDependencyHandler)
-        {
-            if (entity.IsDeleted == true)
-            {
-                if (notifyDependencyHandler)
-                {
-                    DependencyRefreshHandler.OnChangesMade(this, entity, RepositoryChangedAction.Replace);
-                }
-
-                base.OnEntityDeleted(entity, false);
-            }
-
-            base.OnEntityUpdated(entity, notifyDependencyHandler);
-        }
-
-        #region Validation
-
-        protected override Func<T, bool> CreateUniqueConstraintValidator(
-            IEnumerable<T> existingEntities,
-            IEnumerable<IUniqueConstraint<T>> uniqueConstraints,
-            Func<ConstraintViolation, (bool continueValidation, bool ignore)> onViolation)
-        {
-            var validateAgainstSoftDeleted = base.CreateUniqueConstraintValidator(
-                existingEntities.Where(e => e.IsDeleted), uniqueConstraints, onViolation);
-
-            var validateAgainstNotDeleted = base.CreateUniqueConstraintValidator(
-                existingEntities.Where(e => !e.IsDeleted), uniqueConstraints, onViolation);
-
-            return (entity) =>
-            {
-                // return the specific validation function, based on if the entity is deleted
-                if (entity.IsDeleted)
-                {
-                    return validateAgainstSoftDeleted(entity);
-                }
-
-                return validateAgainstNotDeleted(entity);
-            };
-        }
-
-        #endregion
+        return base.DeleteAll();
     }
+
+    public override int DeleteMany(Expression<Func<T, bool>> predicate)
+    {
+        var compiledPredicate = predicate.Compile();
+
+        var entities = GetAll(includeSoftDeleted: false)
+            .Where(compiledPredicate)
+            .ToList();
+
+        foreach (var entity in entities)
+        {
+            entity.IsDeleted = true;
+        }
+
+        return UpdateMany(entities);
+    }
+
+    public int DeleteMany(Expression<Func<T, bool>> predicate, bool softDelete = true)
+    {
+        if (softDelete)
+        {
+            return DeleteMany(predicate);
+        }
+
+        return base.DeleteMany(predicate);
+    }
+    protected override void OnEntityUpdated(T entity, bool notifyDependencyHandler)
+    {
+        if (entity.IsDeleted == true)
+        {
+            if (notifyDependencyHandler)
+            {
+                DependencyRefreshHandler.OnChangesMade(this, entity, RepositoryChangedAction.Replace);
+            }
+
+            base.OnEntityDeleted(entity, false);
+        }
+
+        base.OnEntityUpdated(entity, notifyDependencyHandler);
+    }
+
+    #region Validation
+
+    protected override Func<T, bool> CreateUniqueConstraintValidator(
+        IEnumerable<T> existingEntities,
+        IEnumerable<IUniqueConstraint<T>> uniqueConstraints,
+        Func<ConstraintViolation<T>, (bool continueValidation, bool ignore)> onViolation)
+    {
+        var existingEntitiesCopy = existingEntities.ToList();
+
+        var validateAgainstSoftDeleted = base.CreateUniqueConstraintValidator(
+            existingEntitiesCopy.Where(e => e.IsDeleted), uniqueConstraints, onViolation);
+
+        var validateAgainstNotDeleted = base.CreateUniqueConstraintValidator(
+            existingEntitiesCopy.Where(e => !e.IsDeleted), uniqueConstraints, onViolation);
+
+        return (entity) =>
+        {
+            // return the specific validation function, based on if the entity is deleted
+            if (entity.IsDeleted)
+            {
+                return validateAgainstSoftDeleted(entity);
+            }
+
+            return validateAgainstNotDeleted(entity);
+        };
+    }
+
+    #endregion
 }

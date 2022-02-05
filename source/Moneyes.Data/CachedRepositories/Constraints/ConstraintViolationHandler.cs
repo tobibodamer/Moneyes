@@ -21,7 +21,7 @@ namespace Moneyes.Data
                 _logger = logger;
             }
 
-            public (bool continueValidation, bool ignore) Handle(ConstraintViolation violation, ConflictResolutionAction? userAction)
+            public (bool continueValidation, bool ignore) Handle(ConstraintViolation<T> violation, ConflictResolutionAction? userAction)
             {
                 var conflictResolution = violation.Constraint.ConflictResolution; // default resolution
 
@@ -30,12 +30,14 @@ namespace Moneyes.Data
                 {
                     if (userAction is UpdateConflicResolutionAction<T> updateAction)
                     {
+                        _logger.LogInformation("Choosing advanced conflic resolution 'Update'.");
+
                         _toUpdate.Add(updateAction.EntityToUpdate);
 
                         // not include, continue
                         return (continueValidation: true, ignore: false);
                     }
-                    else
+                    else if (userAction.Resolution != null)
                     {
                         conflictResolution = userAction.Resolution.Value;
                     }
@@ -89,7 +91,7 @@ namespace Moneyes.Data
                     return;
                 }
 
-                _repository.Update(_toUpdate);
+                _repository.UpdateMany(_toUpdate);
             }
         }
     }

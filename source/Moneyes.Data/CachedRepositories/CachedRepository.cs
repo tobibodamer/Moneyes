@@ -246,6 +246,11 @@ namespace Moneyes.Data
 
             return Cache.TryAdd(key, entity);
         }
+
+        /// <summary>
+        /// Gets all the entities from the cache, while holding a read lock, and returns them as a list.
+        /// </summary>
+        /// <returns>A list of all entities present in the cache.</returns>
         protected IReadOnlyList<T> GetFromCache()
         {
             List<T> entities;
@@ -347,7 +352,7 @@ namespace Moneyes.Data
                         isValid = isValid && ignoreViolation;
                     }
                 }
-                
+
                 // Return true if the entity is valid
                 return isValid;
             };
@@ -406,6 +411,12 @@ namespace Moneyes.Data
 
 
         #region CRUD
+        public virtual IEnumerable<T> GetAll()
+        {
+            return GetFromCache();
+        }
+
+        /// <inheritdoc/>
         public virtual T Create(T entity)
         {
             TKey key;
@@ -531,11 +542,6 @@ namespace Moneyes.Data
             return counter;
         }
 
-        public virtual IEnumerable<T> GetAll()
-        {
-            return GetFromCache();
-        }
-
 #nullable enable
         public virtual T? FindById(TKey id)
 #nullable disable
@@ -564,11 +570,11 @@ namespace Moneyes.Data
             return default;
         }
 
-        public virtual IReadOnlyList<T> FindAllById(params TKey[] ids)
+        public virtual IReadOnlyList<T> FindAllById(IEnumerable<TKey> ids)
         {
             ArgumentNullException.ThrowIfNull(ids);
 
-            if (ids.Length == 0)
+            if (!ids.Any())
             {
                 return new List<T>();
             }
@@ -593,14 +599,14 @@ namespace Moneyes.Data
             return Cache.ContainsKey(id);
         }
 
-        public virtual bool ContainsAll(params TKey[] ids)
+        public virtual bool ContainsAll(IEnumerable<TKey> ids)
         {
             ArgumentNullException.ThrowIfNull(ids);
 
             return ids.All(id => Cache.ContainsKey(id));
         }
 
-        public virtual bool ContainsAny(params TKey[] ids)
+        public virtual bool ContainsAny(IEnumerable<TKey> ids)
         {
             ArgumentNullException.ThrowIfNull(ids);
 
@@ -1486,6 +1492,16 @@ namespace Moneyes.Data
         int ICachedRepository<T>.UpdateMany(IEnumerable<object> ids, Func<object, T, T> updateEntityFactory, ConflictResolutionDelegate<T> onConflict)
         {
             return UpdateMany(ids.Cast<TKey>(), (x, e) => updateEntityFactory(x, e), onConflict);
+        }
+
+        IEnumerator<T> IEnumerable<T>.GetEnumerator()
+        {
+            return GetAll().GetEnumerator();
+        }
+
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
+        {
+            return GetAll().GetEnumerator();
         }
 
         #endregion

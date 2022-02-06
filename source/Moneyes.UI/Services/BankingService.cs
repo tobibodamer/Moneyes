@@ -48,21 +48,21 @@ namespace Moneyes.UI
 
         public IReadOnlyList<BankDetails> GetBankEntries()
         {
-            return _bankDetailsRepository.GetAll()
+            return _bankDetailsRepository
                 .Select(b => _bankDetailsFactory.CreateFromDbo(b))
                 .ToList();
         }
 
         public IReadOnlyList<AccountDetails> GetAllAccounts()
         {
-            return _accountRepository.GetAll()
+            return _accountRepository
                 .Select(a => _accountFactory.CreateFromDbo(a))
                 .ToList();
         }
 
         public IReadOnlyList<AccountDetails> GetAccounts(BankDetails bankDetails)
         {
-            return _accountRepository.GetAll()
+            return _accountRepository
                 .Where(acc => acc.Bank.Id.Equals(bankDetails.Id))
                 .Select(a => _accountFactory.CreateFromDbo(a))
                 .ToList();
@@ -113,7 +113,7 @@ namespace Moneyes.UI
         /// <returns></returns>
         public Balance GetBalanceByDate(DateTime date, AccountDetails account)
         {
-            var dbo = _balanceRepository.GetAll()
+            var dbo = _balanceRepository
                 .Where(b => b.Account.Id.Equals(account.Id))
                 .Where(b => b.Date <= date)
                 .OrderByDescending(b => b.Date)

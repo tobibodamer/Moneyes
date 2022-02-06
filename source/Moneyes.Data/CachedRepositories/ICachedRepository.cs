@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Moneyes.Data
 {
@@ -7,7 +8,7 @@ namespace Moneyes.Data
     /// Provides methods for a repository with built in cache and entities of type <typeparamref name="T"/>.
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public interface ICachedRepository<T> : IBaseRepository<T>
+    public interface ICachedRepository<T> : IBaseRepository<T>, IEnumerable<T>
     {
         /// <summary>
         /// Gets the name of the underlying table.
@@ -37,6 +38,11 @@ namespace Moneyes.Data
         /// <param name="entities"></param>
         void RenewCacheFor(IEnumerable<T> entities);
 
+        /// <summary>
+        /// Finds all entities present with the given primary keys.
+        /// </summary>
+        /// <param name="ids">The primary keys of the entities to obtain.</param>
+        /// <returns>A list of entities found.</returns>
         IReadOnlyList<T> FindAllById(params object[] ids);
 
         /// <summary>
@@ -173,21 +179,21 @@ namespace Moneyes.Data
         /// <returns></returns>
         new TKey GetKey(T entity);
 
-        IReadOnlyList<T> FindAllById(params TKey[] ids);
+        IReadOnlyList<T> FindAllById(IEnumerable<TKey> ids);
 
         /// <summary>
         /// Checks if the repostory contains any entities with the given <paramref name="ids"/>.
         /// </summary>
         /// <param name="ids">The entity keys.</param>
         /// <returns><see langword="true"/> if at least one entity exists.</returns>
-        bool ContainsAny(params TKey[] ids);
+        bool ContainsAny(IEnumerable<TKey> ids);
 
         /// <summary>
         /// Checks if the repostory contains all entities with the given <paramref name="ids"/>.
         /// </summary>
         /// <param name="ids">The entity keys.</param>
         /// <returns><see langword="true"/> if all entities exist.</returns>
-        bool ContainsAll(params TKey[] ids);
+        bool ContainsAll(IEnumerable<TKey> ids);
 
         /// <summary>
         /// Checks if the repostory contains an entity with the given <paramref name="id"/>.

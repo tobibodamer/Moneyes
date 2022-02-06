@@ -34,7 +34,6 @@ namespace Moneyes.UI
             if (category.IsNoCategory())
             {
                 return _transactionRepository
-                    .GetAll()
                     .AsParallel()
                     .Where(t => t.Category == null)
                     .OrderByDescending(t => t.BookingDate)
@@ -43,7 +42,7 @@ namespace Moneyes.UI
             }
 
             // Category is some real category
-            var t = _transactionRepository.GetAll()
+            var t = _transactionRepository
                 .AsParallel()
                 .Where(t => t.Category?.Id == category.Id)
                 .OrderByDescending(t => t.BookingDate)
@@ -59,7 +58,7 @@ namespace Moneyes.UI
         {
             var stopwatch = Stopwatch.StartNew();
 
-            var transactions = _transactionRepository.GetAll()
+            var transactions = _transactionRepository
                 .AsParallel()
                 .OrderByDescending(t => t.BookingDate)
                 .ThenByDescending(t => t.PartnerIBAN)
@@ -181,7 +180,7 @@ namespace Moneyes.UI
         {
             var stopwatch = Stopwatch.StartNew();
 
-            var t = _transactionRepository.GetAll()
+            var t = _transactionRepository
                 .Select(_transactionFactory.CreateFromDbo)
                 .ToList();
 
@@ -216,7 +215,7 @@ namespace Moneyes.UI
         public Transaction? GetByUID(string uid)
 #nullable disable
         {
-            var transactionDbo = _transactionRepository.GetAll()
+            var transactionDbo = _transactionRepository
                 .FirstOrDefault(t => t.UID.Equals(uid));
 
             if (transactionDbo is null)

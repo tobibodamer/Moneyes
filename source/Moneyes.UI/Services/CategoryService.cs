@@ -27,7 +27,7 @@ namespace Moneyes.UI
 
         public Category GetCategoryByName(string name)
         {
-            var dbo = _categoryRepo.GetAll().FirstOrDefault(c => c.Name.Equals(name));
+            var dbo = _categoryRepo.FirstOrDefault(c => c.Name.Equals(name));
 
             return dbo is null
                 ? null
@@ -40,7 +40,7 @@ namespace Moneyes.UI
 
             if (includeCategories.HasFlag(CategoryTypes.Real))
             {
-                categories = _categoryRepo.GetAll()
+                categories = _categoryRepo
                     .Select(c => _categoryFactory.CreateFromDbo(c))
                     .ToList();
             }

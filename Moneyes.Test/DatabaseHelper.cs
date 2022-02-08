@@ -11,14 +11,9 @@ namespace Moneyes.Test
     public static class DatabaseHelper
     {
         public const string TestEntityCollectionName = "TestEntities";
-        public static (ILiteDatabase DB, string FileName) CreateTestDatabase()
+        public static ILiteDatabase CreateTestDatabase()
         {
-            var connectionString = new ConnectionString()
-            {
-                Filename = Path.GetTempFileName()
-            };
-
-            return (new LiteDatabase(connectionString), connectionString.Filename);
+            return new LiteDatabase(new MemoryStream());
         }
 
         public static void SeedDatabase(ILiteDatabase database)

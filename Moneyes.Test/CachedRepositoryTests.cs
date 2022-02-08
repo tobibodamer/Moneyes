@@ -11,13 +11,13 @@ using NSubstitute.ExceptionExtensions;
 namespace Moneyes.Test
 {
     public class CachedRepositoryTests
-    {      
+    {
         private readonly ILiteDatabase _database;
-        private readonly string _fileName;
+        private readonly Random _random = new();
         public CachedRepositoryTests()
         {
-            (_database, _fileName) = DatabaseHelper.CreateTestDatabase();
-            
+            _database = DatabaseHelper.CreateTestDatabase();
+
             DatabaseHelper.SeedDatabase(_database);
         }
 
@@ -32,7 +32,7 @@ namespace Moneyes.Test
                 conflictResolution: ConflictResolution.Fail,
                 nullValueHandling: nullValueHandling);
 
-            var repo = DatabaseHelper.SetupRepo<TestEntity, Guid>(_database, x => x.Id, 
+            var repo = DatabaseHelper.SetupRepo<TestEntity, Guid>(_database, x => x.Id,
                 new IUniqueConstraint<TestEntity>[] { uniqueConstraint });
 
             repo.RenewCache();
@@ -40,8 +40,8 @@ namespace Moneyes.Test
             var createEntity = () => repo.Create(new TestEntity()
             {
                 Id = Guid.NewGuid(),
-                Name = "wertzujikl",
-                Age = 77,
+                Name = Guid.NewGuid().ToString(),
+                Age = _random.Next(0, 100),
                 CarNumberPlate = null
             });
 
@@ -59,7 +59,6 @@ namespace Moneyes.Test
         ~CachedRepositoryTests()
         {
             _database.Dispose();
-            File.Delete(_fileName);
         }
     }
 }

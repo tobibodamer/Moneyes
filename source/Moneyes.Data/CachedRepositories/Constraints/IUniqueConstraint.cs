@@ -18,6 +18,11 @@
         ConflictResolution ConflictResolution { get; }
 
         /// <summary>
+        /// Gets the <see cref="Data.NullValueHandling"/> option to use for this unique constraint.
+        /// </summary>
+        NullValueHandling NullValueHandling { get; }
+
+        /// <summary>
         /// Checks if this constraint is violated.
         /// </summary>
         /// <param name="a"></param>

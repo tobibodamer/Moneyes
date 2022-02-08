@@ -89,9 +89,10 @@ namespace Moneyes.Data
             return base.DependsOnMany(collectionPropertySelector, collection) as CachedRepositoryBuilder<T>;
         }
 
-        public override CachedRepositoryBuilder<T> WithUniqueProperty<K>(Expression<Func<T, K>> selector, ConflictResolution conflictResolution = default)
+        public override CachedRepositoryBuilder<T> WithUniqueProperty<K>(Expression<Func<T, K>> selector, 
+            ConflictResolution conflictResolution = default, NullValueHandling nullValueHandling = default)
         {
-            return base.WithUniqueProperty(selector, conflictResolution) as CachedRepositoryBuilder<T>;
+            return base.WithUniqueProperty(selector, conflictResolution, nullValueHandling) as CachedRepositoryBuilder<T>;
         }
 
         public override CachedRepositoryBuilder<T> UseFactory<TFactory>()

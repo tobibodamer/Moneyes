@@ -51,8 +51,8 @@ namespace Moneyes.Data
             ArgumentNullException.ThrowIfNull(databaseProvider);
 
             _keySelector = keySelector;
-            RepositoryDependencies = repositoryDependencies;
-            UniqueConstraints = uniqueConstraints;
+            RepositoryDependencies = repositoryDependencies ?? Enumerable.Empty<IRepositoryDependency<T>>();
+            UniqueConstraints = uniqueConstraints ?? Enumerable.Empty<IUniqueConstraint<T>>();
             Database = databaseProvider.Database;
             Options = options;
             DependencyRefreshHandler = refreshHandler;
@@ -311,8 +311,18 @@ namespace Moneyes.Data
                 // Go through each unique constraint
                 foreach (var (constraint, values) in constraintValues)
                 {
-                    // Add unique property value
-                    values.Add(constraint.GetPropertyValue(existingEntity), existingEntity);
+                    var propertyValue = constraint.GetPropertyValue(existingEntity);
+
+                    if (propertyValue is not null)
+                    {
+                        // Add unique property value
+                        values.Add(propertyValue, existingEntity);
+                    }
+                    else if (constraint.NullValueHandling is NullValueHandling.Include)
+                    {
+                        // Add empty value tuple representing null value
+                        values.Add(ValueTuple.Create(), existingEntity);
+                    }
                 }
             }
 
@@ -325,6 +335,17 @@ namespace Moneyes.Data
                 foreach (var (constraint, values) in constraintValues)
                 {
                     var uniquePropertyValue = constraint.GetPropertyValue(entity);
+
+                    if (uniquePropertyValue is null)
+                    {
+                        if (constraint.NullValueHandling is NullValueHandling.Ignore)
+                        {
+                            continue;
+                        }
+
+                        // Set to empty value tuple representing null value
+                        uniquePropertyValue = ValueTuple.Create();
+                    }
 
                     // Check if unique value is already existing
                     if (values.TryGetValue(uniquePropertyValue, out var existingEntity))

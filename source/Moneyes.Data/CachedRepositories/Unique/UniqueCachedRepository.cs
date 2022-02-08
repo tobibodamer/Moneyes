@@ -13,16 +13,14 @@ namespace Moneyes.Data;
 public interface IUniqueCachedRepository<T> : ICachedRepository<T, Guid>
     where T : UniqueEntity
 {
-    IEnumerable<T> GetAll(bool includeSoftDeleted = false);
-    IReadOnlyList<T> FindAllById(bool includeSoftDeleted = false, params Guid[] ids);
+    IReadOnlyList<T> FindAllById(IEnumerable<Guid> ids, bool includeSoftDeleted = false);
 #nullable enable
     T? FindById(Guid id, bool includeSoftDeleted = false);
 #nullable disable
 
-    bool ContainsAny(bool includeSoftDeleted = false, params Guid[] ids);
-    bool ContainsAll(bool includeSoftDeleted = false, params Guid[] ids);
+    bool ContainsAny(IEnumerable<Guid> ids, bool includeSoftDeleted = false);
+    bool ContainsAll(IEnumerable<Guid> ids, bool includeSoftDeleted = false);
     bool Contains(Guid id, bool includeSoftDeleted = false);
-    
 
     bool Set(T entity, bool keepCreationTimestamp = true);
     bool Set(T entity, ConflictResolutionDelegate<T> onConflict, bool keepCreationTimestamp = true);
@@ -37,6 +35,8 @@ public interface IUniqueCachedRepository<T> : ICachedRepository<T, Guid>
     bool DeleteById(Guid id, bool softDelete = true);
     int DeleteAll(bool softDelete = true);
     int DeleteMany(Expression<Func<T, bool>> predicate, bool softDelete = true);
+
+    IEnumerable<T> IncludeSoftDeleted();
 }
 
 public class UniqueCachedRepository<T> : CachedRepository<T, Guid>, IUniqueCachedRepository<T>
@@ -78,15 +78,11 @@ public class UniqueCachedRepository<T> : CachedRepository<T, Guid>, IUniqueCache
 
     public override IEnumerable<T> GetAll()
     {
-        return GetAll(includeSoftDeleted: false);
+        return base.GetAll().Where(x => !x.IsDeleted);
     }
-    public IEnumerable<T> GetAll(bool includeSoftDeleted = false)
-    {
-        if (!includeSoftDeleted)
-        {
-            return base.GetAll().Where(x => !x.IsDeleted);
-        }
 
+    public IEnumerable<T> IncludeSoftDeleted()
+    {
         return base.GetAll();
     }
 
@@ -107,7 +103,7 @@ public class UniqueCachedRepository<T> : CachedRepository<T, Guid>, IUniqueCache
         return result;
     }
 
-    public IReadOnlyList<T> FindAllById(bool includeSoftDeleted = false, params Guid[] ids)
+    public IReadOnlyList<T> FindAllById(IEnumerable<Guid> ids, bool includeSoftDeleted = false)
     {
         if (includeSoftDeleted)
         {
@@ -116,7 +112,7 @@ public class UniqueCachedRepository<T> : CachedRepository<T, Guid>, IUniqueCache
 
         ArgumentNullException.ThrowIfNull(ids);
 
-        if (ids.Length == 0)
+        if (!ids.Any())
         {
             return new List<T>();
         }
@@ -127,7 +123,7 @@ public class UniqueCachedRepository<T> : CachedRepository<T, Guid>, IUniqueCache
             .ToList();
     }
 
-    public override IReadOnlyList<T> FindAllById(params Guid[] ids)
+    public override IReadOnlyList<T> FindAllById(IEnumerable<Guid> ids)
     {
         return base.FindAllById(ids);
     }
@@ -152,7 +148,7 @@ public class UniqueCachedRepository<T> : CachedRepository<T, Guid>, IUniqueCache
         return Contains(id, includeSoftDeleted: false);
     }
 
-    public bool ContainsAll(bool includeSoftDeleted = false, params Guid[] ids)
+    public bool ContainsAll(IEnumerable<Guid> ids, bool includeSoftDeleted = false)
     {
         if (includeSoftDeleted)
         {
@@ -170,12 +166,12 @@ public class UniqueCachedRepository<T> : CachedRepository<T, Guid>, IUniqueCache
         });
     }
 
-    public override bool ContainsAll(params Guid[] ids)
+    public override bool ContainsAll(IEnumerable<Guid> ids)
     {
-        return ContainsAll(false, ids);
+        return ContainsAll(ids, includeSoftDeleted: false);
     }
 
-    public bool ContainsAny(bool includeSoftDeleted = false, params Guid[] ids)
+    public bool ContainsAny(IEnumerable<Guid> ids, bool includeSoftDeleted = false)
     {
         if (includeSoftDeleted)
         {
@@ -358,7 +354,7 @@ public class UniqueCachedRepository<T> : CachedRepository<T, Guid>, IUniqueCache
     {
         if (softDelete)
         {
-            var entities = GetAll(includeSoftDeleted: false).ToList();
+            var entities = GetAll().ToList();
 
             foreach (var entity in entities)
             {
@@ -375,7 +371,7 @@ public class UniqueCachedRepository<T> : CachedRepository<T, Guid>, IUniqueCache
     {
         var compiledPredicate = predicate.Compile();
 
-        var entities = GetAll(includeSoftDeleted: false)
+        var entities = GetAll()
             .Where(compiledPredicate)
             .ToList();
 
@@ -416,7 +412,7 @@ public class UniqueCachedRepository<T> : CachedRepository<T, Guid>, IUniqueCache
     protected override Func<T, bool> CreateUniqueConstraintValidator(
         IEnumerable<T> existingEntities,
         IEnumerable<IUniqueConstraint<T>> uniqueConstraints,
-        Func<ConstraintViolation<T>, (bool continueValidation, bool ignore)> onViolation)
+        Func<ConstraintViolation<T>, (bool continueValidation, bool ignoreViolation)> onViolation)
     {
         var existingEntitiesCopy = existingEntities.ToList();
 

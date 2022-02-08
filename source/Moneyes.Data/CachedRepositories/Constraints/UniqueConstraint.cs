@@ -18,13 +18,19 @@ namespace Moneyes.Data
 
         public ConflictResolution ConflictResolution { get; }
 
-        public UniqueConstraint(Expression<Func<T, K>> selector, string collectionName,
-            ConflictResolution conflictResolution = default)
+        public NullValueHandling NullValueHandling { get; }
+
+        public UniqueConstraint(
+            Expression<Func<T, K>> selector, 
+            string collectionName,
+            ConflictResolution conflictResolution = default, 
+            NullValueHandling nullValueHandling = default)
         {
             Selector = selector.Compile();
             CollectionName = collectionName;
             PropertyName = GetPropertyName(selector);
             ConflictResolution = conflictResolution;
+            NullValueHandling = nullValueHandling;
         }
 
         private static string GetPropertyName(Expression<Func<T, K>> selector)

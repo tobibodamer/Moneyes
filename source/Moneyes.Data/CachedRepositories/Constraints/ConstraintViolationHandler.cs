@@ -8,21 +8,23 @@ namespace Moneyes.Data
     {
         protected class ConstraintViolationHandler
         {
-            private readonly List<T> _toDelete = new();
-            private readonly List<T> _toUpdate = new();
+            private readonly Dictionary<T, T> _toReplace = new();
+            private readonly Dictionary<T, T> _toUpdate = new();
             private readonly ICachedRepository<T> _repository;
             private readonly ILogger _logger;
+            private readonly RepositoryOperation _operation;
 
-            public IReadOnlyList<T> ToUpdate => _toUpdate;
-            public IReadOnlyList<T> ToDelete => _toDelete;
-            public ConstraintViolationHandler(ICachedRepository<T> repository, ILogger logger)
+            public IEnumerable<T> ToUpdate => _toUpdate.Values;
+            public IEnumerable<T> ToDelete => _toReplace.Values;
+            public ConstraintViolationHandler(ICachedRepository<T> repository, ILogger logger, RepositoryOperation operation)
             {
                 _repository = repository;
                 _logger = logger;
+                _operation = operation;
             }
 
 #nullable enable
-            public (bool continueValidation, bool ignore) Handle(ConstraintViolation<T> violation, ConflictResolutionAction? userAction)
+            public (bool continueValidation, bool ignoreViolation) Handle(ConstraintViolation<T> violation, ConflictResolutionAction? userAction)
 #nullable disable
             {
                 var conflictResolution = violation.Constraint.ConflictResolution; // default resolution
@@ -32,12 +34,13 @@ namespace Moneyes.Data
                 {
                     if (userAction is UpdateConflicResolutionAction<T> updateAction)
                     {
-                        _logger.LogInformation("Choosing advanced conflic resolution 'Update'.");
+                        _logger.LogInformation("[ConstraintViolationHandler] Choosing advanced conflic resolution 'Update'.");
 
-                        _toUpdate.Add(updateAction.EntityToUpdate);
+                        // Set the entity to update for this entity
+                        _toUpdate[violation.NewEntity] = updateAction.EntityToUpdate;
 
                         // not include, continue
-                        return (continueValidation: true, ignore: false);
+                        return (continueValidation: true, ignoreViolation: false);
                     }
                     else if (userAction.Resolution != null)
                     {
@@ -45,7 +48,7 @@ namespace Moneyes.Data
                     }
                 }
 
-                _logger.LogInformation("Choosing conflic resolution {method}.", conflictResolution);
+                _logger.LogInformation("[ConstraintViolationHandler] Choosing conflic resolution {method}.", conflictResolution);
 
                 switch (conflictResolution)
                 {
@@ -57,43 +60,72 @@ namespace Moneyes.Data
                             violation.NewEntity,
                             violation.ExistingEntity);
                     case ConflictResolution.Ignore:
+
+                        // Revoke update entity, because Ignore > Update
+                        if (_toUpdate.Remove(violation.NewEntity))
+                        {
+                            _logger?.LogDebug("[ConstraintViolationHandler] Revoked update of entity.");
+                        }
+
+                        // Revoke replace entity, because Ignore > Replace
+                        if (_toReplace.Remove(violation.NewEntity))
+                        {
+                            _logger?.LogDebug("[ConstraintViolationHandler] Revoked replace of entity.");
+                        }
+
                         // not include, not continue
-                        return (continueValidation: false, ignore: false);
+                        return (continueValidation: false, ignoreViolation: false);
                     case ConflictResolution.Replace:
-                        _toDelete.Add(violation.ExistingEntity);
+                        
+                        // On upserts we dont need to perform an extra replace
+                        if (_operation is not RepositoryOperation.Upsert)
+                        {
+                            _toReplace[violation.NewEntity] = violation.ExistingEntity;
+
+                            return (continueValidation: true, ignoreViolation: false);
+                        }
 
                         // include, continue
-                        return (continueValidation: true, ignore: true);
+                        return (continueValidation: true, ignoreViolation: true);
                     default:
-                        return (continueValidation: true, ignore: false);
+                        return (continueValidation: true, ignoreViolation: false);
                 }
             }
             public void Reset()
             {
-                _toDelete.Clear();
+                _toReplace.Clear();
                 _toUpdate.Clear();
             }
 
-            public void PerformDeletes()
+            public void PerformReplaces()
             {
-                var keysToDelete = _toDelete.Select(x => _repository.GetKey(x)).ToHashSet();
+                var keysToReplace = _toReplace.Values
+                    .Select(x => _repository.GetKey(x))
+                    .Distinct()
+                    .ToHashSet();
 
-                if (!keysToDelete.Any())
+                if (!keysToReplace.Any())
                 {
+                    _logger?.LogDebug("[ConstraintViolationHandler] No entities to be replaced.");
                     return;
                 }
 
-                _repository.DeleteMany(x => keysToDelete.Contains(_repository.GetKey(x)));
+                _logger?.LogDebug("[ConstraintViolationHandler] Upserting {n} entities to be replaced.", keysToReplace.Count);
+
+                _repository.SetMany(_toReplace.Values, onConflict: v => ConflictResolutionAction.Fail());
             }
 
             public void PerformUpdates()
             {
                 if (!_toUpdate.Any())
                 {
+                    _logger?.LogDebug("[ConstraintViolationHandler] No entities to be updated.");
                     return;
                 }
 
-                _repository.UpdateMany(_toUpdate);
+                _logger?.LogDebug("[ConstraintViolationHandler] Updating {n} entities.", _toUpdate.Count);
+
+                _repository.UpdateMany(_toUpdate.Values, onConflict: v => ConflictResolutionAction.Fail());
             }
         }
     }

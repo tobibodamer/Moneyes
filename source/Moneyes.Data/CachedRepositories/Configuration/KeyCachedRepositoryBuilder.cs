@@ -136,11 +136,11 @@ namespace Moneyes.Data
         /// <param name="onConflict">The default conflict resolution action, when the unique constraint is violated.</param>
         /// <returns></returns>
         public virtual KeyCachedRepositoryBuilder<T> WithUniqueProperty<K>(Expression<Func<T, K>> selector,
-            ConflictResolution onConflict = default)
+            ConflictResolution onConflict = default, NullValueHandling nullValueHandling = default)
         {
             Services.AddScoped<IUniqueConstraint<T>, UniqueConstraint<T, K>>(p =>
             {
-                return new(selector, Name, onConflict);
+                return new(selector, Name, onConflict, nullValueHandling);
             });
 
             return this;

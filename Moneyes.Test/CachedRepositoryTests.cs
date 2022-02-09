@@ -127,7 +127,7 @@ namespace Moneyes.Test
             {
                 Id = Guid.NewGuid(),
                 Name = Guid.NewGuid().ToString(),
-                Age = _random.Next(0, 100),
+                Age = 77,
                 CarNumberPlate = null
             });
 

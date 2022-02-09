@@ -126,8 +126,8 @@ namespace Moneyes.Test
             var createEntity = () => repo.Create(new TestEntity()
             {
                 Id = Guid.NewGuid(),
-                Name = "wertzujikl",
-                Age = 77,
+                Name = Guid.NewGuid().ToString(),
+                Age = _random.Next(0, 100),
                 CarNumberPlate = null
             });
 

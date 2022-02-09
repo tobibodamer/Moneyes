@@ -37,7 +37,8 @@ namespace Moneyes.Test
             });
         }
 
-        public static ICachedRepository<T, TKey> SetupRepo<T, TKey>(ILiteDatabase database, Func<T, TKey> keySelector,
+        public static ICachedRepository<T, TKey> SetupRepo<T, TKey>(ILiteDatabase database, Func<T, TKey> keySelector, 
+            string collectionName,
             IEnumerable<IUniqueConstraint<T>> uniqueConstraints) where TKey : struct
         {
             var databaseProvider = Substitute.For<IDatabaseProvider<LiteDB.ILiteDatabase>>();
@@ -45,7 +46,7 @@ namespace Moneyes.Test
             databaseProvider.IsOpen.Returns(true);
             databaseProvider.Database.Returns(database);
 
-            return new CachedRepository<T, TKey>(databaseProvider, new() { CollectionName = TestEntityCollectionName },
+            return new CachedRepository<T, TKey>(databaseProvider, new() { CollectionName = collectionName },
                 Substitute.For<DependencyRefreshHandler>(), keySelector,
                 null, uniqueConstraints, Substitute.For<ILogger<CachedRepository<T, TKey>>>());
         }

@@ -316,12 +316,20 @@ namespace Moneyes.Data
                     if (propertyValue is not null)
                     {
                         // Add unique property value
-                        values.Add(propertyValue, existingEntity);
+                        if (!values.TryAdd(propertyValue, existingEntity))
+                        {
+                            Logger?.LogWarning("Duplicate unique value in database found for property {name}.",
+                                constraint.PropertyName);
+                        }
                     }
                     else if (constraint.NullValueHandling is NullValueHandling.Include)
                     {
                         // Add empty value tuple representing null value
-                        values.Add(ValueTuple.Create(), existingEntity);
+                        if (!values.TryAdd(ValueTuple.Create(), existingEntity))
+                        {
+                            Logger?.LogWarning("Duplicate unique null value in database found for property {name}.",
+                                constraint.PropertyName);
+                        }
                     }
                 }
             }

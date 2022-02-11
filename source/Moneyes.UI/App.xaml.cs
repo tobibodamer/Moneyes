@@ -857,7 +857,7 @@ namespace Moneyes.UI
         protected override void OnExit(ExitEventArgs e)
         {
             base.OnExit(e);
-            _dbProvider.Database.Dispose();
+            _dbProvider.Database?.Dispose();
         }
     }
 }

@@ -17,7 +17,6 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Security;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Markup;
@@ -38,13 +37,6 @@ namespace Moneyes.UI
             CultureInfo.DefaultThreadCurrentCulture = CultureInfo.CurrentCulture;
             FrameworkElement.LanguageProperty.OverrideMetadata(typeof(FrameworkElement), new FrameworkPropertyMetadata(
                 XmlLanguage.GetLanguage(CultureInfo.CurrentCulture.IetfLanguageTag)));
-        }
-
-        private static void RegisterIdSelectors()
-        {
-            //IDSelectors.Register<Category>(c => c.Id);
-            //IDSelectors.Register<AccountDetails>(acc => acc.IBAN);
-            //IDSelectors.Register<Transaction>(t => t.UID);
         }
 
         private static string InitDatabasePath()
@@ -71,38 +63,16 @@ namespace Moneyes.UI
                 .CreateLogger();
         }
 
-        class UIDatabaseProvider : LiteDatabaseProvider
-        {
-            private readonly MasterPasswordProvider _masterPasswordProvider;
-            public UIDatabaseProvider(LiteDbConfig dbConfig, MasterPasswordProvider masterPasswordProvider)
-                : base(dbConfig)
-            {
-                _masterPasswordProvider = masterPasswordProvider;
-            }
-
-            public override SecureString OnCreatePassword()
-            {
-                return _masterPasswordProvider.CreateMasterPassword();
-            }
-
-            public override SecureString OnRequestPassword()
-            {
-                return _masterPasswordProvider.RequestMasterPassword();
-            }
-        }
-
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
 
             RegisterGlobalExceptionHandling((ex, msg) =>
             {
-                Log.Logger.Error(ex, msg);
+                Log.Error(ex, msg);
             });
 
             InitializeCultures();
-
-            RegisterIdSelectors();
 
             SetupLogging();
 
@@ -118,7 +88,7 @@ namespace Moneyes.UI
                 {
                     options.AddUniqueRepository<TransactionDbo>("Transaction")
                         .DependsOnOne(t => t.Category, "Category")
-                        .WithUniqueProperty(t => t.UID, onConflict: ConflictResolution.Replace);
+                        .WithUniqueProperty(t => t.UID);
 
                     options.AddUniqueRepository<CategoryDbo>("Category")
                         .DependsOnOne(c => c.Parent, "Category")
@@ -137,18 +107,7 @@ namespace Moneyes.UI
                         .WithUniqueProperty(b => new { b.BankCode, b.UserId });
                 });
 
-
-            // Repositories
-            //services.AddScoped<CategoryRepository>();
-            //services.AddScoped<IBaseRepository<Category>, CategoryRepository>(p => p.GetRequiredService<CategoryRepository>());
-            //services.AddScoped<TransactionRepository>();
-            //services.AddScoped<IBaseRepository<Transaction>, TransactionRepository>(p => p.GetRequiredService<TransactionRepository>());
-            //services.AddScoped<AccountRepository>();
-            //services.AddScoped<IBaseRepository<AccountDetails>, AccountRepository>(p => p.GetRequiredService<AccountRepository>());
-            //services.AddScoped<BalanceRepository>();
-            //services.AddScoped<IBaseRepository<Balance>, BalanceRepository>(p => p.GetRequiredService<BalanceRepository>());
-            //services.AddScoped<BankDetailsRepository>();
-            //services.AddScoped<IBaseRepository<BankDetails>, BankDetailsRepository>(p => p.GetRequiredService<BankDetailsRepository>());
+            
 
             // Factories
             services.AddTransient<ICategoryFactory, CategoryFactory>();
@@ -230,16 +189,19 @@ namespace Moneyes.UI
 
             ApplyMigrations(_dbProvider.Database, serviceProvider.GetRequiredService<ILogger<ILiteDatabase>>());
 
-            var categoryRepo = serviceProvider.GetService<IUniqueCachedRepository<CategoryDbo>>();
-            categoryRepo.RenewCache();
-            var transactionRepo = serviceProvider.GetService<IUniqueCachedRepository<TransactionDbo>>();
-            transactionRepo.RenewCache();
-            var balanceRepo = serviceProvider.GetService<IUniqueCachedRepository<BalanceDbo>>();
-            balanceRepo.RenewCache();
-            var accountRepo = serviceProvider.GetService<IUniqueCachedRepository<AccountDbo>>();
-            accountRepo.RenewCache();
-            var bankDetailRepo = serviceProvider.GetService<IUniqueCachedRepository<BankDbo>>();
-            bankDetailRepo.RenewCache();
+            Task.Run(() =>
+            {
+                var categoryRepo = serviceProvider.GetService<IUniqueCachedRepository<CategoryDbo>>();
+                categoryRepo.RenewCache();
+                var transactionRepo = serviceProvider.GetService<IUniqueCachedRepository<TransactionDbo>>();
+                transactionRepo.RenewCache();
+                var balanceRepo = serviceProvider.GetService<IUniqueCachedRepository<BalanceDbo>>();
+                balanceRepo.RenewCache();
+                var accountRepo = serviceProvider.GetService<IUniqueCachedRepository<AccountDbo>>();
+                accountRepo.RenewCache();
+                var bankDetailRepo = serviceProvider.GetService<IUniqueCachedRepository<BankDbo>>();
+                bankDetailRepo.RenewCache();
+            });
 
 
             // Seed transactions:
@@ -807,7 +769,7 @@ namespace Moneyes.UI
                        p.GetRequiredService<GetMasterPasswordDialogViewModel>);
         }
 
-        private void RegisterGlobalExceptionHandling(Action<Exception, string> log)
+        private static void RegisterGlobalExceptionHandling(Action<Exception, string> log)
         {
             // this is the line you really want 
             AppDomain.CurrentDomain.UnhandledException +=

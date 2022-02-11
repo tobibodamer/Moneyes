@@ -2,8 +2,6 @@ using Xunit;
 using Moneyes.Data;
 using FluentAssertions.Extensions;
 using System;
-using System.Linq.Expressions;
-using LiteDB;
 using System.IO;
 using FluentAssertions;
 using NSubstitute.ExceptionExtensions;

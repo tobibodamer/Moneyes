@@ -126,7 +126,7 @@ namespace Moneyes.UI
 
                     options.AddUniqueRepository<AccountDbo>("Accounts")
                         .DependsOnOne(a => a.Bank, "BankDetails")
-                        .WithUniqueProperty(a => a.IBAN)
+                        //.WithUniqueProperty(a => a.IBAN)
                         .WithUniqueProperty(a => new { a.Number, a.Bank.Id });
 
                     options.AddUniqueRepository<BalanceDbo>("Balance")

@@ -5,8 +5,6 @@ VisualStudioVersion = 17.0.32112.339
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Moneyes.Core", "source\Moneyes.Core\Moneyes.Core.csproj", "{02B851DA-073B-4D76-ABF8-BA98AF531EB4}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Moneyes.TestProject", "source\Moneyes.TestProject\Moneyes.TestProject.csproj", "{26A3C034-DE3E-4B49-B0AF-3722CA9563DE}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Moneyes.UI", "source\Moneyes.UI\Moneyes.UI.csproj", "{EE303237-8697-4673-933E-5127A0D78D7B}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Moneyes.LiveData", "source\Moneyes.LiveData\Moneyes.LiveData.csproj", "{69A10BDC-65FF-4672-8C40-770821F5657C}"
@@ -15,7 +13,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Moneyes.Data", "source\Moneyes.Data\Moneyes.Data.csproj", "{5178E1B6-560F-497A-9DB5-80F1145C8F22}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Moneyes.Test", "Moneyes.Test\Moneyes.Test.csproj", "{3F873D49-ECAE-4296-BB29-279DD4731F59}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Moneyes.Test", "Moneyes.Test\Moneyes.Test.csproj", "{3F873D49-ECAE-4296-BB29-279DD4731F59}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -27,10 +25,6 @@ Global
 		{02B851DA-073B-4D76-ABF8-BA98AF531EB4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{02B851DA-073B-4D76-ABF8-BA98AF531EB4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{02B851DA-073B-4D76-ABF8-BA98AF531EB4}.Release|Any CPU.Build.0 = Release|Any CPU
-		{26A3C034-DE3E-4B49-B0AF-3722CA9563DE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{26A3C034-DE3E-4B49-B0AF-3722CA9563DE}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{26A3C034-DE3E-4B49-B0AF-3722CA9563DE}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{26A3C034-DE3E-4B49-B0AF-3722CA9563DE}.Release|Any CPU.Build.0 = Release|Any CPU
 		{EE303237-8697-4673-933E-5127A0D78D7B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{EE303237-8697-4673-933E-5127A0D78D7B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EE303237-8697-4673-933E-5127A0D78D7B}.Release|Any CPU.ActiveCfg = Release|Any CPU

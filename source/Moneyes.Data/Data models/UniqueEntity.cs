@@ -5,27 +5,28 @@ namespace Moneyes.Data
     /// <summary>
     /// A unique database entity.
     /// </summary>
-    public abstract class UniqueEntity
+    public abstract record UniqueEntity<T> 
+        where T : UniqueEntity<T>
     {
         /// <summary>
         /// A unique identifier for this entity.
         /// </summary>
-        public Guid Id { get; set; } = Guid.NewGuid();
+        public Guid Id { get; init; }
 
         /// <summary>
         /// The date and time of creation.
         /// </summary>
-        public DateTime CreatedAt { get; set; }
+        public DateTime CreatedAt { get; init; }
 
         /// <summary>
         /// The timestamp of the last database update.
         /// </summary>
-        public DateTime UpdatedAt { get; set; }
+        public DateTime UpdatedAt { get; init; }
 
         /// <summary>
         /// Gets or sets whether this entity is soft deleted.
         /// </summary>
-        public bool IsDeleted { get; set; }
+        public bool IsDeleted { get; init; }
 
         /// <summary>
         /// Returns true if <see cref="ID"/> equals <paramref name="other"/>.ID.
@@ -33,7 +34,7 @@ namespace Moneyes.Data
         /// <param name="other"></param>
         /// <returns></returns>
 #nullable enable
-        public bool IdEquals(UniqueEntity? other)
+        public bool IdEquals(T? other)
 #nullable disable
         {
             return this.Id.Equals(other?.Id);
@@ -45,7 +46,7 @@ namespace Moneyes.Data
         /// </summary>
         /// <param name="other"></param>
         /// <returns></returns>
-        public abstract bool ContentEquals(UniqueEntity other);
+        public abstract bool ContentEquals(T other);
 
         /// <summary>
         /// For deserialization only.
@@ -65,25 +66,6 @@ namespace Moneyes.Data
             CreatedAt = createdAt ?? DateTime.UtcNow;
             UpdatedAt = updatedAt ?? DateTime.UtcNow;
             IsDeleted = isDeleted;
-        }
-
-        /// <summary>
-        /// Creates a new instance of <see cref="UniqueEntity"/> from another <see cref="UniqueEntity"/>, 
-        /// overriding the old parameters when given.
-        /// </summary>
-        /// <param name="other"></param>
-        /// <param name="id"></param>
-        /// <param name="createdAt"></param>
-        /// <param name="updatedAt"></param>
-        /// <param name="isDeleted"></param>
-        public UniqueEntity(UniqueEntity other, Guid? id = null, DateTime? createdAt = null, DateTime? updatedAt = null, bool? isDeleted = null)
-        {
-            ArgumentNullException.ThrowIfNull(other);
-
-            Id = id ?? other.Id;
-            CreatedAt = createdAt ?? other.CreatedAt;
-            UpdatedAt = updatedAt ?? other.UpdatedAt;
-            IsDeleted = isDeleted ?? other.IsDeleted;
         }
     }
 }

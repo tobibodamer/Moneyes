@@ -3,7 +3,7 @@ using System;
 
 namespace Moneyes.Data
 {
-    public class CategoryDbo : UniqueEntity
+    public record CategoryDbo : UniqueEntity<CategoryDbo>
     {
         /// <summary>
         /// Name of the category.
@@ -15,7 +15,7 @@ namespace Moneyes.Data
         /// A <see cref="TransactionFilter"/> used to identify transactions belonging to this category. <br></br>
         /// Can be <see langword="null"/> for dumb categories.
         /// </summary>
-        public TransactionFilterDto? Filter { get; set; }
+        public TransactionFilterDto? Filter { get; init; }
 
         /// <summary>
         /// The parent category.
@@ -26,16 +26,16 @@ namespace Moneyes.Data
         /// <summary>
         /// Gets or sets the monthly target amount for this category.
         /// </summary>
-        public decimal Target { get; set; }
+        public decimal Target { get; init; }
 
         /// <summary>
         /// Indicates whether transactions are exclusive to this category.
         /// </summary>
-        public bool IsExlusive { get; set; }
+        public bool IsExlusive { get; init; }
 
-        public override bool ContentEquals(UniqueEntity other)
+        public override bool ContentEquals(CategoryDbo otherCategory)
         {
-            return other is CategoryDbo otherCategory &&
+            return
                 Name == otherCategory.Name &&
                 (Filter?.Equals(otherCategory.Filter) ?? otherCategory.Filter is null) &&
                 (Parent?.IdEquals(otherCategory.Parent) ?? otherCategory.Parent is null) &&
@@ -43,19 +43,6 @@ namespace Moneyes.Data
                 IsExlusive == otherCategory.IsExlusive;
         }
 
-        public override bool Equals(object obj)
-        {
-            return obj is CategoryDbo category &&
-                   Name == category.Name &&
-                   Target == category.Target &&
-                   Parent == category.Parent &&
-                   IsExlusive == IsExlusive;
-        }
-
-        public override int GetHashCode()
-        {
-            return HashCode.Combine(Name, Filter, Target);
-        }
 
         /// <summary>
         /// For deserialization only.
@@ -71,18 +58,6 @@ namespace Moneyes.Data
             : base(id, createdAt, updatedAt, isDeleted)
         {
             Name = name;
-        }
-
-        public CategoryDbo(
-            CategoryDbo other,
-            string name = null,
-            Guid? id = null,
-            DateTime? createdAt = null,
-            DateTime? updatedAt = null,
-            bool? isDeleted = null)
-            : base(other, id, createdAt, updatedAt, isDeleted)
-        {
-            Name = name ?? other.Name;
         }
     }
 }

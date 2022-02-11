@@ -44,7 +44,7 @@ namespace Moneyes.Data
                    left.OwnerName == other.OwnerName &&
                    left.Type == other.Type &&
                    ((left.Permissions is null && other.Permissions is null) ||
-                   (other.Permissions != null && ((left?.Permissions.SetwiseEquivalentTo(other.Permissions)) ?? false)));
+                   (other.Permissions != null && ((left.Permissions?.SetwiseEquivalentTo(other.Permissions)) ?? false)));
         }
 
         public override bool ContentEquals(AccountDbo other)

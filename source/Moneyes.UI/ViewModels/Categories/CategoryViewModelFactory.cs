@@ -109,15 +109,15 @@ namespace Moneyes.UI.ViewModels
                 }
             }, () => !category.IsAllCategory() && !category.IsNoCategory());
 
-            categoryViewModel.MoveToCategory = new RelayCommand<Transaction>(transaction =>
+            categoryViewModel.MoveToCategory = new RelayCommand<TransactionViewModel>(transaction =>
             {
                 Category targetCategory = categoryViewModel.Category;
 
-                if (_categoryService.MoveToCategory(transaction, targetCategory))
+                if (_categoryService.MoveToCategory(transaction.Transaction, targetCategory))
                 {
                     _statusMessageService.ShowMessage($"Moved to '{targetCategory.Name}'");
                 }
-            }, t => categoryViewModel.IsCreated && canAssign(t));
+            }, t => categoryViewModel.IsCreated && canAssign(t.Transaction));
         }
 
         public EditCategoryViewModel CreateAddCategoryViewModel()

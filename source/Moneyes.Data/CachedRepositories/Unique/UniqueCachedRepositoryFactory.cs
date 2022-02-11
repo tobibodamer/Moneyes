@@ -11,7 +11,7 @@ using LiteDB;
 namespace Moneyes.Data
 {
     public class UniqueCachedRepositoryFactory<T> : CachedRepositoryFactory<T, Guid>
-        where T : UniqueEntity
+        where T : UniqueEntity<T>
     {
         public UniqueCachedRepositoryFactory(IServiceProvider serviceProvider) : base(serviceProvider)
         {

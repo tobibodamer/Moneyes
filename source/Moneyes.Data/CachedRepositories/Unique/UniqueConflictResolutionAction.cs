@@ -11,13 +11,17 @@ public class UniqueConflictResolutionAction
     /// <typeparam name="T"></typeparam>
     /// <param name="v"></param>
     /// <returns></returns>
-    public static ConflictResolutionAction Update<T>(ConstraintViolation<T> v) where T : UniqueEntity
+    public static ConflictResolutionAction Update<T>(ConstraintViolation<T> v) where T : UniqueEntity<T>
     {
         // Apply existing id and creation date to update existing entity
-        v.NewEntity.Id = v.ExistingEntity.Id;
-        v.NewEntity.CreatedAt = v.ExistingEntity.CreatedAt;
-
-        return ConflictResolutionAction.Update(v.NewEntity);
+        //v.NewEntity.Id = v.ExistingEntity.Id;
+        //v.NewEntity.CreatedAt = v.ExistingEntity.CreatedAt;
+        
+        return ConflictResolutionAction.Update(v.NewEntity with
+        {
+            Id = v.ExistingEntity.Id,
+            CreatedAt = v.NewEntity.CreatedAt
+        });
     }
 
     /// <summary>
@@ -29,7 +33,7 @@ public class UniqueConflictResolutionAction
     /// <param name="defaultResolution">The default <see cref="ConflictResolution"/> if the content equals.</param>
     /// <returns></returns>
     public static ConflictResolutionAction UpdateContent<T>(ConstraintViolation<T> v,
-        ConflictResolution? defaultResolution = null) where T : UniqueEntity
+        ConflictResolution? defaultResolution = null) where T : UniqueEntity<T>
     {
         if (v.ExistingEntity.ContentEquals(v.NewEntity))
         {
@@ -49,6 +53,6 @@ public class UniqueConflictResolutionAction
     /// <typeparam name="T"></typeparam>
     /// <param name="v">The constraint violation that needs to be resolved.</param>
     /// <returns></returns>
-    public static ConflictResolutionAction UpdateContentOrIgnore<T>(ConstraintViolation<T> v) where T : UniqueEntity
+    public static ConflictResolutionAction UpdateContentOrIgnore<T>(ConstraintViolation<T> v) where T : UniqueEntity<T>
         => UpdateContent(v, ConflictResolution.Ignore);
 }

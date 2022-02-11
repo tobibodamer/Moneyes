@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Moneyes.Data
 {
-    public class TransactionDbo : UniqueEntity
+    public record TransactionDbo : UniqueEntity<TransactionDbo>
     {
         public string UID { get; init; }
 
@@ -74,25 +74,24 @@ namespace Moneyes.Data
         /// </summary>
         public int Index { get; init; }
 
-        public static bool ContentEquals(TransactionDbo left, TransactionDbo other)
+        public static bool ContentEquals(TransactionDbo left, TransactionDbo right)
         {
-            return other is TransactionDbo transaction &&
-                   left.ValueDate == transaction.ValueDate &&
-                   left.Purpose == transaction.Purpose &&
-                   left.BookingType == transaction.BookingType &&
-                   left.IBAN == transaction.IBAN &&
-                   left.PartnerIBAN == transaction.PartnerIBAN &&
-                   left.BIC == transaction.BIC &&
-                   left.Name == transaction.Name &&
-                   left.Currency == transaction.Currency &&
-                   left.UID == transaction.UID &&
-                   left.Category?.Id == transaction.Category?.Id;
+            return
+                   left.ValueDate == right.ValueDate &&
+                   left.Purpose == right.Purpose &&
+                   left.BookingType == right.BookingType &&
+                   left.IBAN == right.IBAN &&
+                   left.PartnerIBAN == right.PartnerIBAN &&
+                   left.BIC == right.BIC &&
+                   left.Name == right.Name &&
+                   left.Currency == right.Currency &&
+                   left.UID == right.UID &&
+                   left.Category?.Id == right.Category?.Id;
         }
 
-        public override bool ContentEquals(UniqueEntity other)
+        public override bool ContentEquals(TransactionDbo other)
         {
-            return other is TransactionDbo transaction 
-                && ContentEquals(this, transaction);
+            return ContentEquals(this, other);
         }
 
         /// <summary>
@@ -109,16 +108,6 @@ namespace Moneyes.Data
             : base(id, createdAt, updatedAt, isDeleted)
         {
             UID = uid;
-        }
-
-        public TransactionDbo(
-            TransactionDbo other,
-            Guid? id = null,
-            DateTime? createdAt = null,
-            DateTime? updatedAt = null,
-            bool? isDeleted = null)
-            : base(other, id, createdAt, updatedAt, isDeleted)
-        {
         }
     }
 }

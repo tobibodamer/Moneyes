@@ -28,16 +28,7 @@ namespace Moneyes.UI.View
         {
             InitializeComponent();
 
-            _ = new ListViewDragDropManager<Core.Transaction>(transactionsListView);
-
-            TransactionsViewModel t = DataContext as TransactionsViewModel;
-
-            transactionsListView.SelectionChanged += TransactionsListView_SelectionChanged;
-        }
-
-        private void TransactionsListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            
+            _ = new ListViewDragDropManager<TransactionViewModel>(transactionsListView);
         }
 
         private void ItemContextMenu_Opened(object sender, RoutedEventArgs e)
@@ -81,52 +72,11 @@ namespace Moneyes.UI.View
                 {
                     Header = c.Name,
                     IsCheckable = true,
-                    IsChecked = transactionsListView.SelectedItems.Cast<Transaction>().All(x => x.Category?.Id == c.Id),
+                    IsChecked = transactionsListView.SelectedItems.Cast<TransactionViewModel>().All(x => x.Transaction.Category?.Id == c.Id),
                     Command = transactionsViewModel.AddToCategory,
                     CommandParameter = c
                 });
             }
-        }
-
-        public class ListViewExtensions
-        {
-
-            private static SelectedItemsBinder GetSelectedValueBinder(DependencyObject obj)
-            {
-                return (SelectedItemsBinder)obj.GetValue(SelectedValueBinderProperty);
-            }
-
-            private static void SetSelectedValueBinder(DependencyObject obj, SelectedItemsBinder items)
-            {
-                obj.SetValue(SelectedValueBinderProperty, items);
-            }
-
-            private static readonly DependencyProperty SelectedValueBinderProperty = DependencyProperty.RegisterAttached("SelectedValueBinder", typeof(SelectedItemsBinder), typeof(ListViewExtensions));
-
-
-            public static readonly DependencyProperty SelectedValuesProperty = DependencyProperty.RegisterAttached("SelectedValues", typeof(IList), typeof(ListViewExtensions),
-                new FrameworkPropertyMetadata(null, OnSelectedValuesChanged));
-
-
-            private static void OnSelectedValuesChanged(DependencyObject o, DependencyPropertyChangedEventArgs value)
-            {
-                var oldBinder = GetSelectedValueBinder(o);
-                if (oldBinder != null)
-                    oldBinder.UnBind();
-
-                SetSelectedValueBinder(o, new SelectedItemsBinder((ListView)o, (IList)value.NewValue));
-                GetSelectedValueBinder(o).Bind();
-            }
-
-            public static void SetSelectedValues(Selector elementName, IEnumerable value)
-            {
-                elementName.SetValue(SelectedValuesProperty, value);
-            }
-
-            public static IEnumerable GetSelectedValues(Selector elementName)
-            {
-                return (IEnumerable)elementName.GetValue(SelectedValuesProperty);
-            }
-        }
+        }        
     }
 }

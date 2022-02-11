@@ -65,7 +65,7 @@ namespace Moneyes.UI
             Directory.CreateDirectory(logDir);
 
             Log.Logger = new LoggerConfiguration()
-                .WriteTo.Debug(outputTemplate: "{Timestamp:HH:mm:ss} [{Level}] [{SourceContext}] {Message}{NewLine}{Exception}")
+                .WriteTo.Async(x => x.Debug(outputTemplate: "{Timestamp:HH:mm:ss} [{Level}] [{SourceContext}] {Message}{NewLine}{Exception}"))
                 .WriteTo.File(path: Path.Combine(logDir, "log.txt"), rollingInterval: RollingInterval.Day)
                 .MinimumLevel.Debug()
                 .CreateLogger();

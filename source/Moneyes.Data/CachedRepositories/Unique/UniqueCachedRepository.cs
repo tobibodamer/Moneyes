@@ -11,7 +11,7 @@ using Moneyes.Data;
 
 namespace Moneyes.Data;
 public interface IUniqueCachedRepository<T> : ICachedRepository<T, Guid>
-    where T : UniqueEntity
+    where T : UniqueEntity<T>
 {
     IReadOnlyList<T> FindAllById(IEnumerable<Guid> ids, bool includeSoftDeleted = false);
 #nullable enable
@@ -40,7 +40,7 @@ public interface IUniqueCachedRepository<T> : ICachedRepository<T, Guid>
 }
 
 public class UniqueCachedRepository<T> : CachedRepository<T, Guid>, IUniqueCachedRepository<T>
-    where T : UniqueEntity
+    where T : UniqueEntity<T>
 {
     public UniqueCachedRepository(
         IDatabaseProvider<ILiteDatabase> databaseProvider,
@@ -60,7 +60,7 @@ public class UniqueCachedRepository<T> : CachedRepository<T, Guid>, IUniqueCache
         foreach (var dependency in RepositoryDependencies)
         {
             var softDeletedDependents = dependency.GetDependentsOf(entity)
-                .OfType<UniqueEntity>()
+                .OfType<T>()
                 .Where(x => x.IsDeleted)
                 .Select(x => x.Id as object)
                 .ToArray();
@@ -313,9 +313,9 @@ public class UniqueCachedRepository<T> : CachedRepository<T, Guid>, IUniqueCache
     }
     protected virtual T UpdateEntityFactory(T existingEntity, T newEntity)
     {
-        newEntity.CreatedAt = existingEntity.CreatedAt;
+        //newEntity.CreatedAt = existingEntity.CreatedAt;
 
-        return newEntity;
+        return newEntity with { CreatedAt = existingEntity.CreatedAt };
     }
 
     /// <summary>
@@ -334,9 +334,11 @@ public class UniqueCachedRepository<T> : CachedRepository<T, Guid>, IUniqueCache
         {
             if (Cache.TryGetValue(id, out T entity))
             {
-                entity.IsDeleted = true;
+                //entity.IsDeleted = true;
 
-                Update(entity);
+                var deletedEntity = entity with { IsDeleted = true };
+
+                Update(deletedEntity);
 
                 return true;
             }
@@ -354,14 +356,10 @@ public class UniqueCachedRepository<T> : CachedRepository<T, Guid>, IUniqueCache
     {
         if (softDelete)
         {
-            var entities = GetAll().ToList();
+            var entitiesDeleted = GetAll().Select(entity => 
+                entity with { IsDeleted = true });
 
-            foreach (var entity in entities)
-            {
-                entity.IsDeleted = true;
-            }
-
-            return UpdateMany(entities);
+            return UpdateMany(entitiesDeleted);
         }
 
         return base.DeleteAll();
@@ -373,12 +371,7 @@ public class UniqueCachedRepository<T> : CachedRepository<T, Guid>, IUniqueCache
 
         var entities = GetAll()
             .Where(compiledPredicate)
-            .ToList();
-
-        foreach (var entity in entities)
-        {
-            entity.IsDeleted = true;
-        }
+            .Select(entity => entity with { IsDeleted = true });            
 
         return UpdateMany(entities);
     }

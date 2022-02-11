@@ -2,7 +2,7 @@
 
 namespace Moneyes.Data
 {
-    public class BalanceDbo : UniqueEntity
+    public record BalanceDbo : UniqueEntity<BalanceDbo>
     {
         public AccountDbo Account { get; init; }
         public DateTime Date { get; init; }
@@ -18,10 +18,9 @@ namespace Moneyes.Data
                    left.Account?.Id == other.Account?.Id;
         }
 
-        public override bool ContentEquals(UniqueEntity other)
+        public override bool ContentEquals(BalanceDbo other)
         {
-            return other is BalanceDbo otherBalance
-                && ContentEquals(this, otherBalance);
+            return ContentEquals(this, other);
         }
 
         /// <summary>
@@ -40,20 +39,6 @@ namespace Moneyes.Data
         {
             Date = date;
             Amount = amount;
-        }
-
-        public BalanceDbo(
-            BalanceDbo other,
-            DateTime? date = null,
-            decimal? amount = null,
-            Guid? id = null,
-            DateTime? createdAt = null,
-            DateTime? updatedAt = null,
-            bool? isDeleted = null)
-            : base(other, id, createdAt, updatedAt, isDeleted)
-        {
-            Date = date ?? other.Date;
-            Amount = amount ?? other.Amount;
         }
     }
 }

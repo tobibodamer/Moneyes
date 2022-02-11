@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace Moneyes.Data
 {
-    public class AccountDbo : UniqueEntity
+    public record AccountDbo : UniqueEntity<AccountDbo>
     {
         /// <summary>
         /// The bank account number.
@@ -47,10 +47,9 @@ namespace Moneyes.Data
                    (other.Permissions != null && ((left?.Permissions.SetwiseEquivalentTo(other.Permissions)) ?? false)));
         }
 
-        public override bool ContentEquals(UniqueEntity other)
+        public override bool ContentEquals(AccountDbo other)
         {
-            return other is AccountDbo otherAccount 
-                && ContentEquals(this, otherAccount);
+            return ContentEquals(this, other);
         }
 
         /// <summary>
@@ -67,18 +66,6 @@ namespace Moneyes.Data
             : base(id, createdAt, updatedAt, isDeleted)
         {
             Number = number;
-        }
-
-        public AccountDbo(
-            AccountDbo other,
-            string number = null,
-            Guid? id = null,
-            DateTime? createdAt = null,
-            DateTime? updatedAt = null,
-            bool? isDeleted = null) 
-            : base(other, id, createdAt, updatedAt, isDeleted)
-        {
-            Number = number ?? other.Number;
         }
     }
 }

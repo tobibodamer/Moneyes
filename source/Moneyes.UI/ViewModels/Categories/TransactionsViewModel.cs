@@ -18,8 +18,8 @@ namespace Moneyes.UI.ViewModels
         private readonly ITransactionService _transactionService;
         private readonly ICategoryService _categoryService;
 
-        private ObservableCollection<Transaction> _transactions = new();
-        public ObservableCollection<Transaction> Transactions
+        private ObservableCollection<TransactionViewModel> _transactions = new();
+        public ObservableCollection<TransactionViewModel> Transactions
         {
             get
             {
@@ -51,7 +51,7 @@ namespace Moneyes.UI.ViewModels
 
         public ICommand AddToNewCategory { get; set; }
 
-        public ObservableCollection<Transaction> SelectedTransactions { get; set; } = new();
+        public ObservableCollection<TransactionViewModel> SelectedTransactions { get; set; } = new();
 
         public TransactionsViewModel(ITransactionService transactionService, ICategoryService categoryService,
             IStatusMessageService statusMessageService)
@@ -61,24 +61,24 @@ namespace Moneyes.UI.ViewModels
 
             CategoryViewModelFactory categoryViewModelFactory = new(categoryService, statusMessageService);
 
-            RemoveFromCategory = new CollectionRelayCommand<Transaction>(transactions =>
+            RemoveFromCategory = new CollectionRelayCommand<TransactionViewModel>(transactions =>
             {
-                foreach (Transaction t in transactions)
+                foreach (TransactionViewModel t in transactions)
                 {
-                    categoryService.RemoveFromCategory(t);
+                    categoryService.RemoveFromCategory(t.Transaction);
                 }
             }, transactions =>
             {
-                return transactions != null && transactions.Any(t => t.Category != null);
+                return transactions != null && transactions.Any(t => t.Transaction.Category != null);
             });
 
             AddToCategory = new RelayCommand<Category>(category =>
             {
                 var transactions = SelectedTransactions;
 
-                foreach (Transaction t in transactions)
+                foreach (TransactionViewModel t in transactions)
                 {
-                    categoryService.MoveToCategory(t, category);
+                    categoryService.MoveToCategory(t.Transaction, category);
                 }
 
                 statusMessageService.ShowMessage($"Added to category \"{category.Name}\".");
@@ -94,7 +94,7 @@ namespace Moneyes.UI.ViewModels
 
                     foreach (var t in transactions)
                     {
-                        categoryService.MoveToCategory(t, category);
+                        categoryService.MoveToCategory(t.Transaction, category);
                     }
                 };
             });
@@ -148,9 +148,13 @@ namespace Moneyes.UI.ViewModels
                     return;
                 }
 
+                var transactionViewModels = transactions.Select(t =>
+                    new TransactionViewModel(t)
+                );
+
                 Transactions.DynamicUpdate(
-                       transactions,
-                       (t1, t2) => t1.Id.Equals(t2.Id),
+                       transactionViewModels,
+                       (t1, t2) => t1.Transaction.Id.Equals(t2.Transaction.Id),
                        new TransactionSortComparer(),
                        true);
             }
@@ -164,11 +168,11 @@ namespace Moneyes.UI.ViewModels
 
         }
 
-        class TransactionSortComparer : IComparer<Transaction>
+        class TransactionSortComparer : IComparer<TransactionViewModel>
         {
-            public int Compare(Transaction x, Transaction y)
+            public int Compare(TransactionViewModel x, TransactionViewModel y)
             {
-                return x.BookingDate.CompareTo(y.BookingDate) * -1;
+                return x.Transaction.BookingDate.CompareTo(y.Transaction.BookingDate) * -1;
             }
         }
     }

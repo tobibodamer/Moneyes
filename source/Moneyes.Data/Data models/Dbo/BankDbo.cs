@@ -3,9 +3,9 @@ using System.Security;
 
 namespace Moneyes.Data
 {
-    public class BankDbo : UniqueEntity
+    public record BankDbo : UniqueEntity<BankDbo>
     {
-        public string Name { get; set; }
+        public string Name { get; init; }
 
         /// <summary>
         /// The bank code of the bank to connect to.
@@ -15,31 +15,31 @@ namespace Moneyes.Data
         /// <summary>
         /// The bank identifier code (BIC).
         /// </summary>
-        public string BIC { get; set; }
+        public string BIC { get; init; }
 
         /// <summary>
         /// Online banking username for the bank account.
         /// </summary>
-        public string UserId { get; set; }
+        public string UserId { get; init; }
 
         /// <summary>
         /// Online banking logon pin.
         /// </summary>
-        public SecureString Pin { get; set; }
+        public SecureString Pin { get; init; }
 
         /// <summary>
         /// Online banking server url.
         /// </summary>
-        public string Server { get; set; }
+        public string Server { get; init; }
 
         /// <summary>
         /// The supported HBCI version of the bank.
         /// </summary>
-        public int HbciVersion { get; set; }
+        public int HbciVersion { get; init; }
 
-        public override bool ContentEquals(UniqueEntity other)
+        public override bool ContentEquals(BankDbo otherBank)
         {
-            return other is BankDbo otherBank &&
+            return
                 Name == otherBank.Name &&
                 BankCode == otherBank.BankCode &&
                 BIC == otherBank.BIC &&
@@ -63,18 +63,6 @@ namespace Moneyes.Data
             : base(id, createdAt, updatedAt, isDeleted)
         {
             BankCode = bankCode;
-        }
-
-        public BankDbo(
-            BankDbo other,
-            int? bankCode = null,
-            Guid? id = null,
-            DateTime? createdAt = null,
-            DateTime? updatedAt = null,
-            bool? isDeleted = null)
-            : base(other, id, createdAt, updatedAt, isDeleted)
-        {
-            BankCode = bankCode ?? other.BankCode;            
         }
     }
 }

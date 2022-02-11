@@ -30,9 +30,8 @@ namespace Moneyes.UI.View
         {
             _listView.SelectionChanged += ListView_SelectionChanged;
 
-            if (_collection is INotifyCollectionChanged)
+            if (_collection is INotifyCollectionChanged observable)
             {
-                var observable = (INotifyCollectionChanged)_collection;
                 observable.CollectionChanged += Collection_CollectionChanged;
             }
         }
@@ -42,9 +41,8 @@ namespace Moneyes.UI.View
             if (_listView != null)
                 _listView.SelectionChanged -= ListView_SelectionChanged;
 
-            if (_collection != null && _collection is INotifyCollectionChanged)
+            if (_collection != null && _collection is INotifyCollectionChanged observable)
             {
-                var observable = (INotifyCollectionChanged)_collection;
                 observable.CollectionChanged -= Collection_CollectionChanged;
             }
         }

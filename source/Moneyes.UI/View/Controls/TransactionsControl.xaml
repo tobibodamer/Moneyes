@@ -6,7 +6,6 @@
              xmlns:local="clr-namespace:Moneyes.UI.View"
              xmlns:vm="clr-namespace:Moneyes.UI.ViewModels"
              xmlns:m="clr-namespace:Moneyes.Core;assembly=Moneyes.Core"
-             xmlns:controls="clr-namespace:System.Windows.Controls;assembly=MultiSelectTreeView"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes" 
              d:DataContext="{d:DesignInstance Type=vm:TransactionsViewModel}"
              TextElement.Foreground="{DynamicResource MaterialDesignBody}"      
@@ -60,7 +59,7 @@
                       SelectionMode="Extended" local:ListViewExtensions.SelectedValues="{Binding SelectedTransactions}">
             <ListView.ItemTemplate>
                 <DataTemplate>
-                    <DockPanel>
+                    <DockPanel DataContext="{Binding Transaction}">
                         <StackPanel Orientation="Vertical">
                             <TextBlock FontSize="15" >
                                 <TextBlock.Text>
@@ -97,9 +96,9 @@
                 </DataTemplate>
             </ListView.ItemTemplate>
             <ListView.Resources>
-                <!--<Style TargetType="MenuItem" BasedOn="{StaticResource MaterialDesignMenuItem}">
+                <Style TargetType="MenuItem" BasedOn="{StaticResource MaterialDesignMenuItem}">
                     <Setter Property="Padding" Value="10,4,10,4"/>
-                </Style>-->
+                </Style>
                 <ContextMenu Name="ItemContextMenu" x:Key="ItemContextMenu" Opened="ItemContextMenu_Opened">
                     <MenuItem Header="Remove from category"
                                   Command="{Binding DataContext.RemoveFromCategory, RelativeSource={RelativeSource AncestorType=ListView}}"

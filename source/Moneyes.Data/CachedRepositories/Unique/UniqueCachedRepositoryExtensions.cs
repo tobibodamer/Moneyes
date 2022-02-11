@@ -7,7 +7,7 @@ namespace Moneyes.Data
     {
         public static KeyCachedRepositoryBuilder<T> AddUniqueRepository<T>(
             this CachedRepositoriesOptions options, Action<CachedRepositoryOptions> configure = null) 
-            where T : UniqueEntity
+            where T : UniqueEntity<T>
         {
             return options
                 .AddRepository<T, IUniqueCachedRepository<T>>(configure)
@@ -18,7 +18,7 @@ namespace Moneyes.Data
 
         public static KeyCachedRepositoryBuilder<T> AddUniqueRepository<T>(
             this CachedRepositoriesOptions options, string collectionName) 
-            where T : UniqueEntity
+            where T : UniqueEntity<T>
         {
             return options
                 .AddRepository<T, IUniqueCachedRepository<T>>(collectionName)

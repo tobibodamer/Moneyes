@@ -115,10 +115,27 @@ namespace Moneyes.Data
                 return;
             }
 
+            // Define how to update the entity based on the type of change
+
+            Action<T> updateDependent;
+
+            if (e.Action is RepositoryChangedAction.Remove)
+            {
+                updateDependent = (entity) => dependency.RemoveDependents(entity, e.ChangedKey);
+            }
+            else if (e.Action is RepositoryChangedAction.Replace)
+            {
+                updateDependent = (entity) => dependency.ReplaceDependent(entity, e.ChangedKey, e.NewValue);
+            }
+            else
+            {
+                return;
+            }
+
             // Replace dependent properties with updated value
             foreach (var entity in affectedEntities)
             {
-                dependency.UpdateDependency(entity, e);
+                updateDependent(entity);
             }
 
             // NOTE: Cache doesn't need update because references are changed
@@ -126,7 +143,7 @@ namespace Moneyes.Data
             // Forward changes to next dependencies
             foreach (var entity in affectedEntities)
             {
-                DependencyRefreshHandler.OnChangesMade(this, entity, e.Action);
+                DependencyRefreshHandler.OnChangesMade(this, entity, RepositoryChangedAction.Replace);
             }
         }
 

@@ -162,19 +162,26 @@ namespace Moneyes.Data
 
                 if (dependentProperty == null || !keys.Contains(sourceRepository.GetKey(dependentProperty)))
                 {
-                    // Set null
-                    SetDependentProperty(entity, default);
+                    return;
                 }
+
+                // Set null
+                SetDependentProperty(entity, default);
             }
         }
 
-        public void ReplaceDependency(object sourceKeyToReplace, T entity, object newValue)
+        void IRepositoryDependency<T>.ReplaceDependent(T entity, object sourceKeyToReplace, object newValue)
         {
             if (newValue is not TDep updateValue)
             {
                 throw new ArgumentException(null, nameof(newValue));
             }
 
+            ReplaceDependent(entity, sourceKeyToReplace, updateValue);
+        }
+
+        public void ReplaceDependent(T entity, object sourceKeyToReplace, TDep newValue)
+        {
             var sourceRepository = _repositoryProvider.GetRepository<TDep>(SourceCollectionName);
 
             if (_hasMultipleDependents)
@@ -191,7 +198,7 @@ namespace Moneyes.Data
                     }
 
                     depending.Remove(depEntity);
-                    depending.Add(updateValue);
+                    depending.Add(newValue);
                 }
             }
             else
@@ -200,70 +207,7 @@ namespace Moneyes.Data
 
                 if (sourceKeyToReplace.Equals(sourceRepository.GetKey(dependentProperty)))
                 {
-                    // Set null
-                    SetDependentProperty(entity, updateValue);
-                }
-            }
-        }
-
-        public void UpdateDependency(T entity, DependencyRefreshHandler.DepedencyChangedEventArgs e)
-        {
-            if (e.Action != RepositoryChangedAction.Remove && e.NewValue is not TDep)
-            {
-                throw new ArgumentException("New value must be of source entity type.", nameof(e));
-            }
-
-            TDep newValue = (TDep)e.NewValue;
-
-            var sourceRepository = _repositoryProvider.GetRepository<TDep>(SourceCollectionName);
-
-            if (_hasMultipleDependents)
-            {
-                // Depending collection -> Get the keys of all depending entities in the target repository
-                var depending = _collectionDependentPropertySelector(entity);
-
-                foreach (var depEntity in depending.ToList())
-                {
-                    // Match key
-                    if (depEntity == null ||
-                        !sourceRepository.GetKey(depEntity).Equals(e.ChangedKey))
-                    {
-                        continue;
-                    }
-
-                    // Update collection
-
-                    if (e.Action is RepositoryChangedAction.Remove or RepositoryChangedAction.Replace)
-                    {
-                        depending.Remove(depEntity);
-                    }
-
-                    if (e.Action is not RepositoryChangedAction.Remove)
-                    {
-                        depending.Add(newValue);
-                    }
-                }
-            }
-            else
-            {
-                var depEntity = _dependentPropertySelector(entity);
-
-                // Match key
-                if (depEntity == null ||
-                    !sourceRepository.GetKey(depEntity).Equals(e.ChangedKey))
-                {
-                    return;
-                }
-
-                // Update value
-
-                if (e.Action is RepositoryChangedAction.Add or RepositoryChangedAction.Replace)
-                {
                     SetDependentProperty(entity, newValue);
-                }
-                else if (e.Action is RepositoryChangedAction.Remove)
-                {
-                    SetDependentProperty(entity, null);
                 }
             }
         }

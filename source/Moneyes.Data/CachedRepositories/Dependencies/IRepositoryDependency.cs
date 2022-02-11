@@ -61,11 +61,13 @@ namespace Moneyes.Data
         bool NeedsRefresh(object changedSourceKey, T entity);
 
         /// <summary>
-        /// Update the dependent property of a given <paramref name="entity"/> with the provided arguments.
+        /// Replaces the dependent with the given key of an <paramref name="entity"/> 
+        /// with <paramref name="newValue"/>.
         /// </summary>
         /// <param name="entity">The entity to update.</param>
-        /// <param name="e"></param>
-        void UpdateDependency(T entity, DependencyRefreshHandler.DepedencyChangedEventArgs e);
+        /// <param name="sourceKeyToReplace">The key of the dependent to replace.</param>
+        /// <param name="newValue">The new dependent value.</param>
+        void ReplaceDependent(T entity, object sourceKeyToReplace, object newValue);
 
         /// <summary>
         /// Removes / nulls all dependent properties of a given <paramref name="entity"/> with the given <paramref name="keys"/>.

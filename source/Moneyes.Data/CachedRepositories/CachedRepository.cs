@@ -18,6 +18,11 @@ namespace Moneyes.Data
         private readonly Lazy<ILiteCollection<T>> _collectionLazy;
         private readonly Func<T, TKey> _keySelector;
         private readonly ReaderWriterLock _cacheLock = new();
+
+        private bool _isCacheLoaded = false;
+        private bool _cacheLoading = false;
+
+        private readonly EventWaitHandle _cacheInitWaitHandle = new(false, EventResetMode.ManualReset);
         public bool IsAutoId { get; }
         public string CollectionName => Options.CollectionName;
 #nullable enable
@@ -39,6 +44,7 @@ namespace Moneyes.Data
         public event Action<RepositoryChangedEventArgs<T>> RepositoryChanged;
 
         private const int CacheTimeout = 2000;
+        private const int CacheLoadTimeout = 15000;
         public CachedRepository(
             IDatabaseProvider<ILiteDatabase> databaseProvider,
             CachedRepositoryOptions options,
@@ -60,6 +66,13 @@ namespace Moneyes.Data
             _collectionLazy = new Lazy<ILiteCollection<T>>(CreateCollection);
 
             SetupDependencies();
+
+            if (options.PreloadCache)
+            {
+                Logger?.LogInformation("Cache preload is active");
+
+                LoadCacheAsync();
+            }
         }
 
         #region Setup
@@ -168,6 +181,8 @@ namespace Moneyes.Data
 
             List<T> entitiesToUpdate;
 
+            _cacheLoading = true;
+
             try
             {
                 entitiesToUpdate = Collection.FindAll().Select(PostQueryTransform).ToList();
@@ -177,8 +192,15 @@ namespace Moneyes.Data
                 _cacheLock.ReleaseWriterLock();
                 throw;
             }
+            finally
+            {
+                _cacheLoading = false;
+            }
 
             RefreshCacheForInternal(entitiesToUpdate, true);
+
+            _isCacheLoaded = true;
+            _cacheInitWaitHandle.Set();
         }
         public void RenewCacheFor(IEnumerable<T> entities)
         {
@@ -270,6 +292,8 @@ namespace Moneyes.Data
         /// <returns>A list of all entities present in the cache.</returns>
         protected IReadOnlyList<T> GetFromCache()
         {
+            EnsureCacheIsLoaded();
+
             List<T> entities;
 
             _cacheLock.AcquireReaderLock(CacheTimeout);
@@ -284,6 +308,60 @@ namespace Moneyes.Data
             }
 
             return entities;
+        }
+
+        /// <summary>
+        /// Starts loading the cache in a background thread.
+        /// </summary>
+        protected void LoadCacheAsync()
+        {
+            Task.Run(() =>
+            {
+                try
+                {
+                    Logger?.LogInformation("Loading cache...");
+
+                    RenewCache();
+                }
+                catch (Exception ex)
+                {
+                    Logger?.LogError(ex, "Error while loading cache.");
+                }
+            });
+        }
+
+        /// <summary>
+        /// Ensures that the cache is loaded before proceeding to read from it.
+        /// </summary>
+        protected void EnsureCacheIsLoaded()
+        {
+            if (_isCacheLoaded)
+            {
+                // Cache is already loaded
+                return;
+            }
+
+            if (!_cacheLoading)
+            {
+                // Cache is not currently loading -> start loading in background
+                LoadCacheAsync();
+            }
+
+            // Wait until the cache is loaded
+            WaitForCacheLoaded();
+        }
+
+        /// <summary>
+        /// Blocks until the cache is loaded.
+        /// </summary>
+        protected void WaitForCacheLoaded()
+        {
+            if (!_cacheInitWaitHandle.WaitOne(CacheLoadTimeout))
+            {
+                Logger?.LogError("Timed out while waiting for cache to be initialized.");
+
+                throw new TimeoutException("Timed out while waiting for cache to be initialized.");
+            }
         }
 
         #endregion
@@ -454,8 +532,6 @@ namespace Moneyes.Data
 
         #endregion
 
-
-
         #region CRUD
         public virtual IEnumerable<T> GetAll()
         {
@@ -465,6 +541,8 @@ namespace Moneyes.Data
         /// <inheritdoc/>
         public virtual T Create(T entity)
         {
+            EnsureCacheIsLoaded();
+
             TKey key;
 
             if (!IsAutoId)
@@ -522,6 +600,8 @@ namespace Moneyes.Data
         }
         public virtual int CreateMany(IEnumerable<T> entities, ConflictResolutionDelegate<T> onConflict)
         {
+            EnsureCacheIsLoaded();
+
             // Get the primary keys of the entities to upsert
             var keys = entities.Select(GetKey).ToHashSet();
 
@@ -594,6 +674,8 @@ namespace Moneyes.Data
         {
             ArgumentNullException.ThrowIfNull(id);
 
+            EnsureCacheIsLoaded();
+
             _cacheLock.AcquireReaderLock(CacheTimeout);
 
             T entity;
@@ -620,6 +702,8 @@ namespace Moneyes.Data
         {
             ArgumentNullException.ThrowIfNull(ids);
 
+            EnsureCacheIsLoaded();
+
             if (!ids.Any())
             {
                 return new List<T>();
@@ -642,6 +726,8 @@ namespace Moneyes.Data
         {
             ArgumentNullException.ThrowIfNull(id);
 
+            EnsureCacheIsLoaded();
+
             return Cache.ContainsKey(id);
         }
 
@@ -649,12 +735,16 @@ namespace Moneyes.Data
         {
             ArgumentNullException.ThrowIfNull(ids);
 
+            EnsureCacheIsLoaded();
+
             return ids.All(id => Cache.ContainsKey(id));
         }
 
         public virtual bool ContainsAny(IEnumerable<TKey> ids)
         {
             ArgumentNullException.ThrowIfNull(ids);
+
+            EnsureCacheIsLoaded();
 
             return ids.Any(id => Cache.ContainsKey(id));
         }
@@ -667,6 +757,8 @@ namespace Moneyes.Data
         public virtual bool Set(T entity, ConflictResolutionDelegate<T> onConflict)
         {
             ArgumentNullException.ThrowIfNull(entity);
+
+            EnsureCacheIsLoaded();
 
             TKey key = GetKey(entity);
 
@@ -713,6 +805,8 @@ namespace Moneyes.Data
             ArgumentNullException.ThrowIfNull(entity);
             ArgumentNullException.ThrowIfNull(addEntityFactory);
             ArgumentNullException.ThrowIfNull(updateEntityFactory);
+
+            EnsureCacheIsLoaded();
 
             TKey key = GetKey(entity);
 
@@ -796,6 +890,8 @@ namespace Moneyes.Data
         }
         public virtual int SetMany(IEnumerable<T> entities, ConflictResolutionDelegate<T> onConflict)
         {
+            EnsureCacheIsLoaded();
+
             Logger?.LogDebug($"{nameof(SetMany)}(IEnumerable<{typeof(T).Name}>) called");
 
             // Get the primary keys of the entities to upsert
@@ -844,6 +940,8 @@ namespace Moneyes.Data
             Func<TKey, T, T> updateEntityFactory,
             ConflictResolutionDelegate<T> onConflict = null)
         {
+            EnsureCacheIsLoaded();
+
             var keys = ids.ToHashSet();
 
             // Create entities using add and update entity factories
@@ -889,6 +987,8 @@ namespace Moneyes.Data
             ArgumentNullException.ThrowIfNull(entities);
             ArgumentNullException.ThrowIfNull(addEntityFactory);
             ArgumentNullException.ThrowIfNull(updateEntityFactory);
+
+            EnsureCacheIsLoaded();
 
             var keyEntityMap = entities.ToDictionary(x => GetKey(x), x => x);
 
@@ -1007,6 +1107,8 @@ namespace Moneyes.Data
         {
             ArgumentNullException.ThrowIfNull(entity);
 
+            EnsureCacheIsLoaded();
+
             TKey key = GetKey(entity);
 
             _cacheLock.AcquireReaderLock(CacheTimeout);
@@ -1050,6 +1152,8 @@ namespace Moneyes.Data
             ArgumentNullException.ThrowIfNull(id);
             ArgumentNullException.ThrowIfNull(updateEntityFactory);
 
+            EnsureCacheIsLoaded();
+
             T entity = CheckKeyAndCreateEntity(id, updateEntityFactory);
 
             // Get all entities that will not be replaced
@@ -1077,6 +1181,8 @@ namespace Moneyes.Data
         {
             ArgumentNullException.ThrowIfNull(entity);
             ArgumentNullException.ThrowIfNull(updateEntityFactory);
+
+            EnsureCacheIsLoaded();
 
             var key = GetKey(entity);
 
@@ -1137,6 +1243,8 @@ namespace Moneyes.Data
         }
         public virtual int UpdateMany(IEnumerable<T> entities, ConflictResolutionDelegate<T> onConflict)
         {
+            EnsureCacheIsLoaded();
+
             var keys = entities.Select(GetKey).ToHashSet();
 
             // Check if all entities exist
@@ -1169,6 +1277,8 @@ namespace Moneyes.Data
             ArgumentNullException.ThrowIfNull(ids);
             ArgumentNullException.ThrowIfNull(updateEntityFactory);
 
+            EnsureCacheIsLoaded();
+
             var keys = ids.ToHashSet();
 
             // Check keys exist and create entities
@@ -1197,6 +1307,8 @@ namespace Moneyes.Data
         {
             ArgumentNullException.ThrowIfNull(entities);
             ArgumentNullException.ThrowIfNull(updateEntityFactory);
+
+            EnsureCacheIsLoaded();
 
             var keyEntityMap = entities.ToDictionary(x => GetKey(x), x => x);
 
@@ -1352,6 +1464,8 @@ namespace Moneyes.Data
         {
             ArgumentNullException.ThrowIfNull(id);
 
+            EnsureCacheIsLoaded();
+
             _cacheLock.AcquireWriterLock(CacheTimeout);
 
             bool deleted;
@@ -1393,6 +1507,8 @@ namespace Moneyes.Data
         {
             int counter = Collection.DeleteMany(predicate);
 
+            EnsureCacheIsLoaded();
+
             List<T> removedEntities = new();
 
             var compiledPredicate = predicate.Compile();
@@ -1418,6 +1534,8 @@ namespace Moneyes.Data
         public virtual int DeleteAll()
         {
             int counter;
+
+            EnsureCacheIsLoaded();
 
             try
             {

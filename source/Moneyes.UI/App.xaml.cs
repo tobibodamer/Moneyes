@@ -84,30 +84,29 @@ namespace Moneyes.UI
                     config.DatabasePath = InitDatabasePath();
                     config.BsonMapper.TrimWhitespace = false;
                 })
-                .AddCachedRepositories(options =>
+                .AddCachedRepositories(builder =>
                 {
-                    options.AddUniqueRepository<TransactionDbo>("Transaction")
+                    builder.AddUniqueRepository<TransactionDbo>("Transaction", preloadCache: true)
                         .DependsOnOne(t => t.Category, "Category")
                         .WithUniqueProperty(t => t.UID);
 
-                    options.AddUniqueRepository<CategoryDbo>("Category")
+                    builder.AddUniqueRepository<CategoryDbo>("Category", preloadCache: true)
                         .DependsOnOne(c => c.Parent, "Category")
                         .WithUniqueProperty(c => c.Name);
 
-                    options.AddUniqueRepository<AccountDbo>("Accounts")
+                    builder.AddUniqueRepository<AccountDbo>("Accounts", preloadCache: true)
                         .DependsOnOne(a => a.Bank, "BankDetails")
                         .WithUniqueProperty(a => a.IBAN)
                         .WithUniqueProperty(a => new { a.Number, a.Bank.Id });
 
-                    options.AddUniqueRepository<BalanceDbo>("Balance")
+                    builder.AddUniqueRepository<BalanceDbo>("Balance", preloadCache: true)
                         .DependsOnOne(b => b.Account, "Accounts")
                         .WithUniqueProperty(b => new { b.Date, b.Account.Id });
 
-                    options.AddUniqueRepository<BankDbo>("BankDetails")
+                    builder.AddUniqueRepository<BankDbo>("BankDetails", preloadCache: true)
                         .WithUniqueProperty(b => new { b.BankCode, b.UserId });
                 });
 
-            
 
             // Factories
             services.AddTransient<ICategoryFactory, CategoryFactory>();
@@ -189,19 +188,6 @@ namespace Moneyes.UI
 
             ApplyMigrations(_dbProvider.Database, serviceProvider.GetRequiredService<ILogger<ILiteDatabase>>());
 
-            Task.Run(() =>
-            {
-                var categoryRepo = serviceProvider.GetService<IUniqueCachedRepository<CategoryDbo>>();
-                categoryRepo.RenewCache();
-                var transactionRepo = serviceProvider.GetService<IUniqueCachedRepository<TransactionDbo>>();
-                transactionRepo.RenewCache();
-                var balanceRepo = serviceProvider.GetService<IUniqueCachedRepository<BalanceDbo>>();
-                balanceRepo.RenewCache();
-                var accountRepo = serviceProvider.GetService<IUniqueCachedRepository<AccountDbo>>();
-                accountRepo.RenewCache();
-                var bankDetailRepo = serviceProvider.GetService<IUniqueCachedRepository<BankDbo>>();
-                bankDetailRepo.RenewCache();
-            });
 
 
             // Seed transactions:
@@ -608,7 +594,7 @@ namespace Moneyes.UI
                 database.Checkpoint();
 
                 logger.LogInformation("Migrated to version 5");
-            }            
+            }
         }
 
         /// <summary>

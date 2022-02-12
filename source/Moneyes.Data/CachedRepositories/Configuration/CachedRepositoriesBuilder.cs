@@ -6,12 +6,12 @@ using System.Linq;
 
 namespace Moneyes.Data
 {
-    public class CachedRepositoriesOptions
+    public class CachedRepositoriesBuilder
     {
         private readonly LiteDbBuilder _builder;
         private readonly BsonMapper _bsonMapper = new();
         private readonly List<RepositoryEntry> _repositoryEntries = new();
-        internal CachedRepositoriesOptions(LiteDbBuilder liteDbBuilder)
+        internal CachedRepositoriesBuilder(LiteDbBuilder liteDbBuilder)
         {
             _builder = liteDbBuilder;
 

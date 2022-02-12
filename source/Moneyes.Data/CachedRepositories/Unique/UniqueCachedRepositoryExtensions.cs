@@ -6,7 +6,7 @@ namespace Moneyes.Data
     public static class UniqueCachedRepositoryExtensions
     {
         public static KeyCachedRepositoryBuilder<T> AddUniqueRepository<T>(
-            this CachedRepositoriesOptions options, Action<CachedRepositoryOptions> configure = null) 
+            this CachedRepositoriesBuilder options, Action<CachedRepositoryOptions> configure = null) 
             where T : UniqueEntity<T>
         {
             return options
@@ -17,11 +17,15 @@ namespace Moneyes.Data
         }
 
         public static KeyCachedRepositoryBuilder<T> AddUniqueRepository<T>(
-            this CachedRepositoriesOptions options, string collectionName) 
+            this CachedRepositoriesBuilder options, string collectionName, bool preloadCache = false) 
             where T : UniqueEntity<T>
         {
             return options
-                .AddRepository<T, IUniqueCachedRepository<T>>(collectionName)
+                .AddRepository<T, IUniqueCachedRepository<T>>(x =>
+                {
+                    x.CollectionName = collectionName;
+                    x.PreloadCache = preloadCache;
+                })
                 .UseFactory<UniqueCachedRepositoryFactory<T>>()
                 .HasKey(x => x.Id)
                 .As<IUniqueCachedRepository<T>>();

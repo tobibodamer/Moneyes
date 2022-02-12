@@ -72,9 +72,9 @@ namespace Moneyes.Data
         /// <param name="builder"></param>
         /// <param name="configureOptions"></param>
         /// <returns></returns>
-        public static LiteDbBuilder AddCachedRepositories(this LiteDbBuilder builder, Action<CachedRepositoriesOptions> configureOptions)
+        public static LiteDbBuilder AddCachedRepositories(this LiteDbBuilder builder, Action<CachedRepositoriesBuilder> configureOptions)
         {
-            CachedRepositoriesOptions options = new(builder);
+            CachedRepositoriesBuilder options = new(builder);
 
             configureOptions?.Invoke(options);
 

@@ -244,5 +244,6 @@ namespace Moneyes.Data
         /// <param name="onConflict">The conflict resolution handler to use, when a constraint violation occurs.</param>
         /// <returns>The number of updated entities.</returns>
         int UpdateMany(IEnumerable<TKey> ids, Func<TKey, T, T> updateEntityFactory, ConflictResolutionDelegate<T> onConflict = null);
+        int DeleteMany(IReadOnlySet<TKey> keys);
     }
 }

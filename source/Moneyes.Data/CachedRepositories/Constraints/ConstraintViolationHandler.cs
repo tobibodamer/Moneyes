@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -6,28 +7,29 @@ namespace Moneyes.Data
 {
     partial class CachedRepository<T, TKey>
     {
-        protected class ConstraintViolationHandler
+        protected internal class ConstraintViolationHandler
         {
-            private readonly Dictionary<T, T> _toReplace = new();
-            private readonly Dictionary<T, T> _toUpdate = new();
-            private readonly ICachedRepository<T> _repository;
-            private readonly ILogger _logger;
-            private readonly RepositoryOperation _operation;
+            private readonly Dictionary<T, ResolutionMap> _tempResolutionMaps = new();
+            private ResolutionMap _resolutionMap = new();
 
-            public IEnumerable<T> ToUpdate => _toUpdate.Values;
-            public IEnumerable<T> ToDelete => _toReplace.Values;
-            public ConstraintViolationHandler(ICachedRepository<T> repository, ILogger logger, RepositoryOperation operation)
+            private readonly ICachedRepository<T, TKey> _repository;
+            private readonly ILogger _logger;
+
+            public IEnumerable<T> ToUpdate => _resolutionMap.ToUpdate.Values;
+            public IReadOnlySet<TKey> ToReplace => _resolutionMap.ToReplace;
+
+            public ConstraintViolationHandler(ICachedRepository<T, TKey> repository, ILogger logger)
             {
                 _repository = repository;
                 _logger = logger;
-                _operation = operation;
             }
 
 #nullable enable
-            public (bool continueValidation, bool ignoreViolation) Handle(ConstraintViolation<T> violation, ConflictResolutionAction? userAction)
+            public (bool continueValidation, bool ignoreViolation) HandleViolation(ConstraintViolation<T> violation, ConflictResolutionAction? userAction)
 #nullable disable
             {
                 var conflictResolution = violation.Constraint.ConflictResolution; // default resolution
+                ResolutionMap tempResolutionMap;
 
                 // Custom conflict resolution
                 if (userAction != null)
@@ -36,8 +38,22 @@ namespace Moneyes.Data
                     {
                         _logger.LogInformation("[ConstraintViolationHandler] Choosing advanced conflic resolution 'Update'.");
 
+                        var updateKey = _repository.GetKey(updateAction.EntityToUpdate);
+
                         // Set the entity to update for this entity
-                        _toUpdate[violation.NewEntity] = updateAction.EntityToUpdate;
+
+                         tempResolutionMap = GetTempResolutionMap(violation.NewEntity);
+
+                        if (_resolutionMap.ToReplace.Contains(updateKey) ||
+                            tempResolutionMap.ToReplace.Contains(updateKey))
+                        {
+                            _logger.LogInformation("[ConstraintViolationHandler] Updated entity is replaced -> Ignoring violation");
+
+                            return (continueValidation: true, ignoreViolation: true);
+                        }
+
+                        tempResolutionMap.ToUpdate[updateKey] = updateAction.EntityToUpdate;
+
 
                         // not include, continue
                         return (continueValidation: true, ignoreViolation: false);
@@ -61,29 +77,29 @@ namespace Moneyes.Data
                             violation.ExistingEntity);
                     case ConflictResolution.Ignore:
 
-                        // Revoke update entity, because Ignore > Update
-                        if (_toUpdate.Remove(violation.NewEntity))
-                        {
-                            _logger?.LogDebug("[ConstraintViolationHandler] Revoked update of entity.");
-                        }
+                        // Revoke entities, because Ignore > Update, Replace                       
 
-                        // Revoke replace entity, because Ignore > Replace
-                        if (_toReplace.Remove(violation.NewEntity))
+                        if (_tempResolutionMaps.Remove(violation.NewEntity, out tempResolutionMap))
                         {
-                            _logger?.LogDebug("[ConstraintViolationHandler] Revoked replace of entity.");
+                            _logger?.LogDebug("[ConstraintViolationHandler] Revoked action of {n} entities.",
+                                tempResolutionMap.ToReplace.Count + tempResolutionMap.ToUpdate.Count);
                         }
 
                         // not include, not continue
                         return (continueValidation: false, ignoreViolation: false);
                     case ConflictResolution.Replace:
-                        
-                        // On upserts we dont need to perform an extra replace
-                        if (_operation is not RepositoryOperation.Upsert)
-                        {
-                            _toReplace[violation.NewEntity] = violation.ExistingEntity;
+                        var replaceKey = _repository.GetKey(violation.ExistingEntity);
 
-                            return (continueValidation: true, ignoreViolation: false);
+                        tempResolutionMap = GetTempResolutionMap(violation.NewEntity);
+
+                        // Revoke update
+
+                        if (tempResolutionMap.ToUpdate.Remove(replaceKey))
+                        {
+                            _logger?.LogDebug("[ConstraintViolationHandler] Revoked update of {key}.", replaceKey);
                         }
+
+                        tempResolutionMap.ToReplace.Add(replaceKey);
 
                         // include, continue
                         return (continueValidation: true, ignoreViolation: true);
@@ -91,41 +107,69 @@ namespace Moneyes.Data
                         return (continueValidation: true, ignoreViolation: false);
                 }
             }
-            public void Reset()
-            {
-                _toReplace.Clear();
-                _toUpdate.Clear();
-            }
 
-            public void PerformReplaces()
+            /// <summary>
+            /// Gets the temp resolution map for the given entity. <br></br>
+            /// Will create a new map if no map exists.
+            /// </summary>
+            /// <returns></returns>
+            private ResolutionMap GetTempResolutionMap(T entity)
             {
-                var keysToReplace = _toReplace.Values
-                    .Select(x => _repository.GetKey(x))
-                    .Distinct()
-                    .ToHashSet();
-
-                if (!keysToReplace.Any())
+                if (!_tempResolutionMaps.TryGetValue(entity, out var map))
                 {
-                    _logger?.LogDebug("[ConstraintViolationHandler] No entities to be replaced.");
-                    return;
+                    _tempResolutionMaps.Add(entity, map = new());
                 }
 
-                _logger?.LogDebug("[ConstraintViolationHandler] Upserting {n} entities to be replaced.", keysToReplace.Count);
+                return map;
+            }
 
-                _repository.SetMany(_toReplace.Values, onConflict: v => ConflictResolutionAction.Fail());
+            /// <summary>
+            /// This method should be called when the given entity finished validation. <br></br>
+            /// All temporary replace / update actions will be applied.
+            /// </summary>
+            /// <param name="entity">The entity that finished validating.</param>
+            public void OnEntityFinishedValidating(T entity)
+            {
+                if (_tempResolutionMaps.Remove(entity, out var tempMap))
+                {
+                    foreach (var replace in tempMap.ToReplace)
+                    {
+                        _resolutionMap.ToReplace.Add(replace);
+                    }
+
+                    foreach (var kvp in tempMap.ToUpdate)
+                    {
+                        _resolutionMap.ToUpdate.Add(kvp.Key, kvp.Value);
+                    }
+                }
+            }
+
+            public void Reset()
+            {
+                _tempResolutionMaps.Clear();
+                _resolutionMap = new();
+            }
+
+            public void PerformDeletes()
+            {
+                if (_resolutionMap.ToReplace.Any())
+                {
+                    _repository.DeleteMany(_resolutionMap.ToReplace);
+                }
             }
 
             public void PerformUpdates()
             {
-                if (!_toUpdate.Any())
+                if (_resolutionMap.ToUpdate.Any())
                 {
-                    _logger?.LogDebug("[ConstraintViolationHandler] No entities to be updated.");
-                    return;
+                    _repository.UpdateMany(_resolutionMap.ToUpdate.Values);
                 }
+            }
 
-                _logger?.LogDebug("[ConstraintViolationHandler] Updating {n} entities.", _toUpdate.Count);
-
-                _repository.UpdateMany(_toUpdate.Values, onConflict: v => ConflictResolutionAction.Fail());
+            private class ResolutionMap
+            {
+                public HashSet<TKey> ToReplace { get; } = new();
+                public Dictionary<TKey, T> ToUpdate { get; } = new();
             }
         }
     }

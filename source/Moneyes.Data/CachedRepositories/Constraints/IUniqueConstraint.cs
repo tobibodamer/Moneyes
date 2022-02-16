@@ -36,5 +36,7 @@
         /// <param name="entity"></param>
         /// <returns></returns>
         object GetPropertyValue(T entity);
+
+        int? HashPropertyValue(T entity);
     }
 }

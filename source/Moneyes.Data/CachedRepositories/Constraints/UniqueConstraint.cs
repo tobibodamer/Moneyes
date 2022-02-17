@@ -65,5 +65,11 @@ namespace Moneyes.Data
         {
             return Selector(entity);
         }
+
+        public int? HashPropertyValue(T entity)
+        {
+            K value = Selector(entity);
+            return value?.GetHashCode();
+        }
     }
 }

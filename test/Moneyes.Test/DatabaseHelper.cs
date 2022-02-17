@@ -57,6 +57,12 @@ namespace Moneyes.Test
             var uniqueConstraint = Substitute.For<IUniqueConstraint<T>>();
 
             uniqueConstraint.GetPropertyValue(Arg.Any<T>()).Returns(x => returnValue(x.Arg<T>()));
+            uniqueConstraint.HashPropertyValue(Arg.Any<T>()).Returns(x =>
+            {
+                var value = returnValue(x.Arg<T>());
+
+                return value?.GetHashCode();
+            });
             uniqueConstraint.PropertyName.Returns(propertyName);
             uniqueConstraint.CollectionName.Returns(collectionName ?? TestEntityCollectionName);
             uniqueConstraint.ConflictResolution.Returns(conflictResolution);

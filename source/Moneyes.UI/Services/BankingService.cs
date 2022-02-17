@@ -76,7 +76,7 @@ namespace Moneyes.UI
 
                 int numAccountsAdded = _accountRepository.SetMany(
                     entities: accounts.Select(acc => acc.ToDbo()),
-                    onConflict: UniqueConflictResolutionAction.UpdateContentOrIgnore);
+                    onConflict: x => x.UpdateContentOrIgnore());
 
                 if (numAccountsAdded > 0)
                 {
@@ -156,7 +156,7 @@ namespace Moneyes.UI
         {
             return _balanceRepository.SetMany(
                 entities: balances.Select(x => x.ToDbo()),
-                onConflict: UniqueConflictResolutionAction.UpdateContentOrIgnore);
+                onConflict: factory => factory.UpdateContentOrIgnore());
         }
 
         public void AddBankConnection(BankDetails bankDetails)

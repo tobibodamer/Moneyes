@@ -518,6 +518,38 @@ namespace Moneyes.Data
             }
         }
 
+        /// <summary>
+        /// Creates the default unique constraint validator for specific <paramref name="repositoryOperation"/>.
+        /// </summary>
+        /// <param name="repositoryOperation"></param>
+        /// <param name="constraintViolationHandler"></param>
+        /// <param name="onConflict"></param>
+        /// <returns></returns>
+        private UniqueConstraintValidator CreateDefaultUniqueConstraintValidator(
+            RepositoryOperation repositoryOperation,
+            ConstraintViolationHandler constraintViolationHandler,
+            ConflictResolutionDelegate<T> onConflict = null)
+        {
+            var conflictHandler = onConflict ?? DefaultConflictHandler?.Invoke(repositoryOperation);
+
+            return new UniqueConstraintValidator(
+                this,
+                uniqueIndices: _uniqueIndices.Values.Select(i => new UniqueIndex<T, TKey>(i)).ToList(),
+                onViolation: v =>
+                {
+                    // Call user conflict resolution delegate if provided
+                    var userConflictResolution = conflictHandler?.Invoke(v);
+
+                    // Use the constraint violation handler to handle this violation
+                    return constraintViolationHandler.HandleViolation(v, userConflictResolution);
+                },
+                onFinished: (key, entity, isValid) =>
+                {
+                    constraintViolationHandler.OnEntityFinishedValidating(entity);
+                },
+                Logger);
+        }
+
         protected virtual void ValidatePrimaryKey(TKey key, IEnumerable<T> existingEntities = null)
         {
             existingEntities ??= GetFromCache().ToArray();
@@ -569,10 +601,97 @@ namespace Moneyes.Data
         #endregion
 
         #region CRUD
+
+        #region Read
         public virtual IEnumerable<T> GetAll()
         {
             return GetFromCache();
+        }        
+
+#nullable enable
+        public virtual T? FindById(TKey id)
+#nullable disable
+        {
+            ArgumentNullException.ThrowIfNull(id);
+
+            EnsureCacheIsLoaded();
+
+            _cacheLock.AcquireReaderLock(CacheTimeout);
+
+            T entity;
+            bool found;
+
+            try
+            {
+                found = Cache.TryGetValue(id, out entity);
+            }
+            finally
+            {
+                _cacheLock.ReleaseReaderLock();
+            }
+
+            if (found)
+            {
+                return entity;
+            }
+
+            return default;
         }
+
+        public virtual IReadOnlyList<T> FindAllById(IEnumerable<TKey> ids)
+        {
+            ArgumentNullException.ThrowIfNull(ids);
+
+            EnsureCacheIsLoaded();
+
+            if (!ids.Any())
+            {
+                return new List<T>();
+            }
+
+            List<T> result = new();
+
+            foreach (var id in ids)
+            {
+                if (Cache.TryGetValue(id, out var entity))
+                {
+                    result.Add(entity);
+                }
+            }
+
+            return result.AsReadOnly();
+        }
+
+        public virtual bool Contains(TKey id)
+        {
+            ArgumentNullException.ThrowIfNull(id);
+
+            EnsureCacheIsLoaded();
+
+            return Cache.ContainsKey(id);
+        }
+
+        public virtual bool ContainsAll(IEnumerable<TKey> ids)
+        {
+            ArgumentNullException.ThrowIfNull(ids);
+
+            EnsureCacheIsLoaded();
+
+            return ids.All(id => Cache.ContainsKey(id));
+        }
+
+        public virtual bool ContainsAny(IEnumerable<TKey> ids)
+        {
+            ArgumentNullException.ThrowIfNull(ids);
+
+            EnsureCacheIsLoaded();
+
+            return ids.Any(id => Cache.ContainsKey(id));
+        }
+
+        #endregion
+
+        #region Create
 
         /// <inheritdoc/>
         public virtual T Create(T entity)
@@ -707,87 +826,9 @@ namespace Moneyes.Data
             return counter;
         }
 
-#nullable enable
-        public virtual T? FindById(TKey id)
-#nullable disable
-        {
-            ArgumentNullException.ThrowIfNull(id);
+        #endregion
 
-            EnsureCacheIsLoaded();
-
-            _cacheLock.AcquireReaderLock(CacheTimeout);
-
-            T entity;
-            bool found;
-
-            try
-            {
-                found = Cache.TryGetValue(id, out entity);
-            }
-            finally
-            {
-                _cacheLock.ReleaseReaderLock();
-            }
-
-            if (found)
-            {
-                return entity;
-            }
-
-            return default;
-        }
-
-        public virtual IReadOnlyList<T> FindAllById(IEnumerable<TKey> ids)
-        {
-            ArgumentNullException.ThrowIfNull(ids);
-
-            EnsureCacheIsLoaded();
-
-            if (!ids.Any())
-            {
-                return new List<T>();
-            }
-
-            List<T> result = new();
-
-            foreach (var id in ids)
-            {
-                if (Cache.TryGetValue(id, out var entity))
-                {
-                    result.Add(entity);
-                }
-            }
-
-            return result.AsReadOnly();
-        }
-
-        public virtual bool Contains(TKey id)
-        {
-            ArgumentNullException.ThrowIfNull(id);
-
-            EnsureCacheIsLoaded();
-
-            return Cache.ContainsKey(id);
-        }
-
-        public virtual bool ContainsAll(IEnumerable<TKey> ids)
-        {
-            ArgumentNullException.ThrowIfNull(ids);
-
-            EnsureCacheIsLoaded();
-
-            return ids.All(id => Cache.ContainsKey(id));
-        }
-
-        public virtual bool ContainsAny(IEnumerable<TKey> ids)
-        {
-            ArgumentNullException.ThrowIfNull(ids);
-
-            EnsureCacheIsLoaded();
-
-            return ids.Any(id => Cache.ContainsKey(id));
-        }
-
+        #region Upsert
 
         public virtual bool Set(T entity)
         {
@@ -963,7 +1004,7 @@ namespace Moneyes.Data
 
             Logger?.LogDebug("Proceeding with {n} validated entities...", entitiesToUpsert.Count);
 
-            return SetInternal(entitiesToUpsert, constraintViolationHandler);
+            return SetManyInternal(entitiesToUpsert, constraintViolationHandler);
         }
 
         public virtual int SetMany(IEnumerable<TKey> ids,
@@ -1003,7 +1044,7 @@ namespace Moneyes.Data
                 return 0;
             }
 
-            return SetInternal(entitiesToUpsert, constraintViolationHandler);
+            return SetManyInternal(entitiesToUpsert, constraintViolationHandler);
         }
 
         protected virtual int SetMany(IEnumerable<T> entities,
@@ -1054,9 +1095,9 @@ namespace Moneyes.Data
 
             Logger?.LogDebug("Proceeding with {n} validated entities...", entitiesToUpsert.Count);
 
-            return SetInternal(entitiesToUpsert, constraintViolationHandler);
+            return SetManyInternal(entitiesToUpsert, constraintViolationHandler);
         }
-        private int SetInternal(IEnumerable<T> entities, ConstraintViolationHandler constraintViolationHandler)
+        private int SetManyInternal(IEnumerable<T> entities, ConstraintViolationHandler constraintViolationHandler)
         {
             int counter = 0;
             List<T> addedEntities = new();
@@ -1122,6 +1163,10 @@ namespace Moneyes.Data
 
             return counter;
         }
+
+        #endregion
+
+        #region Update
 
         public virtual bool Update(T entity)
         {
@@ -1286,7 +1331,7 @@ namespace Moneyes.Data
             // Validate unique constraints -> get all valid entities
             var entitiesToUpdate = entities.Where(e => uniqueConstraintValidator.ValidateEntity(e)).ToList();
 
-            return UpdateInternal(entitiesToUpdate, constraintViolationHandler);
+            return UpdateManyInternal(entitiesToUpdate, constraintViolationHandler);
         }
         public virtual int UpdateMany(IEnumerable<TKey> ids, Func<TKey, T, T> updateEntityFactory,
             ConflictResolutionDelegate<T> onConflict = null)
@@ -1313,7 +1358,7 @@ namespace Moneyes.Data
             // Validate unique constraints -> get all valid entities
             var entitiesToUpdate = entities.Where(e => uniqueConstraintValidator.ValidateEntity(e)).ToList();
 
-            return UpdateInternal(entitiesToUpdate, constraintViolationHandler);
+            return UpdateManyInternal(entitiesToUpdate, constraintViolationHandler);
         }
         public virtual int UpdateMany(IEnumerable<T> entities, Func<T, T, T> updateEntityFactory,
             ConflictResolutionDelegate<T> onConflict = null)
@@ -1340,9 +1385,9 @@ namespace Moneyes.Data
             // Validate unique constraints -> get all valid entities
             var entitiesToUpdate = entities.Where(e => uniqueConstraintValidator.ValidateEntity(e)).ToList();
 
-            return UpdateInternal(entitiesToUpdate, constraintViolationHandler);
+            return UpdateManyInternal(entitiesToUpdate, constraintViolationHandler);
         }
-        private int UpdateInternal(IReadOnlyList<T> validatedEntities, ConstraintViolationHandler constraintViolationHandler)
+        private int UpdateManyInternal(IReadOnlyList<T> validatedEntities, ConstraintViolationHandler constraintViolationHandler)
         {
             int counter = 0;
 
@@ -1383,37 +1428,9 @@ namespace Moneyes.Data
             return counter;
         }
 
-        /// <summary>
-        /// Creates the default unique constraint validator for specific <paramref name="repositoryOperation"/>.
-        /// </summary>
-        /// <param name="repositoryOperation"></param>
-        /// <param name="constraintViolationHandler"></param>
-        /// <param name="onConflict"></param>
-        /// <returns></returns>
-        private UniqueConstraintValidator CreateDefaultUniqueConstraintValidator(
-            RepositoryOperation repositoryOperation,
-            ConstraintViolationHandler constraintViolationHandler,
-            ConflictResolutionDelegate<T> onConflict = null)
-        {
-            var conflictHandler = onConflict ?? DefaultConflictHandler?.Invoke(repositoryOperation);
+        #endregion
 
-            return new UniqueConstraintValidator(
-                this,
-                uniqueIndices: _uniqueIndices.Values.Select(i => new UniqueIndex<T, TKey>(i)).ToList(),
-                onViolation: v =>
-                {
-                    // Call user conflict resolution delegate if provided
-                    var userConflictResolution = conflictHandler?.Invoke(v);
-
-                    // Use the constraint violation handler to handle this violation
-                    return constraintViolationHandler.HandleViolation(v, userConflictResolution);
-                },
-                onFinished: (key, entity, isValid) =>
-                {
-                    constraintViolationHandler.OnEntityFinishedValidating(entity);
-                },
-                Logger);
-        }
+        #region Entity factories
 
         /// <summary>
         /// Function that checks if the given key exists, and creates a value using the entity factory.
@@ -1465,6 +1482,10 @@ namespace Moneyes.Data
 
             return addEntityFactory(kvp.Value);
         }
+
+        #endregion
+
+        #region Delete
 
         public virtual bool Delete(T entity)
         {
@@ -1599,6 +1620,8 @@ namespace Moneyes.Data
                 _cacheLock.ReleaseWriterLock();
             }
         }
+
+        #endregion
 
         #endregion
 

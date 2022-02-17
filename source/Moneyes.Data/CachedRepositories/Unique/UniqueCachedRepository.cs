@@ -313,8 +313,6 @@ public class UniqueCachedRepository<T> : CachedRepository<T, Guid>, IUniqueCache
     }
     protected virtual T UpdateEntityFactory(T existingEntity, T newEntity)
     {
-        //newEntity.CreatedAt = existingEntity.CreatedAt;
-
         return newEntity with { CreatedAt = existingEntity.CreatedAt };
     }
 
@@ -338,7 +336,7 @@ public class UniqueCachedRepository<T> : CachedRepository<T, Guid>, IUniqueCache
 
                 var deletedEntity = entity with { IsDeleted = true };
 
-                Update(deletedEntity);
+                base.Update(deletedEntity);
 
                 return true;
             }
@@ -359,7 +357,7 @@ public class UniqueCachedRepository<T> : CachedRepository<T, Guid>, IUniqueCache
             var entitiesDeleted = GetAll().Select(entity => 
                 entity with { IsDeleted = true });
 
-            return UpdateMany(entitiesDeleted);
+            return base.UpdateMany(entitiesDeleted);
         }
 
         return base.DeleteAll();
@@ -373,7 +371,7 @@ public class UniqueCachedRepository<T> : CachedRepository<T, Guid>, IUniqueCache
             .Where(compiledPredicate)
             .Select(entity => entity with { IsDeleted = true });            
 
-        return UpdateMany(entities);
+        return base.UpdateMany(entities);
     }
 
     public int DeleteMany(Expression<Func<T, bool>> predicate, bool softDelete = true)
@@ -384,6 +382,14 @@ public class UniqueCachedRepository<T> : CachedRepository<T, Guid>, IUniqueCache
         }
 
         return base.DeleteMany(predicate);
+    }
+
+    public override int DeleteMany(IReadOnlySet<Guid> keys)
+    {
+        var softDeletedEntities = base.FindAllById(keys)
+            .Select(entity => entity with { IsDeleted = true });
+
+        return base.UpdateMany(softDeletedEntities);
     }
     protected override void OnEntityUpdated(T entity, bool notifyDependencyHandler)
     {

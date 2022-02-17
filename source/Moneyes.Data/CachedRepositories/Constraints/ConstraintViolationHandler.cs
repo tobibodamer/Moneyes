@@ -38,7 +38,8 @@ namespace Moneyes.Data
                     {
                         _logger.LogInformation("[ConstraintViolationHandler] Choosing advanced conflic resolution 'Update'.");
 
-                        var updateKey = _repository.GetKey(updateAction.EntityToUpdate);
+                        var entityToUpdate = updateAction.UpdateFactory(violation.ExistingEntity, violation.NewEntity);
+                        var updateKey = _repository.GetKey(entityToUpdate);
 
                         // Set the entity to update for this entity
 
@@ -52,7 +53,7 @@ namespace Moneyes.Data
                             return (continueValidation: true, ignoreViolation: true);
                         }
 
-                        tempResolutionMap.ToUpdate[updateKey] = updateAction.EntityToUpdate;
+                        tempResolutionMap.ToUpdate[updateKey] = entityToUpdate;
 
 
                         // not include, continue

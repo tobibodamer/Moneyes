@@ -230,7 +230,7 @@ namespace Moneyes.UI
         {
             var transactionDbo = transaction.ToDbo();
 
-            return _transactionRepository.Set(transactionDbo, onConflict: UniqueConflictResolutionAction.UpdateContentOrIgnore);
+            return _transactionRepository.Set(transactionDbo, onConflict: x => x.UpdateContentOrIgnore());
         }
 
         /// <summary>
@@ -244,7 +244,7 @@ namespace Moneyes.UI
             // TODO: Validate if duplicate categories and all categories exist, maybe in repo?
 
             return _transactionRepository.SetMany(transactions.Select(x => x.ToDbo()),
-                onConflict: UniqueConflictResolutionAction.UpdateContentOrIgnore);
+                onConflict: x => x.UpdateContentOrIgnore());
         }
     }
 }

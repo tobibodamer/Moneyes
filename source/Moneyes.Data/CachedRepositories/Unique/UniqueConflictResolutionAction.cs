@@ -1,4 +1,6 @@
-﻿namespace Moneyes.Data;
+﻿using System.Collections.Generic;
+
+namespace Moneyes.Data;
 
 /// <summary>
 /// Provides conflict resolution actions for <see cref="UniqueEntity"/> types.
@@ -16,11 +18,11 @@ public class UniqueConflictResolutionAction
         // Apply existing id and creation date to update existing entity
         //v.NewEntity.Id = v.ExistingEntity.Id;
         //v.NewEntity.CreatedAt = v.ExistingEntity.CreatedAt;
-        
-        return ConflictResolutionAction.Update(v.NewEntity with
+
+        return ConflictResolutionAction.Update<T>((old, @new) => @new with
         {
-            Id = v.ExistingEntity.Id,
-            CreatedAt = v.NewEntity.CreatedAt
+            Id = old.Id,
+            CreatedAt = old.CreatedAt
         });
     }
 

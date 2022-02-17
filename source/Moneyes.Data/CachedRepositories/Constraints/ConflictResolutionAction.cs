@@ -1,4 +1,6 @@
-﻿namespace Moneyes.Data
+﻿using System;
+
+namespace Moneyes.Data
 {
     /// <summary>
     /// Describes a complex conflic resolution action.
@@ -61,18 +63,26 @@
         /// <typeparam name="T"></typeparam>
         /// <param name="entityToUpdate"></param>
         /// <returns></returns>
-        public static ConflictResolutionAction Update<T>(T entityToUpdate)
+        public static ConflictResolutionAction Update<T>(Func<T, T, T> updateAction)
         {
-            return new UpdateConflicResolutionAction<T>(entityToUpdate);
+            return new UpdateConflicResolutionAction<T>(updateAction);
         }
+
+        /// <summary>
+        /// Create a simple <see cref="ConflictResolutionAction"/> from a <see cref="ConflictResolution"/>.
+        /// </summary>
+        /// <param name="conflictResolution"></param>
+        public static implicit operator ConflictResolutionAction(ConflictResolution conflictResolution) =>
+            new(conflictResolution);
+
     }
     internal class UpdateConflicResolutionAction<T> : ConflictResolutionAction
     {
-        public T EntityToUpdate { get; }
+        public Func<T, T, T> UpdateFactory { get; }
 
-        public UpdateConflicResolutionAction(T entityToUpdate)
+        public UpdateConflicResolutionAction(Func<T, T, T> updateAction)
         {
-            EntityToUpdate = entityToUpdate;
+            UpdateFactory = updateAction;
         }
     }
 }

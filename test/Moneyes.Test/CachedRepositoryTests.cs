@@ -188,21 +188,25 @@ namespace Moneyes.Test
 
             var conflictHandler = Substitute.For<ConflictResolutionDelegate<TestEntity>>();
 
-            conflictHandler.Invoke(Arg.Any<ConstraintViolation<TestEntity>>()).Returns(x =>
+            conflictHandler.Invoke(Arg.Any<ConflictResolutionFactory<TestEntity>>()).Returns(x =>
             {
-                var v = x.Arg<ConstraintViolation<TestEntity>>();
+                var factory = x.Arg<ConflictResolutionFactory<TestEntity>>();
 
-                if (v.Constraint == uniqueConstraintHigher)
+                return factory.Dynamic(v =>
                 {
-                    return new ConflictResolutionAction(higher);
-                }
+                    if (v.Constraint == uniqueConstraintHigher)
+                    {
+                        return new ConflictResolutionAction(higher);
+                    }
 
-                return ConflictResolutionAction.Update(new TestEntity()
-                {
-                    Id = v.ExistingEntity.Id,
-                    Age = 99,
-                    CarNumberPlate = v.NewEntity.CarNumberPlate,
-                    Name = v.NewEntity.Name
+                    return factory.Update((old, @new) =>
+                        new()
+                        {
+                            Id = old.Id,
+                            Age = 99,
+                            CarNumberPlate = @new.CarNumberPlate,
+                            Name = @new.Name
+                        });
                 });
             });
 
@@ -215,7 +219,7 @@ namespace Moneyes.Test
             };
 
             var createEntity = () => repo.CreateMany(new[] {
-              newEntity  
+              newEntity
             }, conflictHandler);
 
             switch (higher)

@@ -538,7 +538,7 @@ namespace Moneyes.Data
                 onViolation: v =>
                 {
                     // Call user conflict resolution delegate if provided
-                    var userConflictResolution = conflictHandler?.Invoke(v);
+                    var userConflictResolution = conflictHandler?.Invoke(new(v));
 
                     // Use the constraint violation handler to handle this violation
                     return constraintViolationHandler.HandleViolation(v, userConflictResolution);
@@ -1731,5 +1731,5 @@ namespace Moneyes.Data
         #endregion
     }
 
-    public delegate ConflictResolutionAction ConflictResolutionDelegate<T>(ConstraintViolation<T> violation);
+    public delegate ConflictResolutionAction ConflictResolutionDelegate<T>(ConflictResolutionFactory<T> factory);
 }

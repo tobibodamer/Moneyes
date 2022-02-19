@@ -24,7 +24,7 @@ namespace Moneyes.Data
 
         private readonly EventWaitHandle _cacheInitWaitHandle = new(false, EventResetMode.ManualReset);
 
-        private readonly Dictionary<IUniqueConstraint<T>, UniqueIndex<T, TKey>> _uniqueIndices = new();
+        private readonly Dictionary<IUniqueConstraint<T>, IUniqueIndex<T, TKey>> _uniqueIndices = new();
         public bool IsAutoId { get; }
         public string CollectionName => Options.CollectionName;
 #nullable enable
@@ -423,17 +423,30 @@ namespace Moneyes.Data
 
         private void CreateIndices()
         {
-            var entites = Cache.ToList();
+            var entities = Cache.ToList();
 
             foreach (var constraint in UniqueConstraints)
             {
-                _uniqueIndices[constraint] = new(constraint, entites);
+                _uniqueIndices[constraint] = CreateUniqueIndex(constraint, entities);
             }
         }
 
-        internal class UniqueConstraintValidator
+#nullable enable
+        protected virtual IUniqueIndex<T, TKey> CreateUniqueIndex(IUniqueConstraint<T> uniqueConstraint,
+            IReadOnlyList<KeyValuePair<TKey, T>>? entities)
+#nullable disable
         {
-            IEnumerable<UniqueIndex<T, TKey>> Indices { get; }
+            if (entities is null)
+            {
+                return new UniqueIndex<T, TKey>(uniqueConstraint);
+            }
+
+            return new UniqueIndex<T, TKey>(uniqueConstraint, entities);
+        }
+
+        protected internal class UniqueConstraintValidator
+        {
+            IEnumerable<IUniqueIndex<T, TKey>> Indices { get; }
             Func<ConstraintViolation<T>, (bool continueValidation, bool ignoreViolation)> OnViolation { get; }
             Action<TKey, T, bool> OnFinished { get; }
 
@@ -442,9 +455,10 @@ namespace Moneyes.Data
 
             public UniqueConstraintValidator(
                 ICachedRepository<T, TKey> repository,
-                IEnumerable<UniqueIndex<T, TKey>> uniqueIndices,
+                IEnumerable<IUniqueIndex<T, TKey>> uniqueIndices,
                 Func<ConstraintViolation<T>, (bool continueValidation, bool ignoreViolation)> onViolation,
                 Action<TKey, T, bool> onFinished,
+                Func<IUniqueConstraint<T>, IUniqueIndex<T, TKey>> uniqueIndexFactory,
                 ILogger logger = null)
             {
                 _repository = repository;
@@ -455,11 +469,11 @@ namespace Moneyes.Data
 
                 foreach (var index in uniqueIndices)
                 {
-                    _selfIndices.Add(index.Constraint, new(index.Constraint));
+                    _selfIndices.Add(index.Constraint, uniqueIndexFactory(index.Constraint));
                 }
             }
 
-            private readonly Dictionary<IUniqueConstraint<T>, UniqueIndex<T, TKey>> _selfIndices = new();
+            private readonly Dictionary<IUniqueConstraint<T>, IUniqueIndex<T, TKey>> _selfIndices = new();
 
             public bool ValidateEntity(T entity)
             {
@@ -470,15 +484,17 @@ namespace Moneyes.Data
                 // Check all constaints
                 foreach (var index in Indices)
                 {
-                    if (!index.CreateHash(entity, out var uniqueHash))
-                    {
-                        // Value is null and can be ignored
-                        continue;
-                    }
+                    var keyComparer = EqualityComparer<TKey>.Default;
+
+                    //if (!index.CreateHash(entity, out var uniqueHash))
+                    //{
+                    //    // Value is null and can be ignored
+                    //    continue;
+                    //}
 
                     // Check if unique value is already existing
-                    if (index.TryGetExistingEntity(uniqueHash, out var existingKey) &&
-                        !EqualityComparer<TKey>.Default.Equals(key, existingKey))
+                    if (index.TryGetExistingEntity(entity, out var existingKey) &&
+                        !keyComparer.Equals(key, existingKey))
                     {
 
                         _logger?.LogWarning("Unique constraint violation of '{Property}' (Entity ID: {id})",
@@ -504,7 +520,7 @@ namespace Moneyes.Data
                         // If violation ignored -> entity is still valid
                         isValid = isValid && ignoreViolation;
                     }
-                    else if (!_selfIndices[index.Constraint].GetOrAddEntity(key, uniqueHash, out existingKey))
+                    else if (!_selfIndices[index.Constraint].GetOrAddEntity(key, entity, out existingKey))
                     {
                         throw new ConstraintViolationException("Unique constraint violation amongst validated entities",
                             index.Constraint.PropertyName, key, existingKey);
@@ -525,16 +541,16 @@ namespace Moneyes.Data
         /// <param name="constraintViolationHandler"></param>
         /// <param name="onConflict"></param>
         /// <returns></returns>
-        private UniqueConstraintValidator CreateDefaultUniqueConstraintValidator(
+        protected UniqueConstraintValidator CreateDefaultUniqueConstraintValidator(
             RepositoryOperation repositoryOperation,
             ConstraintViolationHandler constraintViolationHandler,
             ConflictResolutionDelegate<T> onConflict = null)
         {
             var conflictHandler = onConflict ?? DefaultConflictHandler?.Invoke(repositoryOperation);
 
-            return new UniqueConstraintValidator(
-                this,
-                uniqueIndices: _uniqueIndices.Values.Select(i => new UniqueIndex<T, TKey>(i)).ToList(),
+            return CreateUniqueConstraintValidator(
+                uniqueIndices: _uniqueIndices.Values.Select(i => i.Copy()).ToList(),
+                uniqueIndexFactory: c => CreateUniqueIndex(c, null),
                 onViolation: v =>
                 {
                     // Call user conflict resolution delegate if provided
@@ -546,7 +562,21 @@ namespace Moneyes.Data
                 onFinished: (key, entity, isValid) =>
                 {
                     constraintViolationHandler.OnEntityFinishedValidating(entity);
-                },
+                });
+        }
+
+        protected virtual UniqueConstraintValidator CreateUniqueConstraintValidator(
+            IEnumerable<IUniqueIndex<T, TKey>> uniqueIndices, 
+            Func<IUniqueConstraint<T>, IUniqueIndex<T, TKey>> uniqueIndexFactory,
+            Func<ConstraintViolation<T>, (bool continueValidation, bool ignoreViolation)> onViolation, 
+            Action<TKey, T, bool> onFinished)
+        {
+            return new UniqueConstraintValidator(
+                this,
+                uniqueIndices,
+                onViolation,
+                onFinished,
+                uniqueIndexFactory,
                 Logger);
         }
 

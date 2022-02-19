@@ -6,14 +6,12 @@ using System.Threading.Tasks;
 
 namespace Moneyes.Data
 {
-    internal class UniqueIndex<T, TKey>
+    internal class UniqueIndex<T, TKey> : IUniqueIndex<T, TKey>
     {
         private readonly Dictionary<int, TKey> _hashEntityMap = new();
         private readonly Dictionary<TKey, int> _keyHashMap = new();
 
-        /// <summary>
-        /// Gets the constraint that this index is based on.
-        /// </summary>
+        
         public IUniqueConstraint<T> Constraint { get; }
 
         /// <summary>
@@ -61,11 +59,16 @@ namespace Moneyes.Data
         /// Creates a new index by copying an existing index.
         /// </summary>
         /// <param name="other"></param>
-        public UniqueIndex(UniqueIndex<T, TKey> other)
+        protected UniqueIndex(UniqueIndex<T, TKey> other)
         {
             _hashEntityMap = new Dictionary<int, TKey>(other._hashEntityMap);
             _keyHashMap = new Dictionary<TKey, int>(other._keyHashMap);
             Constraint = other.Constraint;
+        }
+
+        public IUniqueIndex<T, TKey> Copy()
+        {
+            return new UniqueIndex<T, TKey>(this);
         }
 
         /// <summary>

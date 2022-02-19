@@ -26,7 +26,7 @@ public interface IUniqueCachedRepository<T> : ICachedRepository<T, Guid>
     bool Set(T entity, ConflictResolutionDelegate<T> onConflict, bool keepCreationTimestamp = true);
     int SetMany(IEnumerable<T> entities, bool keepCreationTimestamp = true);
     int SetMany(IEnumerable<T> entities, ConflictResolutionDelegate<T> onConflict, bool keepCreationTimestamp = true);
-    
+
     bool Update(T entity, bool keepCreationTimestamp = true);
     bool Update(T entity, ConflictResolutionDelegate<T> onConflict, bool keepCreationTimestamp = true);
     int UpdateMany(IEnumerable<T> entities, bool keepCreationTimestamp = true);
@@ -53,7 +53,6 @@ public class UniqueCachedRepository<T> : CachedRepository<T, Guid>, IUniqueCache
         : base(databaseProvider, options, refreshHandler, keySelector, repositoryDependencies, uniqueConstraints, logger)
     {
     }
-
     protected override T PostQueryTransform(T entity)
     {
         // Dont include soft deleted dependents
@@ -76,6 +75,113 @@ public class UniqueCachedRepository<T> : CachedRepository<T, Guid>, IUniqueCache
         return entity;
     }
 
+    /// <summary>
+    /// A unique property index that encapsulates two sepereate indices for soft deleted / not soft deleted entities.
+    /// </summary>
+    private class SoftDeleteUniqueIndex : IUniqueIndex<T, Guid>
+    {
+        private readonly IUniqueIndex<T, Guid> _index;
+        private readonly IUniqueIndex<T, Guid> _deletedIndex;
+
+        public IUniqueConstraint<T> Constraint => _index.Constraint;
+
+        public SoftDeleteUniqueIndex(IUniqueConstraint<T> uniqueConstraint)
+        {
+            _index = new UniqueIndex<T, Guid>(uniqueConstraint);
+            _deletedIndex = new UniqueIndex<T, Guid>(uniqueConstraint);
+        }
+
+        public SoftDeleteUniqueIndex(IUniqueConstraint<T> uniqueConstraint, IEnumerable<KeyValuePair<Guid, T>> entities)
+        {
+            _index = new UniqueIndex<T, Guid>(uniqueConstraint, entities);
+            _deletedIndex = new UniqueIndex<T, Guid>(uniqueConstraint, entities);
+        }
+
+        private SoftDeleteUniqueIndex(IUniqueIndex<T, Guid> index, IUniqueIndex<T, Guid> deletedIndex)
+        {
+            _index = index;
+            _deletedIndex = deletedIndex;
+        }
+
+        public IUniqueIndex<T, Guid> Copy()
+        {
+            return new SoftDeleteUniqueIndex(_index.Copy(), _deletedIndex.Copy());
+        }
+
+        public bool GetOrAddEntity(Guid key, T entity, out Guid existingKey)
+        {
+            if (entity.IsDeleted)
+            {
+                return _deletedIndex.GetOrAddEntity(key, entity, out existingKey);
+            }
+
+            return _index.GetOrAddEntity(key, entity, out existingKey);
+        }
+
+        public void RemoveEntity(Guid key)
+        {
+            _index.RemoveEntity(key);
+            _deletedIndex.RemoveEntity(key);
+        }
+
+        public bool TryGetExistingEntity(T entity, out Guid existingKey)
+        {
+            if (entity.IsDeleted)
+            {
+                return _deletedIndex.TryGetExistingEntity(entity, out existingKey);
+            }
+
+            return _index.TryGetExistingEntity(entity, out existingKey);
+        }
+
+        public void UpdateEntity(Guid key, T entity)
+        {
+            if (entity.IsDeleted)
+            {
+                _deletedIndex.UpdateEntity(key, entity);
+                return;
+            }
+
+            _index.UpdateEntity(key, entity);
+        }
+    }
+
+#nullable enable
+    protected override IUniqueIndex<T, Guid> CreateUniqueIndex(IUniqueConstraint<T> uniqueConstraint,
+        IReadOnlyList<KeyValuePair<Guid, T>>? entities)
+#nullable disable
+    {
+        if (entities is null)
+        {
+            return new SoftDeleteUniqueIndex(uniqueConstraint);
+        }
+
+        return new SoftDeleteUniqueIndex(uniqueConstraint, entities);
+    }
+
+    protected override UniqueConstraintValidator CreateUniqueConstraintValidator(
+        IEnumerable<IUniqueIndex<T, Guid>> uniqueIndices,
+        Func<IUniqueConstraint<T>, IUniqueIndex<T, Guid>> uniqueIndexFactory,
+        Func<ConstraintViolation<T>, (bool continueValidation, bool ignoreViolation)> onViolation,
+        Action<Guid, T, bool> onFinished)
+    {
+        return base.CreateUniqueConstraintValidator(
+            uniqueIndices,
+            uniqueIndexFactory,
+            onViolation: violation =>
+            {
+                if (violation.ExistingEntity.IsDeleted)
+                {
+                    // We ignore violations for entities that are already soft deleted.
+                    // Unique constraints do not apply to deleted entities,
+                    // but they will if the deleted entity is restored.
+                    return (continueValidation: true, ignoreViolation: true);
+                }
+
+                return onViolation(violation);
+            },
+            onFinished);
+    }
     public override IEnumerable<T> GetAll()
     {
         return base.GetAll().Where(x => !x.IsDeleted);
@@ -88,14 +194,14 @@ public class UniqueCachedRepository<T> : CachedRepository<T, Guid>, IUniqueCache
 
     public override T FindById(Guid id)
     {
-        return FindById(id, includeSoftDeleted: false);
+        return FindById(id, includeSoftDeleted: true);
     }
 
-    public T FindById(Guid id, bool includeSoftDeleted = false)
+    public T FindById(Guid id, bool includeSoftDeleted = true)
     {
         var result = base.FindById(id);
 
-        if (includeSoftDeleted || (result?.IsDeleted ?? true))
+        if (!includeSoftDeleted && (result?.IsDeleted ?? true))
         {
             return null;
         }
@@ -103,7 +209,7 @@ public class UniqueCachedRepository<T> : CachedRepository<T, Guid>, IUniqueCache
         return result;
     }
 
-    public IReadOnlyList<T> FindAllById(IEnumerable<Guid> ids, bool includeSoftDeleted = false)
+    public IReadOnlyList<T> FindAllById(IEnumerable<Guid> ids, bool includeSoftDeleted = true)
     {
         if (includeSoftDeleted)
         {
@@ -128,7 +234,7 @@ public class UniqueCachedRepository<T> : CachedRepository<T, Guid>, IUniqueCache
         return base.FindAllById(ids);
     }
 
-    public bool Contains(Guid id, bool includeSoftDeleted = false)
+    public bool Contains(Guid id, bool includeSoftDeleted = true)
     {
         if (includeSoftDeleted)
         {
@@ -145,10 +251,10 @@ public class UniqueCachedRepository<T> : CachedRepository<T, Guid>, IUniqueCache
 
     public override bool Contains(Guid id)
     {
-        return Contains(id, includeSoftDeleted: false);
+        return Contains(id, includeSoftDeleted: true);
     }
 
-    public bool ContainsAll(IEnumerable<Guid> ids, bool includeSoftDeleted = false)
+    public bool ContainsAll(IEnumerable<Guid> ids, bool includeSoftDeleted = true)
     {
         if (includeSoftDeleted)
         {
@@ -168,10 +274,10 @@ public class UniqueCachedRepository<T> : CachedRepository<T, Guid>, IUniqueCache
 
     public override bool ContainsAll(IEnumerable<Guid> ids)
     {
-        return ContainsAll(ids, includeSoftDeleted: false);
+        return ContainsAll(ids, includeSoftDeleted: true);
     }
 
-    public bool ContainsAny(IEnumerable<Guid> ids, bool includeSoftDeleted = false)
+    public bool ContainsAny(IEnumerable<Guid> ids, bool includeSoftDeleted = true)
     {
         if (includeSoftDeleted)
         {
@@ -354,7 +460,7 @@ public class UniqueCachedRepository<T> : CachedRepository<T, Guid>, IUniqueCache
     {
         if (softDelete)
         {
-            var entitiesDeleted = GetAll().Select(entity => 
+            var entitiesDeleted = GetAll().Select(entity =>
                 entity with { IsDeleted = true });
 
             return base.UpdateMany(entitiesDeleted);
@@ -369,7 +475,7 @@ public class UniqueCachedRepository<T> : CachedRepository<T, Guid>, IUniqueCache
 
         var entities = GetAll()
             .Where(compiledPredicate)
-            .Select(entity => entity with { IsDeleted = true });            
+            .Select(entity => entity with { IsDeleted = true });
 
         return base.UpdateMany(entities);
     }

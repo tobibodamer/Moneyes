@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -16,7 +17,7 @@ namespace Moneyes.Core.Filters
         private static class FactoryCache<T>
         {
             // Maps property name to factory method
-            public static readonly Dictionary<string, Func<IConditionFilter<T>>> Factories = new();
+            public static readonly ConcurrentDictionary<string, Func<IConditionFilter<T>>> Factories = new();
         }
         
 
@@ -40,7 +41,7 @@ namespace Moneyes.Core.Filters
                         Expression.New(conditionFilterType.GetConstructor(Type.EmptyTypes))
                     ).Compile();
 
-                FactoryCache<T>.Factories.Add(selector, factory);
+                FactoryCache<T>.Factories[selector] = factory;
             }
 
             var conditionFilter = factory();
@@ -64,7 +65,7 @@ namespace Moneyes.Core.Filters
     public class ConditionFilter<T, TValue> : IConditionFilter<T>
     {
         // Holds all previously instantiated selector Funcs for this type
-        private static readonly Dictionary<string, Func<T, TValue>> SelectorCache = new();
+        private static readonly ConcurrentDictionary<string, Func<T, TValue>> SelectorCache = new();
 
         private string _selectorName;
         private Func<T, TValue> _selector;
@@ -86,7 +87,7 @@ namespace Moneyes.Core.Filters
 
                     selector = lambdaExpression.Compile();
 
-                    SelectorCache.Add(value, selector);
+                    SelectorCache[value] = selector;
                 }
                                 
                 _selector = selector;

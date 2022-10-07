@@ -2,7 +2,6 @@
 using Moneyes.Core;
 using Moneyes.Data;
 using Moneyes.LiveData;
-using Moneyes.UI.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,7 +14,6 @@ namespace Moneyes.UI
     {
         private readonly IBankingService _bankingService;
 
-        private readonly IOnlineBankingServiceFactory _bankingServiceFactory;
         private readonly IOnlineBankingService _onlineBankingService;
 
         private readonly IPasswordPrompt _passwordProvider;
@@ -35,15 +33,11 @@ namespace Moneyes.UI
             ILogger<LiveDataService> logger)
         {
             _bankingService = bankingService;
-            _bankingServiceFactory = bankingServiceFactory;
             _passwordProvider = passwordPrompt;
             _statusMessageService = statusMessageService;
             _logger = logger;
             _onlineBankingService = bankingServiceFactory.CreateService();
         }
-
-        private static DateTime FirstOfMonth => new(DateTime.Now.Year, DateTime.Now.Month, 1);
-
 
         private async Task<TResult> EnsurePassword<TResult>(BankDetails bankDetails, Func<SecureString, Task<TResult>> operation, int maxRetries = 3)
             where TResult : BankingResult
@@ -55,15 +49,15 @@ namespace Moneyes.UI
             SecureString password = bankDetails.Pin;
 
             // Password set -> try operation
-            if (!password.IsNullOrEmpty() || _localPins.TryGetValue(bankDetails.Id, out password))
+            if (!password.IsNullOrEmpty() || _localPins.TryGetValue(bankDetails.Id, out password!))
             {
                 _logger?.LogDebug("Password found for {id}, trying to perform operation", bankDetails.Id);
 
-                (TResult result, bool wrongPassword) = await TryOperation(password!, operation);
+                (TResult? result, bool wrongPassword) = await TryOperation(password!, operation);
 
                 if (!wrongPassword)
                 {
-                    return result;
+                    return result!;
                 }
 
                 numRetries++;
@@ -84,7 +78,7 @@ namespace Moneyes.UI
                     throw new OperationCanceledException();
                 }
 
-                (TResult result, bool wrongPassword) = await TryOperation(password, operation);
+                (TResult? result, bool wrongPassword) = await TryOperation(password, operation);
 
                 if (wrongPassword)
                 {
@@ -97,7 +91,7 @@ namespace Moneyes.UI
                 // Store working password in temp store
                 _localPins[bankDetails.Id] = password;
 
-                if (!result.IsSuccessful)
+                if (!result!.IsSuccessful)
                 {
                     // Operation failed otherwise -> return
                     return result;
@@ -130,7 +124,7 @@ namespace Moneyes.UI
         /// </summary>
         /// <param name="operation"></param>
         /// <returns>Whether the operation was executed successfully.</returns>
-        private async Task<(TResult result, bool wrongPassword)> TryOperation<TResult>(SecureString password, Func<SecureString, Task<TResult>> operation)
+        private async Task<(TResult? result, bool wrongPassword)> TryOperation<TResult>(SecureString password, Func<SecureString, Task<TResult>> operation)
             where TResult : BankingResult
         {
             var result = await operation(password);
@@ -173,14 +167,8 @@ namespace Moneyes.UI
         {
             _logger?.LogInformation("Testing bank connection");
 
-
             // Try to sync
             var result = await _onlineBankingService.Sync(onlineBankingDetails);
-
-            //if (!result.IsSuccessful)
-            //{
-            //    _logger?.LogWarning("Bank connection wont be created, sync failed");
-            //}
 
             return result;
         }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Security;
+using System.Threading.Tasks;
 using LiteDB;
 using Moneyes.Core;
 
@@ -28,17 +29,17 @@ namespace Moneyes.Data
         }
 
 #nullable enable
-        public virtual SecureString? OnCreatePassword()
+        public virtual Task<SecureString>? OnCreatePassword()
 #nullable disable
         {
-            return _createMasterPasswordFunc();
+            return Task.FromResult(_createMasterPasswordFunc());
         }
-        public virtual SecureString OnRequestPassword()
+        public virtual Task<SecureString> OnRequestPassword()
         {
-            return _requestMasterPasswordFunc();
+            return Task.FromResult(_requestMasterPasswordFunc());
         }
 
-        public bool TryCreateDatabase()
+        public async Task<bool> TryCreateDatabase()
         {
             if (IsDatabaseCreated)
             {
@@ -49,7 +50,7 @@ namespace Moneyes.Data
             {
                 LiteDbFactory databaseFactory = new(_dbConfig);
 
-                SecureString newPassword = OnCreatePassword();
+                SecureString newPassword = await OnCreatePassword();
 
                 if (newPassword is null)
                 {
@@ -69,7 +70,7 @@ namespace Moneyes.Data
             }
         }
 
-        public bool TryOpenDatabase()
+        public async Task<bool> TryOpenDatabase()
         {
             if (!IsDatabaseCreated)
             {
@@ -96,7 +97,7 @@ namespace Moneyes.Data
             {
                 try
                 {
-                    password = OnRequestPassword();
+                    password = await OnRequestPassword();
 
                     if (password is null)
                     {

@@ -13,7 +13,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Moneyes.Data", "source\Moneyes.Data\Moneyes.Data.csproj", "{5178E1B6-560F-497A-9DB5-80F1145C8F22}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Moneyes.Test", "test\Moneyes.Test\Moneyes.Test.csproj", "{3F873D49-ECAE-4296-BB29-279DD4731F59}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Moneyes.Test", "test\Moneyes.Test\Moneyes.Test.csproj", "{3F873D49-ECAE-4296-BB29-279DD4731F59}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Moneyes.UI.Services", "source\Moneyes.UI.Services\Moneyes.UI.Services.csproj", "{2B879A4B-6C53-4C1B-8E54-4809AB4A3078}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -41,6 +43,20 @@ Global
 		{3F873D49-ECAE-4296-BB29-279DD4731F59}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3F873D49-ECAE-4296-BB29-279DD4731F59}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3F873D49-ECAE-4296-BB29-279DD4731F59}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D7EC0F55-F126-4D54-AC7F-476CE0E58966}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D7EC0F55-F126-4D54-AC7F-476CE0E58966}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D7EC0F55-F126-4D54-AC7F-476CE0E58966}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{D7EC0F55-F126-4D54-AC7F-476CE0E58966}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D7EC0F55-F126-4D54-AC7F-476CE0E58966}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D7EC0F55-F126-4D54-AC7F-476CE0E58966}.Release|Any CPU.Deploy.0 = Release|Any CPU
+		{2B879A4B-6C53-4C1B-8E54-4809AB4A3078}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2B879A4B-6C53-4C1B-8E54-4809AB4A3078}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2B879A4B-6C53-4C1B-8E54-4809AB4A3078}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2B879A4B-6C53-4C1B-8E54-4809AB4A3078}.Release|Any CPU.Build.0 = Release|Any CPU
+		{91EE9B58-A8FA-49BA-B7FE-C7EFB9AFB501}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{91EE9B58-A8FA-49BA-B7FE-C7EFB9AFB501}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{91EE9B58-A8FA-49BA-B7FE-C7EFB9AFB501}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{91EE9B58-A8FA-49BA-B7FE-C7EFB9AFB501}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

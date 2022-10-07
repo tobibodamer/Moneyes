@@ -1,5 +1,6 @@
 ﻿using Moneyes.Data;
 using System.Security;
+using System.Threading.Tasks;
 
 namespace Moneyes.UI
 {
@@ -14,14 +15,14 @@ namespace Moneyes.UI
                 _masterPasswordProvider = masterPasswordProvider;
             }
 
-            public override SecureString OnCreatePassword()
+            public override Task<SecureString> OnCreatePassword()
             {
-                return _masterPasswordProvider.CreateMasterPassword();
+                return Task.FromResult(_masterPasswordProvider.CreateMasterPassword());
             }
 
-            public override SecureString OnRequestPassword()
+            public override Task<SecureString> OnRequestPassword()
             {
-                return _masterPasswordProvider.RequestMasterPassword();
+                return Task.FromResult(_masterPasswordProvider.RequestMasterPassword());
             }
         }
     }

@@ -4,9 +4,9 @@ using System.Collections.Generic;
 
 namespace Moneyes.UI
 {
-    public class Expenditure : IExpenditure
+    public sealed class Expenditure : IExpenditure
     {
-        public IReadOnlyList<Transaction> Transactions { get; init; }
+        public IReadOnlyList<Transaction> Transactions { get; init; } = new List<Transaction>();
         public decimal TotalAmount { get; init; }
         public DateTime StartDate { get; init; }
         public DateTime EndDate { get; init; }

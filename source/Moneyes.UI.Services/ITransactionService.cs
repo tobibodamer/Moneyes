@@ -14,7 +14,7 @@ namespace Moneyes.UI
         DateTime EarliestTransactionDate(TransactionFilter filter);
         IReadOnlyList<Transaction> GetAllTransactions();
         IEnumerable<Transaction> GetByCategory(Category category);
-        Transaction GetByUID(string uid);
+        Transaction? GetByUID(string uid);
         bool ImportTransaction(Transaction transaction);
         int ImportTransactions(IEnumerable<Transaction> transactions);
         DateTime LatestTransactionDate(TransactionFilter filter);

@@ -10,12 +10,12 @@ namespace Moneyes.UI
         /// <summary>
         /// Gets the expenses of each day.
         /// </summary>
-        public IReadOnlyDictionary<DateTime, IExpenditure> DailyExpenses { get; }
+        public IReadOnlyDictionary<DateTime, IExpenditure> DailyExpenses { get; } = new Dictionary<DateTime, IExpenditure>();
 
         /// <summary>
         /// Gets the expenses of each month.
         /// </summary>
-        public IReadOnlyDictionary<DateTime, IExpenditure> MonthlyExpenses { get; }
+        public IReadOnlyDictionary<DateTime, IExpenditure> MonthlyExpenses { get; } = new Dictionary<DateTime, IExpenditure>();
 
         public DateTime StartDate { get; init; }
         public DateTime EndDate { get; init; }

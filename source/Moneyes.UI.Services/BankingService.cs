@@ -44,7 +44,7 @@ namespace Moneyes.UI
             _logger = logger;
         }
 
-        public event Action NewAccountsImported;
+        public event Action? NewAccountsImported;
 
         public IReadOnlyList<BankDetails> GetBankEntries()
         {
@@ -92,7 +92,7 @@ namespace Moneyes.UI
             }
         }
 
-        public Balance GetBalance(DateTime date, AccountDetails account)
+        public Balance? GetBalance(DateTime date, AccountDetails account)
         {
             //TODO: implement total balance            
             return GetBalanceByDate(date, account);
@@ -102,8 +102,8 @@ namespace Moneyes.UI
         {
             return GetAllAccounts()
                 .Select(acc => GetBalanceByDate(date, acc))
-                .Where(x => x != null)
-                .Sum(b => b.Amount);
+                .Where(b => b != null)
+                .Sum(b => b!.Amount);
         }
 
         /// <summary>
@@ -111,7 +111,7 @@ namespace Moneyes.UI
         /// </summary>
         /// <param name="date"></param>
         /// <returns></returns>
-        public Balance GetBalanceByDate(DateTime date, AccountDetails account)
+        public Balance? GetBalanceByDate(DateTime date, AccountDetails account)
         {
             var dbo = _balanceRepository
                 .Where(b => b.Account.Id.Equals(account.Id))

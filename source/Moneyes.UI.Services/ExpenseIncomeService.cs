@@ -9,12 +9,12 @@ using System.Threading.Tasks;
 
 namespace Moneyes.UI
 {
-    partial class ExpenseIncomServieUsingDb : IExpenseIncomeService
+    public class ExpenseIncomServiceUsingDb : IExpenseIncomeService
     {
         private readonly ITransactionService _transactionService;
         private readonly ICategoryService _categoryService;
 
-        public ExpenseIncomServieUsingDb(
+        public ExpenseIncomServiceUsingDb(
             ITransactionService transactionervice,
             ICategoryService categoryService)
         {

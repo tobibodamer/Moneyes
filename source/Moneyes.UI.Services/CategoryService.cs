@@ -7,6 +7,18 @@ using System.Linq;
 
 namespace Moneyes.UI
 {
+    public class CategoryWithChildren : Category
+    {
+        public CategoryWithChildren(Category category) : base(category.Id)
+        {
+            this.Parent = category.Parent;
+            this.Name = category.Name;
+            this.Filter= category.Filter;
+            this.Target= category.Target;
+        }
+
+        public HashSet<CategoryWithChildren> SubCategories { get; init; } = new();
+    }
     public class CategoryService : ICategoryService
     {
         private readonly ITransactionService _transactionService;
@@ -34,6 +46,50 @@ namespace Moneyes.UI
                 : _categoryFactory.CreateFromDbo(dbo);
         }
 
+        public IEnumerable<CategoryWithChildren> GetCategoriesWithChildren(CategoryTypes includeCategories = CategoryTypes.All)
+        {
+            var categories = GetCategories(includeCategories).Select(c => new CategoryWithChildren(c)).ToList();
+
+            // Select all categories with a matching parent
+            var categoriesWithParent = categories.Where(
+                c => c.Parent is not null).ToList();
+
+            // Add categories with parent to sub categories of parent
+            foreach (var category in categoriesWithParent)
+            {
+                var parent = category.Parent;
+                var parentCategoryViewModel = categories.FirstOrDefault(c => c.Id == parent!.Id);
+                
+                parentCategoryViewModel?.SubCategories.Add(category);
+            }
+
+            // Remove all categories with a parent (from top level)
+            categories.RemoveAll(c => categoriesWithParent.Contains(c));
+
+            //HashSet<CategoryH> hierachical = new();
+
+            //do {
+            //    foreach (var category in categories)
+            //    {
+            //        if (category.Parent == null)
+            //        {
+            //            hierachical.Add(new(category.Id));
+            //            categories.Remove(category);
+            //        }
+            //        else
+            //        {
+
+            //        }
+            //        var parent = category.Parent;
+            //        var parentCategoryViewModel = flatCategories.FirstOrDefault(c => c.Category.Id == parent.Id);
+
+            //        parentCategoryViewModel.SubCatgeories.Add(category);
+            //    }
+            //} while (categories.Count > 0);
+
+            return categories;
+        }
+
         public IEnumerable<Category> GetCategories(CategoryTypes includeCategories = CategoryTypes.All)
         {
             List<Category> categories = new();
@@ -47,7 +103,7 @@ namespace Moneyes.UI
 
             if (!includeCategories.HasFlag(CategoryTypes.AllCategory))
             {
-                int allCategoryIndex = categories.IndexOfFirst(c => c.Id.Equals(Category.AllCategoryId));
+                int allCategoryIndex = IndexOfFirst(categories, c => c.Id.Equals(Category.AllCategoryId));
 
                 if (allCategoryIndex != -1)
                 {
@@ -62,7 +118,7 @@ namespace Moneyes.UI
 
             if (!includeCategories.HasFlag(CategoryTypes.NoCategory))
             {
-                int noCategoryIndex = categories.IndexOfFirst(c => c.Id.Equals(Category.NoCategoryId));
+                int noCategoryIndex = IndexOfFirst(categories, c => c.Id.Equals(Category.NoCategoryId));
 
                 if (noCategoryIndex != -1)
                 {
@@ -394,6 +450,24 @@ namespace Moneyes.UI
                     yield return subCategory;
                 }
             }
+        }
+
+        public static int IndexOfFirst<T>(IList<T> list, Func<T, bool> predicate)
+        {
+            if (predicate == null)
+            {
+                throw new ArgumentNullException(nameof(predicate));
+            }
+
+            for (int i = 0; i < list.Count; i++)
+            {
+                if (predicate(list[i]))
+                {
+                    return i;
+                }
+            }
+
+            return -1;
         }
     }
 }

@@ -2,7 +2,6 @@
 using Moneyes.Core;
 using Moneyes.Data;
 using Moneyes.LiveData;
-using Moneyes.UI.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;

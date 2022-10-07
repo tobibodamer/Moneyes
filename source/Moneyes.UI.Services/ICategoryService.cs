@@ -43,5 +43,6 @@ namespace Moneyes.UI
         /// (0 - no sub categories, -1 - all) </param>
         /// <returns></returns>
         IEnumerable<Category> GetSubCategories(Category category, int depth = -1);
+        IEnumerable<CategoryWithChildren> GetCategoriesWithChildren(CategoryTypes includeCategories = CategoryTypes.All);
     }
 }

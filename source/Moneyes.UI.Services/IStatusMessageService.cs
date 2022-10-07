@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Moneyes.UI.Services
+namespace Moneyes.UI
 {
     public interface IStatusMessageService
     {
@@ -15,7 +15,7 @@ namespace Moneyes.UI.Services
 #nullable disable
     }
 
-    class StatusMessageService : IStatusMessageService
+    public class StatusMessageService : IStatusMessageService
     {
         public event Action<string, string, Action> NewMessage;
         public void ShowMessage(string messageText, string actionText = null, Action action = null)

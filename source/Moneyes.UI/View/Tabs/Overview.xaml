@@ -175,8 +175,12 @@
                 <Grid Margin="18">
                     <materialDesign:PackIcon Kind="AccountBalance" Height="20" Width="20" HorizontalAlignment="Right"/>
                     <TextBlock Text="Balance" FontSize="20" FontWeight="SemiBold"/>
+
                     <TextBlock Text="{Binding CurrentBalance.Amount, StringFormat={}{0} €}" Style="{StaticResource BalanceTextBlock}"
-                               VerticalAlignment="Bottom" FontSize="18" Margin="0,7"/>
+                               VerticalAlignment="Bottom" HorizontalAlignment="Left" FontSize="18" Margin="0,7" />
+
+                    <TextBlock Text="{Binding CurrentBalance.Date, StringFormat=dd.MM.yyyy}" Margin="0, -7"
+                               VerticalAlignment="Bottom" HorizontalAlignment="Left" FontSize="10" Foreground="Gray"/>
                 </Grid>
             </materialDesign:Card>
 

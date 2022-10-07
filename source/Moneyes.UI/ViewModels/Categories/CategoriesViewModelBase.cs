@@ -108,8 +108,7 @@ namespace Moneyes.UI.ViewModels
         {
             // Select all categories with a matching parent
             var categoriesWithParent = flatCategories.Where(
-                c => c.Parent is not null &&
-                flatCategories.Select(c => c.Category).Contains(c.Category)).ToList();
+                c => c.Parent is not null).ToList();
 
             // Add categories with parent to sub categories of parent
             foreach (var category in categoriesWithParent)

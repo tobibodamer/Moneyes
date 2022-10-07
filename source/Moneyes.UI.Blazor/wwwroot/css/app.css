@@ -1,0 +1,9 @@
+﻿
+.hover-parent:not(:hover) .parent-hover-show {
+    visibility: hidden;
+    opacity: 0;
+}
+
+.fade-visibility.mud-icon-button {
+    transition: opacity 0.2s ease-in-out, visibility 0.2s, background-color 150ms cubic-bezier(.4,0,.2,1) 0ms;
+}

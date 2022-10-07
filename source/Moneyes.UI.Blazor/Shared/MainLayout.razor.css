@@ -1,0 +1,11 @@
+.mud-main-content {
+    display: flex;
+}
+
+.mud-tabs-toolbar {
+    min-height: 30px;
+}
+
+.mud-tab {
+    min-height: 30px;
+}

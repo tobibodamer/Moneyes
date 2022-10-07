@@ -17,6 +17,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Moneyes.Test", "test\Moneye
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Moneyes.UI.Services", "source\Moneyes.UI.Services\Moneyes.UI.Services.csproj", "{2B879A4B-6C53-4C1B-8E54-4809AB4A3078}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Moneyes.UI.Blazor", "source\Moneyes.UI.Blazor\Moneyes.UI.Blazor.csproj", "{D7EC0F55-F126-4D54-AC7F-476CE0E58966}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Reactives", "..\Reactives\Reactives.csproj", "{91EE9B58-A8FA-49BA-B7FE-C7EFB9AFB501}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

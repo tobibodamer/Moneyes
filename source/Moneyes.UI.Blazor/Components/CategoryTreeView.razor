@@ -1,0 +1,198 @@
+﻿@using Moneyes.Core
+@inject ICategoryService CategoryService
+
+
+<MudTreeView Width="350px" T="CategoryTreeItem" @ref="@_treeView"
+             ActivatedValueChanged="OnSelectionChanged"
+             Hover="true">
+    <ChildContent>
+        @if (Categories == null)
+        {
+            return;
+        }
+        @if (_allCategory != null)
+        {
+            @RenderCategoryTreeItem(_allCategory)
+        }
+
+        @if (_noCategory != null)
+        {
+            @RenderCategoryTreeItem(_noCategory)
+        }
+
+        @if (_allCategory != null || _noCategory != null)
+        {
+            <MudDivider />
+        }
+
+        @foreach (var item in _realCategories)
+        {
+            @RenderCategoryTreeItem(item)
+        }
+    </ChildContent>
+    <ItemTemplate>
+        @RenderCategoryTreeItem(context)
+    </ItemTemplate>
+</MudTreeView>
+
+@code {
+    public record CategoryTreeItem(
+        Category Category,
+        int? NumTransactions,
+        HashSet<CategoryTreeItem>? SubCategories,
+        decimal? Sum,
+        string? Currency
+    );
+
+    private MudTreeView<CategoryTreeItem> _treeView;
+
+    private CategoryTreeItem _allCategory;
+    private CategoryTreeItem _noCategory;
+    private HashSet<CategoryTreeItem> _realCategories;
+    private CategoryTreeItem _previousActiveItem;
+
+    [Parameter]
+    public HashSet<CategoryTreeItem> Categories { get; set; }
+
+    [Parameter]
+    public EventCallback<CategoryTreeItem> SelectedCategoryChanged { get; set; }
+
+
+    [Parameter]
+    public EventCallback<Guid?> SelectedCategoryIdChanged { get; set; }
+
+    private Guid? _selectedCategoryId;
+
+    [Parameter]
+    public Guid? SelectedCategoryId
+    {
+        get => _selectedCategoryId;
+        set
+        {
+            if (_selectedCategoryId == value) {
+                return;
+            }
+
+            _selectedCategoryId = value;
+        }
+    }
+
+    record CategoryWithSubItems(Category Category, HashSet<CategoryWithSubItems> SubCategories, int? NumTransactions);
+    private HashSet<CategoryWithSubItems> _categoriesWithSubItems;
+
+    private async Task OnSelectionChanged(CategoryTreeItem category)
+    {
+        if (SelectedCategoryId == category?.Category.Id)
+        {
+            return;
+        }
+
+        SelectedCategoryId = category?.Category.Id;
+        await Task.Yield();
+        await SelectedCategoryIdChanged.InvokeAsync(category?.Category.Id);
+    }
+    protected override void OnAfterRender(bool firstRender)
+    {
+        base.OnAfterRender(firstRender);
+    }
+    protected virtual RenderFragment RenderCategoryTreeItem(CategoryTreeItem item) => __builder =>
+      {
+          <MudTreeViewItem T="CategoryTreeItem"
+                 Activated="SelectedCategoryId?.Equals(item.Category.Id) ?? false"
+                 Items="@item.SubCategories" Value="@item"
+                 Icon="@Icons.Material.Filled.Folder"
+                 Text="@($"{item.Category.Name} {item.NumTransactions?.ToString("(0)") ?? ""}")"
+                 EndText="@(item.Sum != null ? item.Sum.Value.ToString("0.00") + " " + item.Currency ?? "" : "")"
+                 EndTextTypo="@Typo.caption" />
+      };
+
+    //private CategoryWithSubItems ConvertCategory(Category c)
+    //=> new CategoryWithSubItems(
+    //            Category: c,
+    //            SubCategories: CategoryService.GetSubCategories(c)
+    //                .Select(ConvertCategory).ToHashSet(),
+    //                NumTransactions: GetNumTransactions()
+    //        );
+
+    protected override void OnParametersSet()
+    {
+        if (Categories == null)
+        {
+            return;
+
+        }
+        _noCategory = null;
+        _allCategory = null;
+        _realCategories = new();
+
+        foreach (var category in Categories)
+        {
+            if (category.Category.IsNoCategory())
+            {
+                _noCategory = category;
+            }
+            else if (category.Category.IsAllCategory())
+            {
+                _allCategory = category;
+            }
+            else
+            {
+                _realCategories.Add(category);
+            }
+        }
+
+        //if (SelectedCategoryId == null)
+        //{
+        //    SelectedCategoryId = Category.AllCategoryId;
+        //}
+        //_categoriesWithSubItems = Categories.ToHashSet();
+    }
+
+
+    //    <TreeView Name="treeView" ItemsSource="{Binding Categories}"
+    //                  AllowDrop="True" MinWidth="200">
+    //            <TreeView.Style>
+    //                <Style TargetType="TreeView" BasedOn="{StaticResource MaterialDesignTreeView}">
+    //                    <Setter Property="ContextMenu">
+    //                        <Setter.Value>
+    //                            <ContextMenu>
+    //                                <MenuItem Header="Add category..." Command="{Binding AddCommand}"/>
+    //                            </ContextMenu>
+    //                        </Setter.Value>
+    //                    </Setter>
+    //                </Style>
+    //            </TreeView.Style>
+    //            <TreeView.ItemContainerStyle>
+    //                <Style TargetType="{x:Type TreeViewItem}" BasedOn="{StaticResource NoCategoryStyle}">
+    //                    <Setter Property="FontWeight" Value="Normal" />
+    //                    <!--<Setter Property="IsSelected" Value="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" />-->
+    //                    <!--<Setter Property="IsExpanded" Value="True"/>-->
+    //                    <Setter Property="local:DropBehavior.PreviewDropCommand" Value="{Binding MoveToCategory}"/>
+    //                    <Setter Property="ContextMenu">
+    //                        <Setter.Value>
+    //                            <ContextMenu>
+    //                                <MenuItem Header="Edit..." Command="{Binding EditCommand}"/>
+    //                                <MenuItem Header="Delete" Command="{Binding DeleteCommand}"/>
+    //                                <MenuItem Header="Reevaluate" Command="{Binding ReassignCommand}"/>
+    //                            </ContextMenu>
+    //                        </Setter.Value>
+    //                    </Setter>
+    //                    <Style.Triggers>
+    //                        <Trigger Property="local:TreeViewDropHighlighter.IsPossibleDropTarget" Value="True">
+    //                            <Setter Property="Background" Value="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}" />
+    //                        </Trigger>
+    //                    </Style.Triggers>
+    //                </Style>
+    //            </TreeView.ItemContainerStyle>
+    //            <i:Interaction.Behaviors>
+
+    //                <local:TreeViewSelectionBehavior SelectedItem="{Binding SelectedCategory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+    //                                                 HierarchyPredicate="GetHierarchyPredicate"/>
+    //            </i:Interaction.Behaviors>
+    //            <TreeView.ItemTemplate>
+    //                <HierarchicalDataTemplate ItemsSource="{Binding SubCatgeories}" DataType="{x:Type vm:CategoryExpenseViewModel}">
+    //                    <TextBlock Text="{Binding DisplayName}"/>
+    //                </HierarchicalDataTemplate>
+    //            </TreeView.ItemTemplate>
+    //        </TreeView>
+}

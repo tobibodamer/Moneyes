@@ -1,0 +1,37 @@
+﻿@using Moneyes.Core
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Outlined.Info" Class="mr-3 mb-n1" />
+            Transaction Details
+            <MudIconButton Edge="Edge.End" Class="mr-1" Icon="@Icons.Material.Filled.Close" OnClick="Cancel" />
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudTextField Value="@Transaction.Id.ToString()" Label="ID" ReadOnly="true"/>
+        <MudTextField Value="@Transaction.Name" Label="Name" ReadOnly="true"/>
+        <MudTextField Value="@Transaction.AltName" Label="Alt. Name" ReadOnly="true"/>
+        <MudTextField Value="@Transaction.Purpose" Label="Purpose" ReadOnly="true"/>
+        <MudTextField Value="@Transaction.PartnerIBAN" Label="IBAN" ReadOnly="true"/>
+        <MudStack Row="true">
+        <MudTextField Value="@Transaction.Amount.ToString("0.00")" Label="Amount" ReadOnly="true"/>
+        <MudTextField Value="@Transaction.Currency" Label="Currency" ReadOnly="true"/>
+        <MudTextField Value="@Transaction.CountryCode" Label="Country" ReadOnly="true" />
+        </MudStack>
+        <MudTextField Value="@Transaction.BookingType" Label="Type" ReadOnly="true"/>
+        <MudTextField Value="@Transaction.BookingDate" Label="Booking Date" ReadOnly="true" />
+        <MudTextField Value="@Transaction.ValueDate" Label="Value Date" ReadOnly="true" />        
+    </DialogContent>
+    @*<DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Error" OnClick="DeleteServer">Delete Server</MudButton>
+    </DialogActions>*@
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    [Parameter] public Transaction Transaction { get; set; }
+
+    void Submit() => MudDialog.Close(DialogResult.Ok(true));
+    void Cancel() => MudDialog.Cancel();
+}

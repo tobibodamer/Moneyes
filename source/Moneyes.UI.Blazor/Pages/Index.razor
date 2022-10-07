@@ -1,0 +1,124 @@
+﻿@page "/"
+@using Moneyes.Core
+@using Moneyes.LiveData
+@using Moneyes.UI.Blazor.Stores
+@using System.Reactive.Linq
+@using System.ComponentModel
+@using Reactives
+@using static Reactives.Reactive;
+@implements IDisposable
+
+@inject Moneyes.UI.ITransactionService TransactionService
+@inject Moneyes.UI.ICategoryService CategoryService
+@inject Moneyes.UI.IExpenseIncomeService ExpenseIncomeService
+@inject Moneyes.UI.Blazor.Stores.TransactionStore TransactionStore
+
+<div class="d-flex flex-row" style="height: 100%;">
+    <CategoryTreeView Categories="@_categories.Value" @bind-SelectedCategoryId="@_selectedCategory.Value"></CategoryTreeView>
+    <MudDivider Vertical="true" FlexItem="true" />
+    <div style="height: 100%; overflow-y: scroll; flex: 1;">
+        @if (@_isLoading || @_transactions.Value == null)
+        {
+            <MudContainer Class="d-flex justify-center flex-column align-center mud-height-full">
+                <MudText Class="pb-2">
+                    Loading ...
+                </MudText>
+                <MudProgressCircular Indeterminate="true" Color="Color.Primary"></MudProgressCircular>
+            </MudContainer>
+        }
+        else
+        {
+            <TransactionList Transactions="@_transactions.Value"></TransactionList>
+        }
+    </div>
+</div>
+
+@code {
+    private bool _isLoading = true;
+    private IReadOnlyRef<List<Transaction>> _transactions;
+    private IRef<Guid?> _selectedCategory;
+    private IReadOnlyRef<HashSet<CategoryTreeView.CategoryTreeItem>> _categories;
+    
+    protected override void OnInitialized()
+    {
+        _selectedCategory = TransactionStore.SelectedCategoryIdO
+            .ToRef(initialValue: TransactionStore.GetSelectedCategory(),
+                   setter: TransactionStore.SetSelectedCategory);
+
+        _transactions = TransactionStore.TransactionsO.Select(x => x.ToList())
+                            .ToRef(initialValue: TransactionStore.GetTransactions().ToList());
+
+        //_categories = TransactionStore.ExpensesPerCategoryO
+        //    .Select(ToTreeItems)
+        //    .ToRef(ToTreeItems(TransactionStore.GetExpensesPerCategory()));
+
+        _categories = TransactionStore.CategoryTreeItemsO
+            .ToRef(TransactionStore.GetCategories());
+
+        //var categoriesRefProperty = TransactionStore.CategoryTreeItemsO.Subscribe();
+    }
+
+
+
+    public static void SetSubCategories(HashSet<CategoryTreeView.CategoryTreeItem> categories)
+    {
+        // Select all categories with a matching parent
+        var categoriesWithParent = categories.Where(
+            c => c.Category.Parent is not null).ToList();
+
+        // Add categories with parent to sub categories of parent
+        foreach (var category in categoriesWithParent)
+        {
+            var parent = category.Category.Parent;
+            var parentCategoryViewModel = categories.FirstOrDefault(c => c.Category.Id == parent!.Id);
+
+            parentCategoryViewModel?.SubCategories.Add(category);
+        }
+
+        // Remove all categories with a parent (from top level)
+        categories.RemoveWhere(c => categoriesWithParent.Contains(c));
+    }
+    private static HashSet<CategoryTreeView.CategoryTreeItem> ToTreeItems(IEnumerable<(Category Category, Expenses Expenses)> expPerCategory)
+    {
+        var treeItems = expPerCategory.Select(x =>
+                     new CategoryTreeView.CategoryTreeItem(
+                        x.Category,
+                        x.Expenses.Transactions.Count,
+                        new(),
+                        x.Expenses.TotalAmount, "EUR"
+                     )).ToHashSet();
+
+        SetSubCategories(treeItems);
+
+        return treeItems;
+    }
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        if (!TransactionStore.HasExpenses())
+        {
+            ExpenseIncomeService.GetAllExpenses(new(), UI.CategoryTypes.All, true)
+            //.OnSuccess(TransactionStore.SetExpenses);
+            .OnSuccess(e =>
+            {
+                TransactionStore.SetExpenses(e);
+                TransactionStore.SetCategories(ToTreeItems(e));
+            });
+        }
+
+        _isLoading = false;
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        // Dispose refs
+        _categories.Dispose();
+        _selectedCategory.Dispose();
+        _transactions.Dispose();
+    }
+}

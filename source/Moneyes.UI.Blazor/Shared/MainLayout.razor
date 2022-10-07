@@ -1,0 +1,60 @@
+﻿@inherits LayoutComponentBase
+
+@inject NavigationManager NavigationManager
+
+<MudThemeProvider @ref="@_mudThemeProvider" @bind-IsDarkMode="@_isDarkMode" />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <!-- Tabs for big devices -->
+    <MudHidden Invert="true" Breakpoint="Breakpoint.SmAndUp">
+        <MudNavTabs Color="Color.Primary">
+            <MudNavTab Text="Overview" href="" Match="NavLinkMatch.All" />
+            <MudNavTab Text="Counter" href="counter" />
+        </MudNavTabs>
+    </MudHidden>
+
+    <MudAppBar Elevation="3" Fixed="false" Style="background-color: #eee;">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@ToggleDrawer" Class="d-flex d-sm-none" />
+        <MudSpacer />
+        <MudIconButton Icon="@Icons.Material.Filled.Download" Color="Color.Inherit" />
+    </MudAppBar>
+
+    <!-- Drawer for small devices -->
+    <MudDrawer @bind-Open="@_drawerOpen" Elevation="1" ClipMode="DrawerClipMode.Never" Variant="@DrawerVariant.Responsive" Class="d-sm-none">
+        <MudDrawerHeader>
+            <MudText Typo="Typo.h6">Moneyes</MudText>
+        </MudDrawerHeader>
+        <MudNavMenu>
+            <MudNavLink Href="" Match="NavLinkMatch.All">Overview</MudNavLink>
+            <MudNavLink Href="/counter">Counter</MudNavLink>
+        </MudNavMenu>
+    </MudDrawer>
+
+    <MudMainContent Class="pt-2" Style="height: calc(100vh - var(--mud-appbar-height) - 50px)">
+        @Body
+    </MudMainContent>
+</MudLayout>
+
+
+@code {
+    private bool _isDarkMode;
+    private MudThemeProvider _mudThemeProvider;
+
+    bool _drawerOpen = false;
+
+    void ToggleDrawer()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _isDarkMode = await _mudThemeProvider.GetSystemPreference();
+            StateHasChanged();
+        }
+    }
+}

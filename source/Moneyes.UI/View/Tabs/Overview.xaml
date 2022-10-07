@@ -31,7 +31,7 @@
                 <Setter Property="Height" Value="5"/>
                 <Setter Property="Foreground" Value="{DynamicResource PrimaryHueMidBrush}"/>
                 <Style.Triggers>
-                    <DataTrigger Binding="{Binding IsOver}" Value="True">
+                    <DataTrigger Binding="{Binding IsOverExtrapolated}" Value="True">
                         <Setter Property="Foreground" Value="#d41204"/>
                     </DataTrigger>
                     <DataTrigger Binding="{Binding Target}" Value="0">
@@ -56,7 +56,7 @@
                 <Setter Property="TextWrapping" Value="WrapWithOverflow"/>
                 <Setter Property="Foreground" Value="{DynamicResource PrimaryHueMidBrush}"/>
                 <Style.Triggers>
-                    <DataTrigger Binding="{Binding IsOver}" Value="True">
+                    <DataTrigger Binding="{Binding IsOverExtrapolated}" Value="True">
                         <Setter Property="Foreground" Value="#d41204"/>
                     </DataTrigger>
                 </Style.Triggers>
@@ -273,12 +273,17 @@
                                         </TextBlock.Style>
                                     </TextBlock>
 
-                                    <TextBlock Text="{Binding Target, StringFormat={} / {0:N0} €}">
+                                    <TextBlock>
                                         <TextBlock.Style>
                                             <Style TargetType="TextBlock" BasedOn="{StaticResource ExpenseTextBlock}">
+                                                <Setter Property="Text" Value="{Binding TargetExtrapolated, StringFormat={} / {0:N0} €}"/>
                                                 <Style.Triggers>
                                                     <DataTrigger Binding="{Binding Target}" Value="0">
                                                         <Setter Property="Visibility" Value="Collapsed"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding DataContext.ShowAverage, 
+                                                        RelativeSource={RelativeSource FindAncestor, AncestorType=ItemsControl}}" Value="True">
+                                                        <Setter Property="Text" Value="{Binding Target, StringFormat={} / {0:N0} €}"/>
                                                     </DataTrigger>
                                                 </Style.Triggers>
                                             </Style>
@@ -286,14 +291,16 @@
                                     </TextBlock>
                                 </StackPanel>
 
-                                <ProgressBar Grid.Row="1" Maximum="{Binding Target}">
+                                <ProgressBar Grid.Row="1">
                                     <ProgressBar.Style>
                                         <Style TargetType="ProgressBar" BasedOn="{StaticResource ExpenseProgressBar}">
                                             <Setter Property="Value" Value="{Binding TotalExpense, Mode=OneWay}"/>
+                                            <Setter Property="Maximum" Value="{Binding TargetExtrapolated, Mode=OneWay}"/>
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding DataContext.ShowAverage, 
                                                     RelativeSource={RelativeSource FindAncestor, AncestorType=ItemsControl}}" Value="True">
                                                     <Setter Property="Value" Value="{Binding AverageExpense, Mode=OneWay}"/>
+                                                    <Setter Property="Maximum" Value="{Binding Target, Mode=OneWay}"/>
                                                 </DataTrigger>
                                             </Style.Triggers>
                                         </Style>

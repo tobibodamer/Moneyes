@@ -37,7 +37,7 @@ namespace Moneyes.UI
             _transactionRepo = transactionRepo;
         }
 
-        public Category GetCategoryByName(string name)
+        public Category? GetCategoryByName(string name)
         {
             var dbo = _categoryRepo.FirstOrDefault(c => c.Name.Equals(name));
 
@@ -156,7 +156,7 @@ namespace Moneyes.UI
             bool updateDatabase = false)
         {
             // Get old transaction
-            Transaction oldTransaction = null;
+            Transaction? oldTransaction = null;
 
             if (assignMethod is not AssignMethod.Simple or AssignMethod.Reset)
             {
@@ -217,7 +217,7 @@ namespace Moneyes.UI
             bool updateDatabase = false)
         {
             // Get old transactions
-            Dictionary<string, Transaction> oldTransactions = null;
+            Dictionary<string, Transaction> oldTransactions = new();
 
             if (assignMethod is not AssignMethod.Simple or AssignMethod.Reset)
             {
@@ -241,7 +241,7 @@ namespace Moneyes.UI
                 }
 
                 if (assignMethod is not AssignMethod.Simple or AssignMethod.Reset &&
-                    oldTransactions.TryGetValue(transaction.UID, out Transaction oldTransaction))
+                    oldTransactions!.TryGetValue(transaction.UID, out Transaction? oldTransaction))
                 {
                     // Transaction already imported -> keep old categories
                     transaction.Category = oldTransaction.Category;

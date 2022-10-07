@@ -8,7 +8,7 @@ namespace Moneyes.UI
 {
     public interface IStatusMessageService
     {
-        void ShowMessage(string messageText, string actionText = null, Action action = null);
+        void ShowMessage(string messageText, string? actionText = null, Action? action = null);
 
 #nullable enable
         event Action<string, string?, Action?> NewMessage;

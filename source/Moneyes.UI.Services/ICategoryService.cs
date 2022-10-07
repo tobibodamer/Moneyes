@@ -26,7 +26,7 @@ namespace Moneyes.UI
 
         bool RemoveFromCategory(Transaction transaction);
 
-        Category GetCategoryByName(string name);
+        Category? GetCategoryByName(string name);
 
         IEnumerable<Category> GetCategories(
             CategoryTypes includeCategories = CategoryTypes.All);

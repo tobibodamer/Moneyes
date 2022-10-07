@@ -724,7 +724,7 @@ namespace Moneyes.UI
         //    return done.Values;
         //}
 
-        private void RestoreFromDatabase(string userHome)
+        private async Task RestoreFromDatabase(string userHome)
         {
             var restorePath = Path.Combine(userHome, @".moneyes_kaputt\database.db");
 
@@ -736,7 +736,7 @@ namespace Moneyes.UI
 
             });
 
-            oldDbProvider.TryOpenDatabase();
+            await oldDbProvider.TryOpenDatabase();
 
             //var oldCategoryRepo = new CategoryRepository(oldDbProvider);
             //var oldTransactionRepo = new TransactionRepository(oldDbProvider);

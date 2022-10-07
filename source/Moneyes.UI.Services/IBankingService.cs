@@ -43,7 +43,7 @@ namespace Moneyes.UI
         /// <param name="date"></param>
         /// <param name="account"></param>
         /// <returns></returns>
-        Balance GetBalance(DateTime date, AccountDetails account);
+        Balance? GetBalance(DateTime date, AccountDetails account);
 
         /// <summary>
         /// Imports the given accounts.

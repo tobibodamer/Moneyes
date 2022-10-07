@@ -63,7 +63,7 @@ namespace Moneyes.UI
                 .CreateLogger();
         }
 
-        protected override void OnStartup(StartupEventArgs e)
+        protected override async void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
 
@@ -122,7 +122,7 @@ namespace Moneyes.UI
             services.AddSingleton<IOnlineBankingServiceFactory, OnlineBankingServiceFactory>();
 
             services.AddScoped<LiveDataService>();
-            services.AddScoped<IExpenseIncomeService, ExpenseIncomServieUsingDb>();
+            services.AddScoped<IExpenseIncomeService, ExpenseIncomServiceUsingDb>();
             services.AddScoped<IBankingService, BankingService>();
             services.AddScoped<ITransactionService, TransactionService>();
             services.AddScoped<ICategoryService, CategoryService>();
@@ -173,14 +173,14 @@ namespace Moneyes.UI
 
             if (!_dbProvider.IsDatabaseCreated)
             {
-                if (!_dbProvider.TryCreateDatabase())
+                if (!await _dbProvider.TryCreateDatabase())
                 {
                     Environment.Exit(-1);
                 }
             }
             else
             {
-                if (!_dbProvider.TryOpenDatabase())
+                if (!await _dbProvider.TryOpenDatabase())
                 {
                     Environment.Exit(-1);
                 }

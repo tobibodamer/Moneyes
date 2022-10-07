@@ -1,4 +1,5 @@
 ﻿using LiteDB;
+using System.Threading.Tasks;
 
 namespace Moneyes.Data
 {
@@ -12,8 +13,8 @@ namespace Moneyes.Data
         bool IsDatabaseCreated { get; }
         bool IsOpen { get; }
 
-        bool TryCreateDatabase();
+        Task<bool> TryCreateDatabase();
 
-        bool TryOpenDatabase();
+        Task<bool> TryOpenDatabase();
     }
 }

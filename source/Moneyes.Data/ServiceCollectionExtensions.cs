@@ -39,7 +39,7 @@ namespace Moneyes.Data
             where TProvider : LiteDatabaseProvider
         {
             // Add database provider
-            services.AddScoped<IDatabaseProvider<ILiteDatabase>, TProvider>();
+            services.AddSingleton<IDatabaseProvider<ILiteDatabase>, TProvider>();
 
             LiteDbBuilder builder = new(services);
 

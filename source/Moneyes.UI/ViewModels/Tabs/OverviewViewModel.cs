@@ -95,6 +95,11 @@ namespace Moneyes.UI.ViewModels
                 _showAverage = value;
                 OnPropertyChanged();
 
+                if (Selector.DateSelection is not View.DateSelectionMode.Month)
+                {
+                    return;
+                }
+
                 UpdateCategories().FireAndForgetSafeAsync();
             }
         }
@@ -140,7 +145,7 @@ namespace Moneyes.UI.ViewModels
 
         private TransactionFilter GetFilter()
         {
-            if (ShowAverage)
+            if (ShowAverage && Selector.DateSelection is View.DateSelectionMode.Month)
             {
                 return new TransactionFilter()
                 {

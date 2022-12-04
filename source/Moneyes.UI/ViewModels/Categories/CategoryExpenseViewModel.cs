@@ -35,16 +35,24 @@ namespace Moneyes.UI.ViewModels
 
         public bool IsOver => Target > 0 && TotalExpense > Target;
 
+        public bool IsOverExtrapolated => TargetExtrapolated > 0 && TotalExpense > TargetExtrapolated;
+
         public decimal? Difference => Target == null ? null : Math.Abs(Target.Value - TotalExpense);
 
-        public CategoryExpenseViewModel(Category category, Expenses expenses, 
-            ICategoryService categoryService, IStatusMessageService statusMessageService) 
+        public decimal? TargetExtrapolated { get; }
+
+        public CategoryExpenseViewModel(Category category, Expenses expenses,
+            ICategoryService categoryService, IStatusMessageService statusMessageService)
             : base(categoryService, statusMessageService)
         {
             Category = category;
             TotalExpense = expenses.TotalAmount;
             AverageExpense = expenses.GetMonthlyAverage();
-            
+
+            TargetExtrapolated = Target.HasValue
+                ? Target.Value * (Expenses.MonthDifference(expenses.StartDate, expenses.EndDate, limitToCurrentMonth: true) + 1)
+                : null;
+
             if (IsNoCategory)
             {
                 DisplayName = $"-- No category -- ({TotalExpense} €)";

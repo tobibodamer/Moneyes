@@ -40,7 +40,7 @@ namespace Moneyes.UI
                     Transactions = g.ToList(),
                     TotalAmount = Math.Abs(g.Sum(t => t.Amount)),
                     StartDate = g.Key,
-                    EndDate = g.Key.AddDays(1).AddTicks(-1)
+                    EndDate = g.Key.AddDays(1)
                 } as IExpenditure);
 
             var groupedByMonth = transactions.GroupBy(t => new DateTime
@@ -55,7 +55,7 @@ namespace Moneyes.UI
                     Transactions = g.ToList(),
                     TotalAmount = Math.Abs(g.Sum(t => t.Amount)),
                     StartDate = g.Key,
-                    EndDate = g.Key.AddMonths(1).AddTicks(-1)
+                    EndDate = g.Key.AddMonths(1)
                 } as IExpenditure);
 
             //StartDate = groupedByDay.Min(g => g.Key);
@@ -68,8 +68,9 @@ namespace Moneyes.UI
         /// Gets the monthly average expenditure.
         /// </summary>
         /// <param name="includeEmptyMonths">Include months without expenses</param>
+        /// <param name="limitToCurrentMonth">Limit the end of the period to the current month, to leave out future months.</param>
         /// <returns>The monthly average.</returns>
-        public decimal GetMonthlyAverage(bool includeEmptyMonths = true)
+        public decimal GetMonthlyAverage(bool includeEmptyMonths = true, bool limitToCurrentMonth = true)
         {
             if (Transactions.Count == 0)
             {
@@ -80,7 +81,7 @@ namespace Moneyes.UI
 
             if (includeEmptyMonths)
             {
-                totalMonths = MonthDifference(EndDate, StartDate) + 1;                
+                totalMonths = MonthDifference(EndDate, StartDate, limitToCurrentMonth) + 1;
             }
 
             return TotalAmount / totalMonths;
@@ -104,8 +105,14 @@ namespace Moneyes.UI
             return perDayAmt * (decimal)timePeriod.TotalDays;
         }
 
-        private static int MonthDifference(DateTime lValue, DateTime rValue)
+        public static int MonthDifference(DateTime lValue, DateTime rValue, bool limitToCurrentMonth = false)
         {
+            if (limitToCurrentMonth)
+            {
+                lValue = new(Math.Min(DateTime.Now.Ticks, lValue.Ticks));
+                rValue = new(Math.Min(DateTime.Now.Ticks, rValue.Ticks));
+            }
+
             return Math.Abs((lValue.Month - rValue.Month) + 12 * (lValue.Year - rValue.Year));
         }
     }

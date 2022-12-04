@@ -407,20 +407,16 @@ public class UniqueCachedRepository<T> : CachedRepository<T, Guid>, IUniqueCache
         IEnumerable<IUniqueConstraint<T>> uniqueConstraints,
         Func<ConstraintViolation<T>, (bool continueValidation, bool ignoreViolation)> onViolation)
     {
-        var existingEntitiesCopy = existingEntities.ToList();
-
-        var validateAgainstSoftDeleted = base.CreateUniqueConstraintValidator(
-            existingEntitiesCopy.Where(e => e.IsDeleted), uniqueConstraints, onViolation);
-
         var validateAgainstNotDeleted = base.CreateUniqueConstraintValidator(
-            existingEntitiesCopy.Where(e => !e.IsDeleted), uniqueConstraints, onViolation);
+            existingEntities.Where(e => !e.IsDeleted), uniqueConstraints, onViolation);
 
         return (entity) =>
         {
             // return the specific validation function, based on if the entity is deleted
             if (entity.IsDeleted)
             {
-                return validateAgainstSoftDeleted(entity);
+                // Deleted entities are always valid
+                return true;
             }
 
             return validateAgainstNotDeleted(entity);

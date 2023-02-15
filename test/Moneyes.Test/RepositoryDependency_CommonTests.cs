@@ -71,9 +71,8 @@ namespace Moneyes.Test
                     () => Enumerable.Empty<IRepositoryDependency<TOtherEntity>>());
             }
         }
-
-        [Fact]
-        public void Test_Types_and_Names_General()
+                
+        protected void Test_Types_and_Names_General()
         {
             var dependency = CreateDependency();
 

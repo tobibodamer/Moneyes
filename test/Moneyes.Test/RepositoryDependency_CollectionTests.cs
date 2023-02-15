@@ -39,7 +39,10 @@ namespace Moneyes.Test
             {
                 Id = Guid.NewGuid()
             };
-        }        
+        }
+
+        [Fact]
+        public void Test_Types_and_Names() => base.Test_Types_and_Names_General();
 
         [Fact]
         public void GetDependents_Should_Return_All_Dependents()

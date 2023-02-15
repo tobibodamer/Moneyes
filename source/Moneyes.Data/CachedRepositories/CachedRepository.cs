@@ -118,10 +118,10 @@ namespace Moneyes.Data
                    .Where(x => dependency.NeedsRefresh(e.ChangedKey, x))
                    .ToList();
 
-            Logger.LogInformation("OnDependencyChanged() called with {@dependency} and {@args}",
+            Logger?.LogInformation("OnDependencyChanged() called with {@dependency} and {@args}",
                 new { Source = dependency.SourceCollectionName, Target = dependency.TargetCollectionName },
                 new { Key = e.ChangedKey, e.Action });
-            Logger.LogInformation("Affected entities: {@entities}", affectedEntities.Count);
+            Logger?.LogInformation("Affected entities: {@entities}", affectedEntities.Count);
 
             if (!affectedEntities.Any())
             {
@@ -212,11 +212,11 @@ namespace Moneyes.Data
             {
                 var keys = entities.Select(GetKey).Select(x => new BsonValue(x));
 
-                Logger.LogInformation("Reloading {count} entities...", keys.Count());
+                Logger?.LogInformation("Reloading {count} entities...", keys.Count());
 
                 entitiesToUpdate = Collection.Find(Query.In("_id", keys)).Select(PostQueryTransform).ToList();
 
-                Logger.LogInformation("{count} entities loaded", entitiesToUpdate.Count);
+                Logger?.LogInformation("{count} entities loaded", entitiesToUpdate.Count);
             }
             catch
             {
@@ -233,7 +233,7 @@ namespace Moneyes.Data
             {
                 List<T> entitiesToUpdate = entities.ToList();
 
-                Logger.LogInformation("Updating cache for {count} entities", entitiesToUpdate.Count);
+                Logger?.LogInformation("Updating cache for {count} entities", entitiesToUpdate.Count);
 
                 if (!isWriteLockHeld)
                 {
@@ -245,7 +245,7 @@ namespace Moneyes.Data
                     AddOrUpdateCache(entity);
                 }
 
-                Logger.LogInformation("Cache updated.");
+                Logger?.LogInformation("Cache updated.");
             }
             finally
             {
@@ -453,7 +453,7 @@ namespace Moneyes.Data
                     // Check if unique value is already existing
                     if (values.TryGetValue(uniquePropertyValue, out var existingEntity))
                     {
-                        Logger.LogWarning("Unique constraint violation of '{Property}' (Entity ID: {id})",
+                        Logger?.LogWarning("Unique constraint violation of '{Property}' (Entity ID: {id})",
                                                 constraint.PropertyName, GetKey(entity));
 
                         ConstraintViolation<T> violation = new
@@ -490,7 +490,7 @@ namespace Moneyes.Data
             {
                 if (GetKey(existingEntity).Equals(key))
                 {
-                    Logger.LogWarning("Primary key violation: {key} already exists", key);
+                    Logger?.LogWarning("Primary key violation: {key} already exists", key);
 
                     throw new DuplicateKeyException("Primary key already exists", key);
                 }
@@ -501,7 +501,7 @@ namespace Moneyes.Data
         {
             if (!IsUnique(keys))
             {
-                Logger.LogWarning("Duplicate primary key in given collection.");
+                Logger?.LogWarning("Duplicate primary key in given collection.");
 
                 // Duplicate PK in collection itself
                 throw new DuplicateKeyException("Duplicate primary key in given collection.");
@@ -515,7 +515,7 @@ namespace Moneyes.Data
 
                 if (keys.Contains(key))
                 {
-                    Logger.LogWarning("Primary key violation: {key} already exists", key);
+                    Logger?.LogWarning("Primary key violation: {key} already exists", key);
 
                     throw new DuplicateKeyException("Primary key already exists", key);
                 }
@@ -1521,7 +1521,7 @@ namespace Moneyes.Data
                 {
                     removedEntities.Add(entity);
 
-                    Logger.LogInformation("Deleted entity with id '{key}'.", id);
+                    Logger?.LogInformation("Deleted entity with id '{key}'.", id);
 
                     OnEntityDeleted(entity);
                 }

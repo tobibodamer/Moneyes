@@ -23,6 +23,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\source\Moneyes.Core\Moneyes.Core.csproj" />
     <ProjectReference Include="..\..\source\Moneyes.Data\Moneyes.Data.csproj" />
+    <ProjectReference Include="..\..\source\Moneyes.UI.Services\Moneyes.UI.Services.csproj" />
   </ItemGroup>
 
 </Project>

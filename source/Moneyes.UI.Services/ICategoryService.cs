@@ -7,29 +7,9 @@ namespace Moneyes.UI
 {
     public interface ICategoryService
     {
-        //TODO: Move to transaction service??
-        void AssignCategories(
-            IEnumerable<Transaction> transactions,
-            AssignMethod assignMethod = AssignMethod.KeepPrevious,
-            bool updateDatabase = false);
-
-        void ReassignCategories(AssignMethod assignMethod = AssignMethod.Simple);
-
-        /// <summary>
-        /// Assigns a given category to all transactions matching, and updates the database.
-        /// </summary>
-        /// <param name="category"></param>
-        int AssignCategory(Category category, AssignMethod assignMethod = AssignMethod.KeepPrevious);
-
-
-        bool MoveToCategory(Transaction transaction, Category category);
-
-        bool RemoveFromCategory(Transaction transaction);
-
         Category? GetCategoryByName(string name);
 
-        IEnumerable<Category> GetCategories(
-            CategoryTypes includeCategories = CategoryTypes.All);
+        IEnumerable<Category> GetCategories(CategoryTypes includeCategories = CategoryTypes.All);
 
         bool AddCategory(Category category);
         bool UpdateCategory(Category category);

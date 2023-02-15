@@ -18,6 +18,7 @@ namespace Moneyes.UI.ViewModels
     internal class CategoryViewModel : ViewModelBase, INotifyDataErrorInfo
     {
         protected readonly ICategoryService _categoryService;
+        protected readonly ITransactionService _transactionService;
 
         private string _name;
         public string Name
@@ -206,15 +207,17 @@ namespace Moneyes.UI.ViewModels
 
         public event Action<Category> Saved;
 
-        public CategoryViewModel(ICategoryService categoryService, IStatusMessageService statusMessageService)
+        public CategoryViewModel(ICategoryService categoryService, ITransactionService transactionService, 
+            IStatusMessageService statusMessageService)
         {
             _categoryService = categoryService;
+            _transactionService = transactionService;
 
             ReassignCommand = new RelayCommand(() =>
             {
                 Category category = Category;
 
-                int reassignedCount = _categoryService.AssignCategory(category);
+                int reassignedCount = _transactionService.ReassignCategory(category);
 
                 if (reassignedCount > 0)
                 {

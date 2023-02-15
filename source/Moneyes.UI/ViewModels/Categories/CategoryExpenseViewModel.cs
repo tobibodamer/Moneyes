@@ -42,8 +42,9 @@ namespace Moneyes.UI.ViewModels
         public decimal? TargetExtrapolated { get; }
 
         public CategoryExpenseViewModel(Category category, Expenses expenses,
-            ICategoryService categoryService, IStatusMessageService statusMessageService)
-            : base(categoryService, statusMessageService)
+            ICategoryService categoryService, ITransactionService transactionService,
+            IStatusMessageService statusMessageService)
+            : base(categoryService, transactionService, statusMessageService)
         {
             Category = category;
             TotalExpense = expenses.TotalAmount;

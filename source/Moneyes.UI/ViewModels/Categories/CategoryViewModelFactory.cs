@@ -11,16 +11,19 @@ namespace Moneyes.UI.ViewModels
     internal class CategoryViewModelFactory
     {
         private readonly ICategoryService _categoryService;
+        private readonly ITransactionService _transactionService;
         private readonly IStatusMessageService _statusMessageService;
-        public CategoryViewModelFactory(ICategoryService categoryService, IStatusMessageService statusMessageService)
+        public CategoryViewModelFactory(ICategoryService categoryService, ITransactionService transactionService,
+            IStatusMessageService statusMessageService)
         {
             _categoryService = categoryService;
+            _transactionService = transactionService;
             _statusMessageService = statusMessageService;
         }
         public CategoryViewModel CreateCategoryViewModel(Category category,
             Action<EditCategoryViewModel> editCallback)
         {
-            CategoryViewModel categoryViewModel = new(_categoryService, _statusMessageService);
+            CategoryViewModel categoryViewModel = new(_categoryService, _transactionService, _statusMessageService);
 
             InitViewModel(category, categoryViewModel, editCallback);
 
@@ -67,7 +70,7 @@ namespace Moneyes.UI.ViewModels
             {
                 Category category = categoryViewModel.Category;
 
-                int reassignedCount = _categoryService.AssignCategory(category);
+                int reassignedCount = _transactionService.ReassignCategory(category);
 
                 if (reassignedCount > 0)
                 {
@@ -113,7 +116,7 @@ namespace Moneyes.UI.ViewModels
             {
                 Category targetCategory = categoryViewModel.Category;
 
-                if (_categoryService.MoveToCategory(transaction.Transaction, targetCategory))
+                if (_transactionService.MoveToCategory(transaction.Transaction, targetCategory))
                 {
                     _statusMessageService.ShowMessage($"Moved to '{targetCategory.Name}'");
                 }
@@ -136,7 +139,7 @@ namespace Moneyes.UI.ViewModels
             List<Category> possibleParents = _categoryService.GetCategories(CategoryTypes.Real)
                 .Where(c => !c.Id.Equals(category.Id)).ToList();
 
-            EditCategoryViewModel editCategoryViewModel = new(_categoryService, _statusMessageService)
+            EditCategoryViewModel editCategoryViewModel = new(_categoryService, _transactionService, _statusMessageService)
             {
                 PossibleParents = possibleParents,
                 Category = category,
@@ -153,7 +156,8 @@ namespace Moneyes.UI.ViewModels
             Expenses expenses,
             Action<EditCategoryViewModel> editCallback)
         {
-            CategoryExpenseViewModel categoryViewModel = new(category, expenses, _categoryService, _statusMessageService);
+            CategoryExpenseViewModel categoryViewModel = new(category, expenses, _categoryService, 
+                _transactionService, _statusMessageService);
 
             InitViewModel(category, categoryViewModel, editCallback);
 

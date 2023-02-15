@@ -21,8 +21,9 @@ namespace Moneyes.UI.ViewModels
 
         public event EventHandler<RequestCloseDialogEventArgs> RequestClose;
 
-        public EditCategoryViewModel(ICategoryService categoryService, IStatusMessageService statusMessageService) 
-            : base(categoryService, statusMessageService)
+        public EditCategoryViewModel(ICategoryService categoryService, ITransactionService transactionService,
+            IStatusMessageService statusMessageService) 
+            : base(categoryService, transactionService, statusMessageService)
         {
             ApplyCommand = SaveCommand;
 

@@ -13,11 +13,14 @@ namespace Moneyes.UI
     {
         private readonly IUniqueCachedRepository<TransactionDbo> _transactionRepository;
         private readonly ITransactionFactory _transactionFactory;
+        private readonly ICategoryService _categoryService;
         public TransactionService(IUniqueCachedRepository<TransactionDbo> transactionRepository,
-            ITransactionFactory transactionFactory)
+            ITransactionFactory transactionFactory,
+            ICategoryService categoryService)
         {
             _transactionRepository = transactionRepository;
             _transactionFactory = transactionFactory;
+            _categoryService = categoryService;
         }
 
         public IEnumerable<Transaction> GetByCategory(Category category)
@@ -243,6 +246,288 @@ namespace Moneyes.UI
 
             return _transactionRepository.SetMany(transactions.Select(x => x.ToDbo()),
                 onConflict: UniqueConflictResolutionAction.UpdateContentOrIgnore);
+        }
+
+
+        public void AssignCategory(Transaction transaction, AssignMethod assignMethod = AssignMethod.KeepPreviousAlways)
+        {
+            // Get old transaction
+            Transaction? importedTransaction = null;
+
+            if (assignMethod is AssignMethod.KeepPreviousAlways or AssignMethod.KeepPrevious)
+            {
+                importedTransaction = GetByUID(transaction.UID);
+            }
+
+            // Assign categories
+
+            List<Category> categories = _categoryService.GetCategories(CategoryTypes.Real)
+                .Where(c => c.Filter is not null)
+                .OrderBy(c => c.IsExlusive)
+                .ToList();
+
+            if (assignMethod is AssignMethod.Reset)
+            {
+                /** Reset means resetting the category before the assignment process. **/
+                transaction.Category = null;
+            }
+            else if (importedTransaction != null)
+            {
+                // Transaction already imported -> keep old categories
+
+                if (assignMethod is AssignMethod.KeepPreviousAlways)
+                {
+                    /** KeepPreviousAlways means keeping the existing category 
+                      * if the transaction is already imported, even if no category is assigned.
+                      * 
+                      * This means we can skip the assignment process and return the transaction 
+                      * with the previous category assigned or null. **/
+
+                    transaction.Category = importedTransaction.Category;
+
+                    // Skip assignment
+                    return;
+                }
+                else if (importedTransaction.Category != null)
+                {
+                    /** KeepPrevious means keeping the existing if the transaction 
+                      * is already imported and assigned to a category. 
+                      * 
+                      * This means we can skip the assignment process and return the transaction, 
+                      * if the imported transaction was already assigned to a category.**/
+
+                    transaction.Category = importedTransaction.Category;
+
+                    // Skip assignment
+                    return;
+                }
+            }
+
+            // Transaction not imported -> assign new categories
+            foreach (Category category in categories)
+            {
+                if (category.Filter!.Evaluate(transaction))
+                {
+                    transaction.Category = category;
+
+                    // Matching category found -> finished
+                    return;
+                }
+            }
+        }
+
+        public void AssignCategories(IEnumerable<Transaction> transactions, AssignMethod assignMethod = AssignMethod.KeepPreviousAlways)
+        {
+            // Get old transactions. Only necessary if KeepPrevious or KeepPreviousAlways method is used
+            Dictionary<string, Category?> oldCategories = new();
+
+            if (assignMethod is AssignMethod.KeepPreviousAlways or AssignMethod.KeepPrevious)
+            {
+                oldCategories = All()
+                    .ToDictionary(t => t.UID, t => t.Category);
+            }
+
+            // Get real categories that have a filter in the right order
+            List<Category> categories = _categoryService.GetCategories(CategoryTypes.Real)
+                .Where(c => c.Filter is not null)
+                .OrderBy(c => c.IsExlusive)
+                .ToList();
+
+
+            foreach (Transaction transaction in transactions)
+            {
+                if (assignMethod is AssignMethod.Reset)
+                {
+                    /** Reset means resetting the category before the assignment process. **/
+                    transaction.Category = null;
+                }
+                else if (assignMethod is AssignMethod.KeepPrevious or AssignMethod.KeepPreviousAlways
+                    && oldCategories.TryGetValue(transaction.UID, out Category? previousCategory))
+                {
+                    // Transaction is already imported. Set category to previoud category.
+
+                    if (assignMethod is AssignMethod.KeepPreviousAlways)
+                    {
+                        /** KeepPreviousAlways means keeping the existing category 
+                          * if the transaction is already imported, even if no category is assigned.
+                          * 
+                          * This means we can skip the assignment process and return the transaction 
+                          * with the previous category assigned or null. **/
+
+                        transaction.Category = previousCategory;
+
+                        // Skip assignment, continue with next transaction
+                        continue;
+                    }
+                    else if (previousCategory != null)
+                    {
+                        /** KeepPrevious means keeping the existing if the transaction 
+                          * is already imported and assigned to a category. 
+                          * 
+                          * This means we can skip the assignment process and return the transaction, 
+                          * if the imported transaction was already assigned to a category.**/
+
+                        transaction.Category = previousCategory;
+
+
+                        // Skip assignment, continue with next transaction
+                        continue;
+                    }
+                }
+
+                // Assign new category
+                foreach (Category category in categories)
+                {
+                    if (category.Filter!.Evaluate(transaction))
+                    {
+                        transaction.Category = category;
+
+                        // Matching category found -> finished
+                        break;
+                    }
+                }
+            }
+        }
+
+        public int ReassignCategory(Category category, AssignMethod assignMethod = AssignMethod.Simple)
+        {
+            if (assignMethod is AssignMethod.KeepPreviousAlways) { return 0; }
+
+            // Get transactions
+            IEnumerable<Transaction> transactions = All();
+            List<Transaction> transactionsToUpdate = new();
+
+            if (category.Filter == null) { return 0; }
+
+            foreach (Transaction transaction in transactions)
+            {
+                Category? before = transaction.Category;
+
+                if (assignMethod is AssignMethod.Reset && transaction.Category == category)
+                {
+                    /** Reset means resetting the category before the assignment process. **/
+                    transaction.Category = null;
+                }
+                else if (assignMethod is AssignMethod.KeepPrevious && transaction.Category != null)
+                {
+                    /** KeepPrevious means keeping the existing if the transaction 
+                      * is already imported and assigned to a category. 
+                      * 
+                      * This means we can skip the assignment process and return the transaction, 
+                      * if the imported transaction was already assigned to a category.**/
+
+                    // Skip assignment, continue with next transaction
+                    continue;
+                }
+
+                if (category.Filter.Evaluate(transaction))
+                {
+                    transaction.Category = category;
+                }
+
+                // Update transaction only if category changed
+                if (before != transaction.Category)
+                {
+                    transactionsToUpdate.Add(transaction);
+                }
+            }
+
+            // Store
+            _ = ImportTransactions(transactionsToUpdate);
+
+            return transactionsToUpdate.Count;
+        }
+        public int ReassignCategories(AssignMethod assignMethod = AssignMethod.Simple)
+        {
+            if (assignMethod is AssignMethod.KeepPreviousAlways) { return 0; }
+
+            IEnumerable<Transaction> transactions = All();
+            List<Transaction> transactionsToUpdate = new();
+
+            // Get real categories that have a filter in the right order
+            List<Category> categories = _categoryService.GetCategories(CategoryTypes.Real)
+                .Where(c => c.Filter is not null)
+                .OrderBy(c => c.IsExlusive)
+                .ToList();
+
+
+            foreach (Transaction transaction in transactions)
+            {
+                Category? before = transaction.Category;
+
+                if (assignMethod is AssignMethod.Reset)
+                {
+                    /** Reset means resetting the category before the assignment process. **/
+                    transaction.Category = null;
+                }
+                else if (assignMethod is AssignMethod.KeepPrevious && transaction.Category != null)
+                {
+                    /** KeepPrevious means keeping the existing if the transaction 
+                      * is already imported and assigned to a category. 
+                      * 
+                      * This means we can skip the assignment process and return the transaction, 
+                      * if the imported transaction was already assigned to a category.**/
+
+                    // Skip assignment, continue with next transaction
+                    continue;
+                }
+
+                // Assign new category
+                foreach (Category category in categories)
+                {
+                    if (category.Filter!.Evaluate(transaction))
+                    {
+                        transaction.Category = category;
+
+                        // Matching category found -> finished
+                        break;
+                    }
+                }
+
+                // Update transaction only if category changed
+                if (before != transaction.Category)
+                {
+                    transactionsToUpdate.Add(transaction);
+                }
+            }
+
+            // Store
+            _ = ImportTransactions(transactionsToUpdate);
+
+            return transactionsToUpdate.Count;
+        }
+
+
+        public bool RemoveFromCategory(Transaction transaction)
+        {
+            return MoveToCategory(transaction, Category.NoCategory);
+        }
+
+        public bool MoveToCategory(Transaction transaction, Category category)
+        {
+            if (transaction is null)
+            {
+                throw new ArgumentNullException(nameof(transaction));
+            }
+
+            if (category is null)
+            {
+                throw new ArgumentNullException(nameof(category));
+            }
+
+            if (category.IsAllCategory()) { return false; }
+            if (category.IsNoCategory() && transaction.Category is null) { return false; }
+            if (transaction.Category?.Id == category.Id) { return false; }
+
+            transaction.Category = null;
+
+            if (!category.IsNoCategory())
+            {
+                transaction.Category = category;
+            }
+
+            // Update transaction in repo
+            return _transactionRepository.Update(transaction.ToDbo());
         }
     }
 }

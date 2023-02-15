@@ -59,13 +59,13 @@ namespace Moneyes.UI.ViewModels
             _transactionService = transactionService;
             _categoryService = categoryService;
 
-            CategoryViewModelFactory categoryViewModelFactory = new(categoryService, statusMessageService);
+            CategoryViewModelFactory categoryViewModelFactory = new(categoryService, transactionService, statusMessageService);
 
             RemoveFromCategory = new CollectionRelayCommand<TransactionViewModel>(transactions =>
             {
                 foreach (TransactionViewModel t in transactions)
                 {
-                    categoryService.RemoveFromCategory(t.Transaction);
+                    transactionService.RemoveFromCategory(t.Transaction);
                 }
             }, transactions =>
             {
@@ -78,7 +78,7 @@ namespace Moneyes.UI.ViewModels
 
                 foreach (TransactionViewModel t in transactions)
                 {
-                    categoryService.MoveToCategory(t.Transaction, category);
+                    transactionService.MoveToCategory(t.Transaction, category);
                 }
 
                 statusMessageService.ShowMessage($"Added to category \"{category.Name}\".");
@@ -94,7 +94,7 @@ namespace Moneyes.UI.ViewModels
 
                     foreach (var t in transactions)
                     {
-                        categoryService.MoveToCategory(t.Transaction, category);
+                        transactionService.MoveToCategory(t.Transaction, category);
                     }
                 };
             });

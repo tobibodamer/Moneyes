@@ -13,28 +13,24 @@ namespace Moneyes.UI
         {
             this.Parent = category.Parent;
             this.Name = category.Name;
-            this.Filter= category.Filter;
-            this.Target= category.Target;
+            this.Filter = category.Filter;
+            this.Target = category.Target;
         }
 
         public HashSet<CategoryWithChildren> SubCategories { get; init; } = new();
     }
     public class CategoryService : ICategoryService
     {
-        private readonly ITransactionService _transactionService;
-        private readonly IUniqueCachedRepository<TransactionDbo> _transactionRepo;
 
         private readonly IUniqueCachedRepository<CategoryDbo> _categoryRepo;
         private readonly ICategoryFactory _categoryFactory;
 
-        public CategoryService(ITransactionService transactionService,
+        public CategoryService(
             IUniqueCachedRepository<CategoryDbo> categoryRepo,
-            ICategoryFactory categoryFactory, IUniqueCachedRepository<TransactionDbo> transactionRepo)
+            ICategoryFactory categoryFactory)
         {
-            _transactionService = transactionService;
             _categoryRepo = categoryRepo;
             _categoryFactory = categoryFactory;
-            _transactionRepo = transactionRepo;
         }
 
         public Category? GetCategoryByName(string name)
@@ -59,7 +55,7 @@ namespace Moneyes.UI
             {
                 var parent = category.Parent;
                 var parentCategoryViewModel = categories.FirstOrDefault(c => c.Id == parent!.Id);
-                
+
                 parentCategoryViewModel?.SubCategories.Add(category);
             }
 
@@ -151,178 +147,7 @@ namespace Moneyes.UI
             return categories;
         }
 
-        public void AssignCategories(Transaction transaction,
-            AssignMethod assignMethod = AssignMethod.KeepPrevious,
-            bool updateDatabase = false)
-        {
-            // Get old transaction
-            Transaction? oldTransaction = null;
 
-            if (assignMethod is not AssignMethod.Simple or AssignMethod.Reset)
-            {
-                oldTransaction = _transactionService.GetByUID(transaction.UID);
-            }
-
-            // Assign categories
-
-            List<Category> categories = GetCategories(CategoryTypes.Real)
-                .OrderBy(c => c.IsExlusive)
-                .ToList();
-
-            if (assignMethod is AssignMethod.Reset)
-            {
-                transaction.Category = null;
-            }
-
-            if (assignMethod is not AssignMethod.Simple && oldTransaction != null)
-            {
-                // Transaction already imported -> keep old categories
-                transaction.Category = oldTransaction.Category;
-
-                // Dont merge if keep previous method is used
-                if (assignMethod is AssignMethod.KeepPrevious)
-                {
-                    if (updateDatabase)
-                    {
-                        _transactionService.ImportTransaction(transaction);
-                    }
-
-                    return;
-                }
-            }
-
-            // Transaction not imported or merge -> assign new categories
-            foreach (Category category in categories)
-            {
-                if (category.IsExlusive && transaction.Category is not null)
-                {
-                    // Exclusive category and already assigned
-                    continue;
-                }
-
-                if (category.Filter != null && category.Filter.Evaluate(transaction))
-                {
-                    transaction.Category = category;
-                }
-            }
-
-            if (updateDatabase)
-            {
-                _transactionService.ImportTransaction(transaction);
-            }
-        }
-
-        public void AssignCategories(IEnumerable<Transaction> transactions,
-            AssignMethod assignMethod = AssignMethod.KeepPrevious,
-            bool updateDatabase = false)
-        {
-            // Get old transactions
-            Dictionary<string, Transaction> oldTransactions = new();
-
-            if (assignMethod is not AssignMethod.Simple or AssignMethod.Reset)
-            {
-                oldTransactions = _transactionService.All()
-                    .ToDictionary(t => t.UID, t => t);
-            }
-
-            // Assign categories
-
-            List<Category> categories = GetCategories(CategoryTypes.Real)
-                .OrderBy(c => c.IsExlusive)
-                .ToList();
-
-            List<Transaction> transactionsToUpdate = new();
-
-            foreach (Transaction transaction in transactions)
-            {
-                if (assignMethod is AssignMethod.Reset)
-                {
-                    transaction.Category = null;
-                }
-
-                if (assignMethod is not AssignMethod.Simple or AssignMethod.Reset &&
-                    oldTransactions!.TryGetValue(transaction.UID, out Transaction? oldTransaction))
-                {
-                    // Transaction already imported -> keep old categories
-                    transaction.Category = oldTransaction.Category;
-
-                    // Dont merge if keep previous method is used
-                    if (assignMethod is AssignMethod.KeepPrevious)
-                    {
-                        continue;
-                    }
-                }
-
-                // Transaction not imported or merge -> assign new categories
-                foreach (Category category in categories)
-                {
-                    if (category.IsExlusive && transaction.Category is not null)
-                    {
-                        // Exclusive category and already assigned
-                        continue;
-                    }
-
-                    if (category.Filter != null && category.Filter.Evaluate(transaction))
-                    {
-                        transaction.Category = category;
-                    }
-                }
-
-                transactionsToUpdate.Add(transaction);
-            }
-
-            if (updateDatabase)
-            {
-                // Store
-                _transactionService.ImportTransactions(transactionsToUpdate);
-            }
-        }
-
-        public void ReassignCategories(AssignMethod assignMethod = AssignMethod.Simple)
-        {
-            if (assignMethod is AssignMethod.KeepPrevious) { return; }
-
-            IEnumerable<Transaction> transactions = _transactionService.All();
-
-            AssignCategories(transactions, assignMethod, true);
-        }
-
-        public int AssignCategory(Category category, AssignMethod assignMethod = AssignMethod.KeepPrevious)
-        {
-            // Get transactions
-            var transactions = _transactionService.All().ToList();
-            var transactionsToUpdate = new List<Transaction>();
-
-            if (category.Filter == null) { return 0; }
-
-            foreach (Transaction transaction in transactions)
-            {
-                if (assignMethod is AssignMethod.Reset)
-                {
-                    transaction.Category = null;
-                }
-
-                if (category.IsExlusive && transaction.Category is not null)
-                {
-                    // Exclusive category and already assigned
-                    continue;
-                }
-
-                if (transaction.Category is not null &&
-                    transaction.Category.Id != category.Id &&
-                    category.Filter != null &&
-                    category.Filter.Evaluate(transaction))
-                {
-                    transaction.Category = category;
-                    transactionsToUpdate.Add(transaction);
-                }
-            }
-
-            // Store
-            _ = _transactionService.ImportTransactions(transactionsToUpdate);
-
-            return transactionsToUpdate.Count;
-        }
 
         public bool AddCategory(Category category)
         {
@@ -379,37 +204,6 @@ namespace Moneyes.UI
             return false;
         }
 
-        public bool RemoveFromCategory(Transaction transaction)
-        {
-            return MoveToCategory(transaction, Category.NoCategory);
-        }
-
-        public bool MoveToCategory(Transaction transaction, Category category)
-        {
-            if (transaction is null)
-            {
-                throw new ArgumentNullException(nameof(transaction));
-            }
-
-            if (category is null)
-            {
-                throw new ArgumentNullException(nameof(category));
-            }
-
-            if (category.IsAllCategory()) { return false; }
-            if (transaction.Category?.Id == category.Id) { return false; }
-
-            transaction.Category = null;
-
-            if (!category.IsNoCategory())
-            {
-                transaction.Category = category;
-            }
-
-            // Update transaction in repo
-            return _transactionRepo.Update(transaction.ToDbo());
-        }
-
 
         public IEnumerable<Category> GetSubCategories(Category category, int depth = -1)
         {
@@ -452,7 +246,7 @@ namespace Moneyes.UI
             }
         }
 
-        public static int IndexOfFirst<T>(IList<T> list, Func<T, bool> predicate)
+        private static int IndexOfFirst<T>(IList<T> list, Func<T, bool> predicate)
         {
             if (predicate == null)
             {

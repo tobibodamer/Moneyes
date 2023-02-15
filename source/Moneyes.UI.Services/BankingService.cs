@@ -146,7 +146,7 @@ namespace Moneyes.UI
         public int ImportTransactions(IEnumerable<Transaction> transactions, AssignMethod categoryAssignMethod)
         {
             // Assign categories
-            _categoryService.AssignCategories(transactions, assignMethod: categoryAssignMethod, updateDatabase: false);
+            _transactionService.AssignCategories(transactions, assignMethod: categoryAssignMethod);
 
             // Store
             return _transactionService.ImportTransactions(transactions);

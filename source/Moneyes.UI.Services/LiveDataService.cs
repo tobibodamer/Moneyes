@@ -208,14 +208,14 @@ namespace Moneyes.UI
 
         public async Task<Result<int>> FetchTransactionsAndBalances(
             AccountDetails account,
-            AssignMethod categoryAssignMethod = AssignMethod.KeepPrevious)
+            AssignMethod categoryAssignMethod = AssignMethod.KeepPreviousAlways)
         {
             return await FetchTransactionsAndBalances(new AccountDetails[] { account }, categoryAssignMethod);
         }
 
         public async Task<Result<int>> FetchTransactionsAndBalances(
             AccountDetails[] accounts,
-            AssignMethod categoryAssignMethod = AssignMethod.KeepPrevious)
+            AssignMethod categoryAssignMethod = AssignMethod.KeepPreviousAlways)
         {
             List<Transaction> transactions = new();
             List<Balance> balances = new();

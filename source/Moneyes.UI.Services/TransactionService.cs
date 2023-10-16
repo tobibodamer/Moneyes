@@ -39,7 +39,7 @@ namespace Moneyes.UI
                 return _transactionRepository
                     .AsParallel()
                     .Where(t => t.Category == null)
-                    .OrderByDescending(t => t.BookingDate)
+                    .OrderByDescending(t => t.ValueDate ?? t.ValueDate ?? t.BookingDate)
                     .Select(_transactionFactory.CreateFromDbo)
                     .ToList();
             }
@@ -48,7 +48,7 @@ namespace Moneyes.UI
             var t = _transactionRepository
                 .AsParallel()
                 .Where(t => t.Category?.Id == category.Id)
-                .OrderByDescending(t => t.BookingDate)
+                .OrderByDescending(t => t.ValueDate ?? t.BookingDate)
                 .Select(_transactionFactory.CreateFromDbo)
                 .ToList();
 
@@ -63,7 +63,7 @@ namespace Moneyes.UI
 
             var transactions = _transactionRepository
                 .AsParallel()
-                .OrderByDescending(t => t.BookingDate)
+                .OrderByDescending(t => t.ValueDate ?? t.BookingDate)
                 .ThenByDescending(t => t.PartnerIBAN)
                 .ThenByDescending(t => t.Index)
                 .Select(_transactionFactory.CreateFromDbo);
@@ -114,7 +114,7 @@ namespace Moneyes.UI
 
             //return Collection.Query()
             //    .Where(t => t.Categories != null && t.Categories.Count > 0)
-            //    .OrderByDescending(t => t.BookingDate)
+            //    .OrderByDescending(t => t.ValueDate ?? t.BookingDate)
             //    .ToEnumerable()
             //    .Where(t => t.Categories.Any(category =>
             //        notNullCategories.Any(c => c.Id == category.Id)) ||
@@ -132,7 +132,7 @@ namespace Moneyes.UI
             }
 
             return query
-                .OrderByDescending(t => t.BookingDate)
+                .OrderByDescending(t => t.ValueDate ?? t.BookingDate)
                 .Select(_transactionFactory.CreateFromDbo)
                 .ToList();
         }
@@ -157,7 +157,7 @@ namespace Moneyes.UI
 
             if (allTransactions.Any())
             {
-                return allTransactions.Min(t => t.BookingDate);
+                return allTransactions.Min(t => t.ValueDate ?? t.BookingDate);
             }
 
             return DateTime.MinValue;
@@ -169,7 +169,7 @@ namespace Moneyes.UI
 
             if (allTransactions.Any())
             {
-                return allTransactions.Max(t => t.BookingDate);
+                return allTransactions.Max(t => t.ValueDate ?? t.BookingDate);
             }
 
             return DateTime.MinValue;
@@ -263,7 +263,6 @@ namespace Moneyes.UI
 
             List<Category> categories = _categoryService.GetCategories(CategoryTypes.Real)
                 .Where(c => c.Filter is not null)
-                .OrderBy(c => c.IsExlusive)
                 .ToList();
 
             if (assignMethod is AssignMethod.Reset)
@@ -330,7 +329,6 @@ namespace Moneyes.UI
             // Get real categories that have a filter in the right order
             List<Category> categories = _categoryService.GetCategories(CategoryTypes.Real)
                 .Where(c => c.Filter is not null)
-                .OrderBy(c => c.IsExlusive)
                 .ToList();
 
 
@@ -447,7 +445,6 @@ namespace Moneyes.UI
             // Get real categories that have a filter in the right order
             List<Category> categories = _categoryService.GetCategories(CategoryTypes.Real)
                 .Where(c => c.Filter is not null)
-                .OrderBy(c => c.IsExlusive)
                 .ToList();
 
 

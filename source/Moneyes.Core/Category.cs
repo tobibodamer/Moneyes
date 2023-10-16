@@ -19,12 +19,12 @@ namespace Moneyes.Core
         /// <summary>
         /// Gets a category indicating no category has been assoiated with a transaction.
         /// </summary>
-        public static readonly Category NoCategory = new(NoCategoryId) { Name = "No category", IsExlusive = true };
+        public static readonly Category NoCategory = new(NoCategoryId) { Name = "No category" };
 
         /// <summary>
         /// Gets a category all transactions belong to.
         /// </summary>
-        public static readonly Category AllCategory = new(AllCategoryId) { Name = "All", IsExlusive = true };
+        public static readonly Category AllCategory = new(AllCategoryId) { Name = "All" };
 
         /// <summary>
         /// Gets the unique identifier of this category.
@@ -54,14 +54,10 @@ namespace Moneyes.Core
         /// </summary>
         public decimal Target { get; set; }
 
-        /// <summary>
-        /// Indicates whether transactions are exclusive to this category.
-        /// </summary>
-        public bool IsExlusive { get; set; }
-
 
         public bool IsReal => this.Id != NoCategory.Id && this.Id != AllCategory.Id;
 
+        public bool IsExpenseCategory => Filter is null || Filter.TransactionType is TransactionType.Expense or TransactionType.None;
 
         public Category(Guid id)
         {
@@ -73,8 +69,7 @@ namespace Moneyes.Core
             return obj is Category category &&
                    Name == category.Name &&
                    Target == category.Target &&
-                   Parent == category.Parent &&
-                   IsExlusive == IsExlusive;
+                   Parent == category.Parent;
         }
 
         public override int GetHashCode()

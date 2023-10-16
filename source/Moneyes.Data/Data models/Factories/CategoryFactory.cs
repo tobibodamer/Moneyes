@@ -23,7 +23,6 @@ namespace Moneyes.Data
             return new Category(categoryDbo.Id)
             {
                 Filter = filterDto,
-                IsExlusive = categoryDbo.IsExlusive,
                 Name = categoryDbo.Name,
                 Parent = parentDbo,
                 Target = categoryDbo.Target

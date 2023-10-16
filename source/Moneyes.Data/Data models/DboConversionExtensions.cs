@@ -33,7 +33,6 @@ namespace Moneyes.Data
             return new(category.Id, category.Name, createdAt, updatedAt, isDeleted)
             {
                 Filter = category.Filter?.ToDto(),
-                IsExlusive = category.IsExlusive,
                 Parent = category.Parent?.ToDbo(),
                 Target = category.Target,
             };

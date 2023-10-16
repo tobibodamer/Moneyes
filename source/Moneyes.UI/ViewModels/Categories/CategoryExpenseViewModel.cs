@@ -20,52 +20,112 @@ namespace Moneyes.UI.ViewModels
             }
         }
 
-        private decimal _totalExpense;
-        public decimal TotalExpense
-        {
-            get => _totalExpense;
-            set
-            {
-                _totalExpense = value;
-                OnPropertyChanged();
-            }
-        }
+        /// <summary>
+        /// Total summed up amount over the expenditure period.
+        /// </summary>
+        public decimal TotalAmount { get; init; }
 
-        public decimal AverageExpense { get; }
+        /// <summary>
+        /// Absolute total summed up amount over the expenditure period
+        /// </summary>
+        public decimal AbsoluteTotalAmount => Math.Abs(TotalAmount);
 
-        public bool IsOver => Target > 0 && TotalExpense > Target;
+        /// <summary>
+        /// Average amount over the expenditure period.
+        /// </summary>
+        public decimal AverageAmount { get; }
 
-        public bool IsOverExtrapolated => TargetExtrapolated > 0 && TotalExpense > TargetExtrapolated;
+        /// <summary>
+        /// Gets whether the total amount is over the target, or false when no target is set.
+        /// </summary>
+        public bool IsOver { get; }
 
-        public decimal? Difference => Target == null ? null : Math.Abs(Target.Value - TotalExpense);
+        /// <summary>
+        /// Gets whether the toal amount is over the target extrapolated to the monthly range.
+        /// </summary>
+        public bool IsOverExtrapolated { get; }
 
+        public decimal? Difference { get; }
+
+        /// <summary>
+        /// Target extrapolated to the monthly range.
+        /// </summary>
         public decimal? TargetExtrapolated { get; }
 
-        public CategoryExpenseViewModel(Category category, Expenses expenses,
+        public bool IsExpenseCategory => Category.IsExpenseCategory;
+
+        /// <summary>
+        /// Gets the current amount towards the target.
+        /// </summary>
+        public decimal AmountOfTarget { get; }
+
+
+        /// <summary>
+        /// Gets the current monthly average amount towards the target.
+        /// </summary>
+        public decimal AverageAmountOfTarget { get; }
+
+        /// <summary>
+        /// Gets the total expense amount.
+        /// </summary>
+        public decimal TotalExpense { get; }
+
+        /// <summary>
+        /// Gets the total income amount.
+        /// </summary>
+        public decimal TotalIncome { get; }
+
+        public TransactionType ExpenditureType { get; }
+
+        public CategoryExpenseViewModel(Category category, IExpenditure expenditure, TransactionType expenditureType,
             ICategoryService categoryService, ITransactionService transactionService,
             IStatusMessageService statusMessageService)
             : base(categoryService, transactionService, statusMessageService)
         {
             Category = category;
-            TotalExpense = expenses.TotalAmount;
-            AverageExpense = expenses.GetMonthlyAverage();
+            ExpenditureType = expenditureType;
+            TotalAmount = expenditure.TotalAmount;
+            AverageAmount = expenditure.GetMonthlyAverage();
 
             TargetExtrapolated = Target.HasValue
-                ? Target.Value * (Expenses.MonthDifference(expenses.StartDate, expenses.EndDate, limitToCurrentMonth: true) + 1)
+                ? Target.Value * expenditure.GetMonths(limitToCurrentMonth: true)
                 : null;
+
+            AmountOfTarget = AbsoluteTotalAmount;
+            AverageAmountOfTarget = Math.Abs(AverageAmount);
+
+            TotalExpense = expenditure.IsAbsolute ? expenditure.TotalAmount : Math.Max(0, TotalAmount * -1);
+            TotalIncome = expenditure.IsAbsolute ? expenditure.TotalAmount : Math.Max(0, TotalAmount);
+            
+            if (IsExpenseCategory && Target.HasValue)
+            {
+                AmountOfTarget = TotalExpense;
+                AverageAmountOfTarget = Math.Max(0, AverageAmount * -1);
+                IsOver = AmountOfTarget > Target;
+                IsOverExtrapolated = AmountOfTarget > TargetExtrapolated;
+                Difference = Math.Abs(Target.Value - AbsoluteTotalAmount);
+            }
+            else if (Target.HasValue)
+            {
+                AmountOfTarget = TotalIncome;
+                AverageAmountOfTarget = Math.Max(0, AverageAmount);
+                IsOver = AmountOfTarget > Target;
+                IsOverExtrapolated = AmountOfTarget > TargetExtrapolated;
+                Difference = Math.Abs(Target.Value - TotalAmount);
+            }
 
             if (IsNoCategory)
             {
-                DisplayName = $"-- No category -- ({TotalExpense} €)";
+                DisplayName = $"-- No category -- ({AmountOfTarget} €)";
             }
-            else if (category.Target > 0)
+            else if (Target.HasValue)
             {
 
-                DisplayName = $"{category.Name} ({TotalExpense} / {category.Target} €)";
+                DisplayName = $"{category.Name} ({AmountOfTarget} / {category.Target} €)";
             }
             else
             {
-                DisplayName = $"{category.Name} ({TotalExpense} €)";
+                DisplayName = $"{category.Name} ({AmountOfTarget} €)";
             }
         }
 

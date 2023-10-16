@@ -153,10 +153,11 @@ namespace Moneyes.UI.ViewModels
 
         public CategoryExpenseViewModel CreateCategoryExpenseViewModel(
             Category category,
-            Expenses expenses,
+            IExpenditure expenses,
+            TransactionType expenditureType,
             Action<EditCategoryViewModel> editCallback)
         {
-            CategoryExpenseViewModel categoryViewModel = new(category, expenses, _categoryService, 
+            CategoryExpenseViewModel categoryViewModel = new(category, expenses, expenditureType, _categoryService, 
                 _transactionService, _statusMessageService);
 
             InitViewModel(category, categoryViewModel, editCallback);

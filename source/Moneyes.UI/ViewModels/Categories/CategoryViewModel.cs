@@ -91,7 +91,7 @@ namespace Moneyes.UI.ViewModels
                 _category = value;
 
                 Name = _category.Name;
-                Target = _category.Target;
+                Target = _category.Target > 0 ? _category.Target : null;
 
                 if (_category.Parent is not null)
                 {

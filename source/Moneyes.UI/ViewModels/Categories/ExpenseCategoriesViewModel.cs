@@ -34,16 +34,18 @@ namespace Moneyes.UI.ViewModels
             {
                 List<CategoryExpenseViewModel> categoryViewModels = new();
 
-                var expensesResult = _expenseIncomeService.GetAllExpenses(filter, categoryTypes, includeSubCategories: true);
-                if (!expensesResult.IsSuccessful)
+                var expenditureResult = _expenseIncomeService.GetExpenditurePerCategory(filter, categoryTypes, includeSubCategories: true);
+
+                if (!expenditureResult.IsSuccessful)
                 {
+                    return categoryViewModels;
                     // Failed to get expenses
                 }
 
-                foreach ((Category category, Expenses expenses) in expensesResult.Data)
+                foreach ((Category category, IExpenditure expenses) in expenditureResult.Data)
                 {
                     categoryViewModels.Add(
-                        Factory.CreateCategoryExpenseViewModel(category, expenses,
+                        Factory.CreateCategoryExpenseViewModel(category, expenses, filter.TransactionType,
                             editViewModel =>
                             {
                                 EditCategoryViewModel = editViewModel;
@@ -74,16 +76,16 @@ namespace Moneyes.UI.ViewModels
         {
             public int Compare(CategoryExpenseViewModel x, CategoryExpenseViewModel y)
             {
-                if (x.Target > 0 && y.Target == 0)
+                if (x.Target > 0 && (y.Target == 0 || y.Target == null))
                 {
                     return -1;
                 }
-                else if (x.Target == 0 && y.Target > 0)
+                else if ((x.Target == 0 || x.Target == null) && y.Target > 0)
                 {
                     return 1;
                 }
 
-                return x.TotalExpense.CompareTo(y.TotalExpense) * -1;
+                return x.TotalAmount.CompareTo(y.TotalAmount) * -1;
             }
         }
     }

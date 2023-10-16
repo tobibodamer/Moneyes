@@ -107,13 +107,13 @@
                                             VerticalAlignment="Bottom" Margin="0,0,0,-3"/>
 
                 <Grid Grid.ColumnSpan="10" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,-5,0,0" Width="200">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="1*"/>
-                    <ColumnDefinition Width="1*"/>
-                    <ColumnDefinition Width="1*"/>
-                </Grid.ColumnDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1*"/>
+                        <ColumnDefinition Width="1*"/>
+                        <ColumnDefinition Width="1*"/>
+                    </Grid.ColumnDefinitions>
 
-                <RadioButton x:Name="YearRadioButton" 
+                    <RadioButton x:Name="YearRadioButton" 
                                  IsChecked="{Binding ElementName=DateSelectionControl, Path=SelectionMode, 
                                             Converter={StaticResource ComparisonConverter}, 
                                             ConverterParameter={x:Static local:DateSelectionMode.Year}}"
@@ -121,7 +121,7 @@
                                  HorizontalContentAlignment="Center" VerticalContentAlignment="Center" 
                                  FontSize="13" Height="Auto" MinHeight="0" Width="Auto" MinWidth="10" HorizontalAlignment="Center"
                                  Margin="0,0,1,0" Padding="10,5" FocusVisualStyle="{x:Null}" Grid.Column="0"/>
-                <RadioButton x:Name="MonthRadioButton"
+                    <RadioButton x:Name="MonthRadioButton"
                                  IsChecked="{Binding ElementName=DateSelectionControl, Path=SelectionMode, 
                                             Converter={StaticResource ComparisonConverter}, 
                                             ConverterParameter={x:Static local:DateSelectionMode.Month}}"
@@ -129,7 +129,7 @@
                                  HorizontalContentAlignment="Center" VerticalContentAlignment="Center" 
                                  FontSize="13" Height="Auto" MinHeight="0" Width="Auto" MinWidth="10" HorizontalAlignment="Center"
                                  Margin="1,0,1,0" Padding="10,5" FocusVisualStyle="{x:Null}" Grid.Column="1"/>
-                <RadioButton x:Name="CustomRadioButton"
+                    <RadioButton x:Name="CustomRadioButton"
                                  IsChecked="{Binding ElementName=DateSelectionControl, Path=SelectionMode, 
                                             Converter={StaticResource ComparisonConverter}, 
                                             ConverterParameter={x:Static local:DateSelectionMode.Custom}}"
@@ -137,9 +137,9 @@
                                  HorizontalContentAlignment="Center" VerticalContentAlignment="Center" 
                                  FontSize="13" Height="Auto" MinHeight="0" Width="Auto" MinWidth="10" HorizontalAlignment="Center"
                                  Margin="1,0,0,0" Padding="10,5" FocusVisualStyle="{x:Null}" Grid.Column="2"/>
-            </Grid>
+                </Grid>
 
-            <!--<StackPanel Orientation="Horizontal" Grid.Column="1">
+                <!--<StackPanel Orientation="Horizontal" Grid.Column="1">
                     <DatePicker SelectedDate="{Binding FromDate}" IsTodayHighlighted="False" Grid.Column="1">
                         <i:Interaction.Triggers>
                             <i:EventTrigger EventName="SelectedDateChanged">
@@ -171,12 +171,12 @@
             <!--<TextBlock Text="Spending" FontSize="22" FontWeight="Normal" DockPanel.Dock="Top" Margin="0"/>-->
 
             <materialDesign:Card Width="220" Height="110" UniformCornerRadius="10" HorizontalAlignment="Left" Margin="10,15"
-                                 Background="{DynamicResource MaterialDesignShadowBrush}" Foreground="{DynamicResource PrimaryHueDarkForegroundBrush}">
+                                 Background="{DynamicResource PrimaryHueDarkBrush}" Foreground="{DynamicResource PrimaryHueDarkForegroundBrush}">
                 <Grid Margin="18">
                     <materialDesign:PackIcon Kind="AccountBalance" Height="20" Width="20" HorizontalAlignment="Right"/>
                     <TextBlock Text="Balance" FontSize="20" FontWeight="SemiBold"/>
 
-                    <TextBlock Text="{Binding CurrentBalance.Amount, StringFormat={}{0} €}" Style="{StaticResource BalanceTextBlock}"
+                    <TextBlock Text="{Binding CurrentBalance.Amount, StringFormat={}{0:N2} €}" Style="{StaticResource BalanceTextBlock}"
                                VerticalAlignment="Bottom" HorizontalAlignment="Left" FontSize="18" Margin="0,7" />
 
                     <TextBlock Text="{Binding CurrentBalance.Date, StringFormat=dd.MM.yyyy}" Margin="0, -7"
@@ -185,17 +185,23 @@
             </materialDesign:Card>
 
             <materialDesign:Card Width="220" Height="110" UniformCornerRadius="10" HorizontalAlignment="Left" Margin="10,15"
-                                 Background="{DynamicResource SecondaryHueMidBrush}">
+                                 Background="{DynamicResource MaterialDesignShadowBrush}" Foreground="{DynamicResource PrimaryHueDarkForegroundBrush}">
                 <Grid Margin="18">
-                    <materialDesign:PackIcon Kind="ArrowDown" Height="20" Width="20" HorizontalAlignment="Right"/>
-                    <TextBlock Text="Expense" FontSize="20" FontWeight="SemiBold"/>
-                    <TextBlock VerticalAlignment="Bottom" FontSize="18" Margin="0,7">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <Border CornerRadius="10" Height="25" Width="25" Background="#25EB5859" HorizontalAlignment="Right" VerticalAlignment="Center">
+                        <materialDesign:PackIcon Kind="ArrowUp" Foreground="#EB5859" Height="20" Width="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <TextBlock Text="Expense" FontSize="16" FontWeight="Normal" VerticalAlignment="Center" Opacity="0.9"/>
+                    <TextBlock VerticalAlignment="Bottom" FontSize="18" Margin="0,7" Grid.Row="1">
                         <TextBlock.Style>
                             <Style TargetType="TextBlock" BasedOn="{StaticResource MaterialDesignTextBlock}">
-                                <Setter Property="Text" Value="{Binding TotalExpense, StringFormat={}{0:F2} €}"/>
+                                <Setter Property="Text" Value="{Binding TotalExpense, StringFormat={}{0:N2} €}"/>
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding ShowAverage}" Value="True">
-                                        <Setter Property="Text" Value="{Binding AverageExpense, Mode=OneWay, StringFormat={}{0:F2} €}"/>
+                                        <Setter Property="Text" Value="{Binding AverageExpense, Mode=OneWay, StringFormat={}{0:N2} €}"/>
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>
@@ -205,17 +211,23 @@
             </materialDesign:Card>
 
             <materialDesign:Card Width="220" Height="110" UniformCornerRadius="10" HorizontalAlignment="Left" Margin="10,15"
-                                 Background="{DynamicResource PrimaryHueDarkBrush}" Foreground="{DynamicResource PrimaryHueDarkForegroundBrush}">
-                <Grid Margin="18">
-                    <materialDesign:PackIcon Kind="ArrowUp" Height="20" Width="20" HorizontalAlignment="Right"/>
-                    <TextBlock Text="Income" FontSize="20" FontWeight="SemiBold"/>
-                    <TextBlock VerticalAlignment="Bottom" FontSize="18" Margin="0,7">
+                                 Background="{DynamicResource MaterialDesignShadowBrush}" Foreground="{DynamicResource PrimaryHueDarkForegroundBrush}">
+                <Grid Margin="20">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <Border CornerRadius="10" Height="25" Width="25" Background="#2570CF98" HorizontalAlignment="Right" VerticalAlignment="Center">
+                        <materialDesign:PackIcon Kind="ArrowDown" Foreground="#70CF98" Height="20" Width="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <TextBlock Text="Income" FontSize="16" FontWeight="Normal" VerticalAlignment="Center" Opacity="0.9"/>
+                    <TextBlock VerticalAlignment="Bottom" FontSize="18" Margin="0,7" Grid.Row="1">
                         <TextBlock.Style>
                             <Style TargetType="TextBlock" BasedOn="{StaticResource MaterialDesignTextBlock}">
-                                <Setter Property="Text" Value="{Binding TotalIncome, StringFormat={}{0:F2} €}"/>
+                                <Setter Property="Text" Value="{Binding TotalIncome, StringFormat={}+{0:N2} €}"/>
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding ShowAverage}" Value="True">
-                                        <Setter Property="Text" Value="{Binding AverageIncome, Mode=OneWay, StringFormat={}{0:F2} €}"/>
+                                        <Setter Property="Text" Value="{Binding AverageIncome, Mode=OneWay, StringFormat={}+{0:N2} €}"/>
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>
@@ -230,11 +242,65 @@
             <Grid DockPanel.Dock="Top" Margin="0,0,0,5">
                 <TextBlock Text="Expense Categories" FontSize="22" FontWeight="Normal" DockPanel.Dock="Top" Margin="10,0"/>
                 <TextBlock Text="Show more" HorizontalAlignment="Right" Margin="0,5,10,0" Foreground="Gray" FontSize="13"/>
-
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                    <TextBlock Text="Average" VerticalAlignment="Center" Margin="5,-1,7,0"/>
-                    <CheckBox IsChecked="{Binding ShowAverage}" VerticalAlignment="Center" 
-                              Style="{StaticResource MaterialDesignSwitchDarkToggleButton}"/>
+                    <CheckBox Content="Show Average" IsChecked="{Binding ShowAverage}" VerticalAlignment="Center" Margin="5,-1,7,0"
+                              Style="{StaticResource MaterialDesignFilterChipCheckBox}"
+                              ToolTip="Show the average expenses / income in the selected period. (If 'Month' is selected, the total average is displayed.)"/>
+
+                    <CheckBox IsChecked="{Binding ExpenditureType}" IsThreeState="True" VerticalAlignment="Center" Width="100" Padding="0">
+                        <CheckBox.Style>
+                            <Style TargetType="CheckBox" BasedOn="{StaticResource MaterialDesignFlatButton}">
+                                <Style.Triggers>
+                                    <Trigger Property="IsChecked" Value="{x:Null}">
+                                        <Setter Property="Content">
+                                            <Setter.Value>
+                                                <Grid HorizontalAlignment="Stretch" Width="85" Margin="5,0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="20"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <materialDesign:PackIcon Kind="Minus" Height="20" Width="20" HorizontalAlignment="Center"/>
+                                                    <TextBlock Text="All" VerticalAlignment="Center" Margin="0,0,0,0" Grid.Column="1" HorizontalAlignment="Center"/>
+                                                </Grid>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Trigger>
+                                    <Trigger Property="IsChecked" Value="False">
+                                        <Setter Property="Content">
+                                            <Setter.Value>
+                                                <Grid HorizontalAlignment="Stretch" Width="85" Margin="5,0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="20"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <materialDesign:PackIcon Kind="ArrowDown" Height="20" Width="20" HorizontalAlignment="Center"/>
+                                                    <TextBlock Text="Income" VerticalAlignment="Center" Margin="0,0,0,0" Grid.Column="1" HorizontalAlignment="Center"/>
+                                                </Grid>
+                                            </Setter.Value>
+                                        </Setter>
+                                        <Setter Property="Foreground" Value="Green"/>
+                                    </Trigger>
+                                    <Trigger Property="IsChecked" Value="True">
+                                        <Setter Property="Content">
+                                            <Setter.Value>
+                                                <Grid HorizontalAlignment="Stretch" Width="85" Margin="5,0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="20"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <materialDesign:PackIcon Kind="ArrowUp" Height="20" Width="20" HorizontalAlignment="Center"/>
+                                                    <TextBlock Text="Expenses" VerticalAlignment="Center" Margin="0,0,0,0" Grid.Column="1" HorizontalAlignment="Center"/>
+                                                </Grid>
+                                            </Setter.Value>
+                                        </Setter>
+                                        <Setter Property="Foreground" Value="DarkRed"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </CheckBox.Style>
+                    </CheckBox>
+
+                    <Button Command="{Binding ExportCommand}" Content="Export summary" ToolTip="Exports a summary of the transactions in the selected period as CSV."/>
                 </StackPanel>
             </Grid>
 
@@ -262,15 +328,28 @@
 
                                 <TextBlock Text="{Binding Name}" Style="{StaticResource CategoryCardName}" />
 
+                                <materialDesign:PackIcon Height="12" Width="12" HorizontalAlignment="Right" VerticalAlignment="Top">
+                                    <materialDesign:PackIcon.Style>
+                                        <Style TargetType="materialDesign:PackIcon">
+                                            <Setter Property="Kind" Value="ArrowDown"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsExpenseCategory}" Value="True">
+                                                    <Setter Property="Kind" Value="ArrowUp"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </materialDesign:PackIcon.Style>
+                                </materialDesign:PackIcon>
+
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,0" VerticalAlignment="Bottom" HorizontalAlignment="Left">
                                     <TextBlock>
                                         <TextBlock.Style>
                                             <Style TargetType="TextBlock" BasedOn="{StaticResource ExpenseTextBlock}">
-                                                <Setter Property="Text" Value="{Binding TotalExpense, StringFormat={}{0:N0} €}"/>
+                                                <Setter Property="Text" Value="{Binding AmountOfTarget, StringFormat={}{0:N0} €}"/>
                                                 <Style.Triggers>
                                                     <DataTrigger Binding="{Binding DataContext.ShowAverage,
                                                         RelativeSource={RelativeSource FindAncestor, AncestorType=ItemsControl}}" Value="True">
-                                                        <Setter Property="Text" Value="{Binding AverageExpense, Mode=OneWay, StringFormat={}{0:N0} €}"/>
+                                                        <Setter Property="Text" Value="{Binding AverageAmountOfTarget, Mode=OneWay, StringFormat={}{0:N0} €}"/>
                                                     </DataTrigger>
                                                 </Style.Triggers>
                                             </Style>
@@ -282,7 +361,7 @@
                                             <Style TargetType="TextBlock" BasedOn="{StaticResource ExpenseTextBlock}">
                                                 <Setter Property="Text" Value="{Binding TargetExtrapolated, StringFormat={} / {0:N0} €}"/>
                                                 <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding Target}" Value="0">
+                                                    <DataTrigger Binding="{Binding Target}" Value="{x:Null}">
                                                         <Setter Property="Visibility" Value="Collapsed"/>
                                                     </DataTrigger>
                                                     <DataTrigger Binding="{Binding DataContext.ShowAverage, 
@@ -298,12 +377,15 @@
                                 <ProgressBar Grid.Row="1">
                                     <ProgressBar.Style>
                                         <Style TargetType="ProgressBar" BasedOn="{StaticResource ExpenseProgressBar}">
-                                            <Setter Property="Value" Value="{Binding TotalExpense, Mode=OneWay}"/>
+                                            <Setter Property="Value" Value="{Binding AmountOfTarget, Mode=OneWay}"/>
                                             <Setter Property="Maximum" Value="{Binding TargetExtrapolated, Mode=OneWay}"/>
                                             <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Target}" Value="{x:Null}">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                </DataTrigger>
                                                 <DataTrigger Binding="{Binding DataContext.ShowAverage, 
                                                     RelativeSource={RelativeSource FindAncestor, AncestorType=ItemsControl}}" Value="True">
-                                                    <Setter Property="Value" Value="{Binding AverageExpense, Mode=OneWay}"/>
+                                                    <Setter Property="Value" Value="{Binding AverageAmountOfTarget, Mode=OneWay}"/>
                                                     <Setter Property="Maximum" Value="{Binding Target, Mode=OneWay}"/>
                                                 </DataTrigger>
                                             </Style.Triggers>

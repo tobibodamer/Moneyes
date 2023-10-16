@@ -2,10 +2,6 @@
 using Moneyes.Core.Filters;
 using Moneyes.Data;
 using Moneyes.LiveData;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace Moneyes.UI
 {
@@ -22,20 +18,18 @@ namespace Moneyes.UI
             _categoryService = categoryService ?? throw new ArgumentNullException(nameof(categoryService));
         }
 
-        public Result<Expenses> GetExpenses(
-            Category category, TransactionFilter filter, bool includeSubCategories = false)
+        public Result<IExpenditure> GetExpenditure(
+            Category category, TransactionFilter filter, bool includeSubCategories, bool absolute)
         {
-            return GetInternal(category, filter, includeSubCategories, TransactionType.Expense);
+            return GetExpenditureInternal(category, filter, includeSubCategories, absolute);
         }
 
-        public Result<Expenses> GetIncome(
-            Category category, TransactionFilter filter, bool includeSubCategories = false)
+        public Result<IExpenditure> GetTotalExpenditure(TransactionFilter filter, bool absolute)
         {
-            return GetInternal(category, filter, includeSubCategories, TransactionType.Income);
+            return GetExpenditureInternal(Category.AllCategory, filter, false, absolute);
         }
 
-        private Result<Expenses> GetInternal(Category category, TransactionFilter filter, bool includeSubCategories,
-            TransactionType transactionType)
+        private Result<IExpenditure> GetExpenditureInternal(Category category, TransactionFilter filter, bool includeSubCategories, bool absolute)
         {
             try
             {
@@ -46,108 +40,106 @@ namespace Moneyes.UI
                     categories.AddRange(_categoryService.GetSubCategories(category));
                 }
 
-                // Set filter to only include expenses
-                filter.TransactionType = transactionType;
-
                 // Get transactions for filter and categories
-                List<Transaction> transactions = _transactionService.All(filter, categories.ToArray())
-                    .ToList();
+                var accountTransactions = _transactionService.All(
+                    new TransactionFilter()
+                    {
+                        AccountNumber = filter.AccountNumber
+                    },
+                    categories.ToArray()).ToList();
+
+                var transactions = accountTransactions.Filter(filter);
 
                 // Find total start and end date
-                DateTime startDate = filter.StartDate ?? _transactionService.EarliestTransactionDate(filter);
-                DateTime endDate = filter.EndDate ?? _transactionService.LatestTransactionDate(filter);
+                var (startDate, endDate) = GetDateRange(accountTransactions, filter.StartDate, filter.EndDate);
 
-                return Result.Successful(new Expenses(transactions)
+                var result = new Expenditure(transactions, absolute, startDate, endDate)
                 {
                     StartDate = startDate,
                     EndDate = endDate
-                });
+                };
+                return result;
             }
             catch
             {
-                return Result.Failed<Expenses>();
+                return Result.Failed<IExpenditure>();
             }
         }
 
-        public Result<IEnumerable<(Category Category, Expenses Expenses)>> GetAllExpenses(
-            TransactionFilter filter,
-            CategoryTypes categoryFlags = CategoryTypes.Real | CategoryTypes.NoCategory,
-            bool includeSubCategories = false)
+        private static (DateTime startDate, DateTime endDate) GetDateRange(IEnumerable<Transaction> accountFilteredTransactions, DateTime? startDate, DateTime? endDate)
         {
-            return GetAllInternal(filter, categoryFlags, includeSubCategories, TransactionType.Expense);
+            var (et, lt) = accountFilteredTransactions.Select(t => t.BookingDate).MinAndMax();
+
+            return (startDate > et ? startDate.Value : et,
+                    endDate < lt ? endDate.Value : lt);
         }
 
-        public Result<IEnumerable<(Category Category, Expenses Expenses)>> GetAllIncome(
-            TransactionFilter filter,
-            CategoryTypes categoryFlags = CategoryTypes.Real | CategoryTypes.NoCategory,
-            bool includeSubCategories = false)
-        {
-            return GetAllInternal(filter, categoryFlags, includeSubCategories, TransactionType.Income);
-        }
-
-        private Result<IEnumerable<(Category Category, Expenses Expenses)>> GetAllInternal(
+        public Result<IEnumerable<(Category Category, IExpenditure Expenses)>> GetExpenditurePerCategory(
             TransactionFilter filter,
             CategoryTypes categoryFlags,
             bool includeSubCategories,
-            TransactionType transactionType)
+            bool absolute)
         {
-            try
+            var categories = _categoryService.GetCategories(categoryFlags).ToDictionary(c => c.Id, c => c);
+            var accountFilteredTransactions = _transactionService.All(
+                    new TransactionFilter()
+                    {
+                        AccountNumber = filter.AccountNumber
+                    }).ToList();
+
+            var transactions = accountFilteredTransactions.Filter(filter);
+
+            // Sort transactions per category
+            var transactionsPerCategory = new Dictionary<Guid, List<Transaction>>();
+
+            foreach (var c in categories.Keys)
             {
-                List<Category> categories = _categoryService.GetCategories(categoryFlags).ToList();
+                transactionsPerCategory.Add(c, new());
+            }
 
-                List<(Category, Expenses)> results = new();
+            foreach (var transaction in transactions)
+            {
+                var categoryId = transaction.Category?.Id ?? Category.NoCategoryId;
+                var category = categories[categoryId];
 
-                foreach (Category c in categories)
+                if (categoryFlags.HasFlag(CategoryTypes.All))
                 {
-                    _ = GetInternal(c, filter, includeSubCategories, transactionType)
-                        .OnSuccess(expenses =>
-                        {
-                            results.Add((c, expenses));
-                        });
+                    transactionsPerCategory[Category.AllCategoryId].Add(transaction);
                 }
 
-                return Result.Successful(results.AsEnumerable());
-            }
-            catch
-            {
-                return Result.Failed<IEnumerable<(Category, Expenses)>>();
-            }
-        }
-
-        public Result<Expenses> GetTotalExpense(TransactionFilter filter)
-        {
-            return GetTotalInternal(filter, TransactionType.Expense);
-        }
-
-        public Result<Expenses> GetTotalIncome(TransactionFilter filter)
-        {
-            return GetTotalInternal(filter, TransactionType.Income);
-        }
-        private Result<Expenses> GetTotalInternal(TransactionFilter filter, TransactionType transactionType)
-        {
-            try
-            {
-                // Set filter to only include expenses
-                filter.TransactionType = transactionType;
-
-                // Get transactions for filter and categories
-                List<Transaction> transactions = _transactionService.All(filter)
-                    .ToList();
-
-                // Find total start and end date
-                DateTime startDate = filter.StartDate ?? _transactionService.EarliestTransactionDate(filter);
-                DateTime endDate = filter.EndDate ?? _transactionService.LatestTransactionDate(filter);
-
-                return Result.Successful(new Expenses(transactions)
+                if (category == null)
                 {
-                    StartDate = startDate,
-                    EndDate = endDate
-                });
+                    continue;
+                }
+
+                if (includeSubCategories)
+                {
+                    // Add transaction to every parent in branch
+                    while (category != null)
+                    {
+                        transactionsPerCategory[category.Id].Add(transaction);
+                        category = category.Parent;
+                    }
+                }
+                else
+                {
+                    transactionsPerCategory[categoryId].Add(transaction);
+                }
             }
-            catch
-            {
-                return Result.Failed<Expenses>();
-            }
+
+            // Find total start and end date
+            var (startDate, endDate) = GetDateRange(accountFilteredTransactions, filter.StartDate, filter.EndDate);
+
+            var results = transactionsPerCategory
+                .Select(kvp => (categories[kvp.Key],
+                    new Expenditure(kvp.Value, absolute, startDate, endDate)
+                    {
+                        StartDate = startDate,
+                        EndDate = endDate
+                    } as IExpenditure))
+                .ToList();
+
+            return Result.Successful(results.AsEnumerable());
         }
     }
 }

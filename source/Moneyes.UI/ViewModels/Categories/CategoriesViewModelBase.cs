@@ -101,7 +101,7 @@ namespace Moneyes.UI.ViewModels
         }
 
         /// <summary>
-        /// Set the sub categores of the catgeory view models, provided as a flat list.
+        /// Set the sub categories of the catgeory view models, provided as a flat list.
         /// </summary>
         /// <param name="flatCategories"></param>
         protected virtual void SetSubCategories(List<TCategoryViewModel> flatCategories)

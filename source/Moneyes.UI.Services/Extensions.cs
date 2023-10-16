@@ -33,5 +33,34 @@ namespace Moneyes.UI
             return -1;
         }
 
+        public static (T min, T max) MinAndMax<T>(this IEnumerable<T> source)
+            where T : IComparable<T>
+        {
+            using var enumerator = source.GetEnumerator();
+
+            if (enumerator.MoveNext())
+            {
+                var min = enumerator.Current;
+                var max = enumerator.Current;
+
+                while (enumerator.MoveNext())
+                {
+                    if (Comparer<T>.Default.Compare(enumerator.Current, min) < 0)
+                    {
+                        min = enumerator.Current;
+                    }
+
+                    if (Comparer<T>.Default.Compare(enumerator.Current, max) > 0)
+                    {
+                        max = enumerator.Current;
+                    }
+                }
+
+                return (min, max);
+            }
+
+            throw new InvalidOperationException("Sequence contains no elements.");
+        }
+
     }
 }

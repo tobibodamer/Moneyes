@@ -1,5 +1,6 @@
 ﻿using LiveCharts;
 using LiveCharts.Wpf;
+using Moneyes.Core;
 using Moneyes.UI.ViewModels;
 using System;
 using System.Collections.Generic;
@@ -17,13 +18,19 @@ namespace Moneyes.UI.View
         {
             if (value is IEnumerable<CategoryExpenseViewModel> collection)
             {
-                //var mapper = Mappers.Pie<CategoryExpenseViewModel>().Value(c => (double)c.TotalExpense);
+                //var mapper = Mappers.Pie<CategoryExpenseViewModel>().Value(c => (double)amt(c));
 
                 SeriesCollection col = new SeriesCollection();
 
+                Func<CategoryExpenseViewModel, decimal> amt = c => c.ExpenditureType switch
+                {
+                    TransactionType.Income => c.TotalIncome,
+                    _ => c.TotalExpense
+                };
+
                 var totalExpense = collection
                     //.Where(c => !c.IsNoCategory)
-                    .Sum(c => c.TotalExpense);
+                    .Sum(amt);
 
                 if (totalExpense == 0)
                 {
@@ -31,24 +38,24 @@ namespace Moneyes.UI.View
                 }
 
                 var biggestExpenses = collection
-                        .Where(c => (c.TotalExpense / totalExpense) > 0.02m);
+                        .Where(c => (amt(c) / totalExpense) > 0.02m);
                         //.Where(c => !c.IsNoCategory);
 
-                var restAmount = totalExpense - biggestExpenses.Sum(c => c.TotalExpense);
+                var restAmount = totalExpense - biggestExpenses.Sum(c => amt(c));
 
                 col.AddRange(
                     biggestExpenses
-                        .OrderByDescending(c => c.TotalExpense)
-                        .Select(v => new PieSeries()
+                        .OrderByDescending(c => amt(c))
+                        .Select(c => new PieSeries()
                         {
-                            Values = new ChartValues<double>(new double[] { (double)v.TotalExpense }),
-                            Title = v.Name,
+                            Values = new ChartValues<double>(new double[] { (double)amt(c) }),
+                            Title = c.Name,
                             DataLabels = true,
-                            LabelPosition = (v.TotalExpense / totalExpense) > 0.11m ? PieLabelPosition.InsideSlice :
+                            LabelPosition = (amt(c) / totalExpense) > 0.11m ? PieLabelPosition.InsideSlice :
                                                 PieLabelPosition.OutsideSlice,
-                            Foreground = (v.TotalExpense / totalExpense) > 0.11m ? new SolidColorBrush(Colors.White) :
+                            Foreground = (amt(c) / totalExpense) > 0.11m ? new SolidColorBrush(Colors.White) :
                                 new SolidColorBrush(Colors.Black),
-                            LabelPoint = p => v.Name + $"\n{Math.Round(p.Participation * 100)} %"
+                            LabelPoint = p => c.Name + $"\n{Math.Round(p.Participation * 100)} %"
                         })
                         .Concat(new PieSeries[] {
                             new PieSeries() {

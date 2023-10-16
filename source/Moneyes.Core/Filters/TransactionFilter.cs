@@ -4,7 +4,7 @@ using System.Collections;
 
 namespace Moneyes.Core.Filters
 {
-    public class TransactionFilter : IEvaluable<Transaction>
+    public record TransactionFilter : IEvaluable<Transaction>
     {
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
@@ -50,8 +50,8 @@ namespace Moneyes.Core.Filters
         public bool Evaluate(Transaction input)
         {
             return (TransactionType is TransactionType.None || (input.Type == TransactionType))
-               && (!StartDate.HasValue || (input.BookingDate >= StartDate))
-               && (!EndDate.HasValue || (input.BookingDate <= EndDate))
+               && (!StartDate.HasValue || ((input.ValueDate ?? input.BookingDate) >= StartDate))
+               && (!EndDate.HasValue || ((input.ValueDate ?? input.BookingDate) <= EndDate))
                && (AccountNumber is null || (input.IBAN?.EndsWith(AccountNumber) ?? true))
                && (MinAmount is null || Math.Abs(input.Amount) >= MinAmount)
                && (MaxAmount is null || Math.Abs(input.Amount) <= MaxAmount)

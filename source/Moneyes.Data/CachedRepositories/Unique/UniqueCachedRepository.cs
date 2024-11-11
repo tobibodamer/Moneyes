@@ -35,6 +35,7 @@ public interface IUniqueCachedRepository<T> : ICachedRepository<T, Guid>
     bool DeleteById(Guid id, bool softDelete = true);
     int DeleteAll(bool softDelete = true);
     int DeleteMany(Expression<Func<T, bool>> predicate, bool softDelete = true);
+    int SoftDeleteMany(IEnumerable<Guid> ids);
 
     IEnumerable<T> IncludeSoftDeleted();
 }
@@ -372,6 +373,14 @@ public class UniqueCachedRepository<T> : CachedRepository<T, Guid>, IUniqueCache
         var entities = GetAll()
             .Where(compiledPredicate)
             .Select(entity => entity with { IsDeleted = true });            
+
+        return UpdateMany(entities);
+    }
+
+    public int SoftDeleteMany(IEnumerable<Guid> ids)
+    {
+        var entities = FindAllById(ids)
+            .Select(entity => entity with { IsDeleted = true });
 
         return UpdateMany(entities);
     }

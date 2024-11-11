@@ -45,6 +45,8 @@ namespace Moneyes.UI.ViewModels
             }
         }
 
+        public ICommand DeleteTransactions { get; set; }
+
         public ICommand RemoveFromCategory { get; set; }
 
         public ICommand AddToCategory { get; set; }
@@ -99,6 +101,16 @@ namespace Moneyes.UI.ViewModels
                 };
             });
 
+            DeleteTransactions = new RelayCommand(() =>
+            {
+                var transactions = SelectedTransactions.Select(t => t.Transaction).ToArray();
+                int numDeleted = transactionService.DeleteTransactions(transactions);
+
+                statusMessageService.ShowMessage(
+                    $"{numDeleted} transaction deleted", 
+                    "Undo",
+                    () => transactionService.RestoreTransactions(transactions));
+            });
         }
 
         private EditCategoryViewModel _addCategoryViewModel;

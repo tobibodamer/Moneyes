@@ -526,5 +526,19 @@ namespace Moneyes.UI
             // Update transaction in repo
             return _transactionRepository.Update(transaction.ToDbo());
         }
+
+        public int DeleteTransactions(params Transaction[] transactions)
+        {
+            return _transactionRepository.SoftDeleteMany(transactions.Select(t => t.Id));
+        }
+
+        public int RestoreTransactions(params Transaction[] transactions)
+        {
+            return _transactionRepository.UpdateMany(
+                transactions.Select(t => t.Id), 
+                (id, dbo) => dbo with { IsDeleted = false }, 
+                _ => ConflictResolutionAction.Ignore()
+            );
+        }
     }
 }

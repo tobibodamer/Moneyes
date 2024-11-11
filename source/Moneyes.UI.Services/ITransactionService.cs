@@ -19,6 +19,8 @@ namespace Moneyes.UI
         int ImportTransactions(IEnumerable<Transaction> transactions);
         DateTime LatestTransactionDate(TransactionFilter filter);
 
+        int DeleteTransactions(params Transaction[] transactions);
+        int RestoreTransactions(params Transaction[] transactions);
 
         /// <summary>
         /// Assigns the given <paramref name="transaction"/> to the first category
